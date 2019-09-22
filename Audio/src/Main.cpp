@@ -1,8 +1,6 @@
 #include "Window.h"
 #include "Input.h"
 #include "Stopwatch.h"
-#include "Music.h"
-#include "Sound.h"
 #include "Triangle.h"
 #include <iostream>
 
