@@ -120,6 +120,12 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Memory.h">
       <Filter>Headers</Filter>
     </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Music.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Sound.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp" />
@@ -147,5 +153,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Image.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Tween.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Disk.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Music.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Sound.cpp" />
   </ItemGroup>
 </Project>

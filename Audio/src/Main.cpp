@@ -1,5 +1,8 @@
 #include "Window.h"
 #include "Input.h"
+#include "Stopwatch.h"
+#include "Music.h"
+#include "Sound.h"
 #include "Triangle.h"
 #include <iostream>
 
@@ -19,7 +22,7 @@ void demo0() {
 	while (window.isOpen()) {
 		sb::Input::update();
 		window.update();
-
+ 
 		window.clear(sb::Color(1, 1, 1, 1));
 		window.draw(triangle);
 		window.display();

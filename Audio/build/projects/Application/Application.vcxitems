@@ -31,6 +31,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Logger.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\GL.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Memory.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Music.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\ParticleSystem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Physics.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Scene.h" />
@@ -42,6 +43,7 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\SDL.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Shader.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Shape.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Sound.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Sprite.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Stopwatch.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Texture.h" />
@@ -62,8 +64,10 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\GL.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Image.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Logger.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Music.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\ParticleSystem.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Physics.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Sound.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Sprite.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Texture.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TextureSheet.cpp" />

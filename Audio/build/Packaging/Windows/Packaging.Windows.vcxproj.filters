@@ -3,7 +3,4 @@
   <ItemGroup>
     <ClCompile Include="Dummy.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="ClassDiagram.cd" />
-  </ItemGroup>
 </Project>
