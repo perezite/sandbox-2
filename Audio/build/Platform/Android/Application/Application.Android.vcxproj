@@ -19,38 +19,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\..\src\Android\AndroidAudio.cpp" />
-    <ClCompile Include="..\..\..\..\src\Android\Java.cpp" />
-    <ClCompile Include="..\..\..\..\src\Android\MusicImpl.cpp" />
     <ClCompile Include="Precompiled.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x86'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="SDL_android_main.c">
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">CompileAsC</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">CompileAsC</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">CompileAsC</CompileAs>
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Release|x86'">CompileAsC</CompileAs>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-      </ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
-      </ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
-      </ForcedIncludeFiles>
-      <ForcedIncludeFiles Condition="'$(Configuration)|$(Platform)'=='Release|x86'">
-      </ForcedIncludeFiles>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x86'">NotUsing</PrecompiledHeader>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\src\Android\AndroidAudio.h" />
-    <ClInclude Include="..\..\..\..\src\Android\Java.h" />
-    <ClInclude Include="..\..\..\..\src\Android\MusicImpl.h" />
     <ClInclude Include="Precompiled.h" />
-    <ClInclude Include="SDL_android_main.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{71ba3082-afac-433b-b51c-17e3c244fea7}</ProjectGuid>
