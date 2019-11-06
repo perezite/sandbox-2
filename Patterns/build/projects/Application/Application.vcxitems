@@ -1,0 +1,84 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <ItemsProjectGuid>{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}</ItemsProjectGuid>
+    <ItemsProjectName>application</ItemsProjectName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(MSBuildThisFileDirectory)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ProjectCapability Include="SourceItemsFromImports" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Asset.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Body.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Camera.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Color.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Disk.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Drawable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\DrawBatch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\DrawStates.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\DrawTarget.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Easing.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Image.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Input.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\IntRect.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Logger.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\GL.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Memory.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\ParticleSystem.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Physics.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Scene.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Math.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Mesh.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\PrimitiveType.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Quad.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Renderer.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\SDL.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Shader.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Shape.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Sprite.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Stopwatch.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Texture.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TextureSheet.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Transform.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Transformable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Triangle.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Tween.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Vector2.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Vertex.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Asset.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Camera.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Disk.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\DrawStates.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\GL.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Image.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Logger.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\ParticleSystem.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Physics.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Sprite.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Texture.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TextureSheet.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Transformable.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\DrawBatch.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\DrawTarget.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Input.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Quad.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Renderer.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Shader.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Stopwatch.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Transform.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Triangle.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Tween.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Window.cpp" />
+  </ItemGroup>
+</Project>
