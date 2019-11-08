@@ -82,12 +82,12 @@ void edit<Vector2f>(Vector2f& v, const std::string& typeName) {
 }
 
 template <class T>
-void editPropertiesOfType(std::vector<Property>& properties) {
+void editAll(std::vector<Property>& properties) {
 	for (size_t i = 0; i < properties.size(); i++) {
 		if (properties[i].getType() == getType<T>()) 
 			edit<T>(properties[i], getType<T>);
 
-		editPropertiesOfType<T>(properties[i[.getChildren());
+		editAll<T>(properties[i].getChildren());
 	}
 }
 
@@ -115,7 +115,7 @@ void demo1000() {
 	hero.position.y = -2;
 	std::string inEditorHero = serialize(otherHero);
 	auto otherHeroProperties = getProperties(inEditorHero);
-	editPropertiesOfType<Vector2f>(otherHeroProperties);
+	editAll<Vector2f>(otherHeroProperties);
 
 	Hero otherReturnedHero;
 	deserialize(otherReturnedHero, otherHeroProperties.getString());
