@@ -1,6 +1,8 @@
 #include "Logger.h"
 #include <string>
 #include <iostream>
+#include <vector>
+#include <map>
 
 void version() {
 	#ifdef _DEBUG
@@ -91,6 +93,11 @@ void editAll(std::vector<Property>& properties) {
 	}
 }
 
+template <class T> 
+void editAll(T& t) {
+	editAll(t.getProperties());
+}
+
 */
 
 void demo1000() {
@@ -100,34 +107,137 @@ void demo1000() {
 	hero.health = 42;
 	hero.position.x = 1;
 	hero.position.y = 2;
+
 	std::string heroString = serialize(hero);
 
 	Hero returnedHero;
 	deserialize(returnedHero, heroString);
 
-	std::cout << heroString;
-	std::cout << serialize(returnedHero);
-
-	Hero otherHero;
-	hero.name = "The other Hero";
-	hero.health = 200;
-	hero.position.x = -1;
-	hero.position.y = -2;
-	std::string inEditorHero = serialize(otherHero);
-	auto otherHeroProperties = getProperties(inEditorHero);
-	editAll<Vector2f>(otherHeroProperties);
-
-	Hero otherReturnedHero;
-	deserialize(otherReturnedHero, otherHeroProperties.getString());
-
-	std::cout << serialize(otherReturnedHero);
+	editAll<Vector2f>(returnedHero);
 */
 }
+
+template <void(*Func)()>
+class Caller {
+public:
+	Caller() {
+		Func();
+	}
+};
+
+template <class T>
+std::string serialize(T& t) {
+	std::cout << "Serialization for this type is not specified" << std::endl;
+	std::cin.get();
+	exit(0);
+}
+
+template <>
+std::string serialize<int>(int& f) {
+	std::ostringstream os;
+	os << f;
+	return os.str();
+}
+
+template <class T>
+class Property {
+	typedef std::string(T::*Serializer)();
+	const std::string _name;
+	const std::string _typename;
+
+public:
+	Property(const std::string& name, const std::string& typeName, Serializer serializer)
+		:  _name(name)
+	{ }
+
+	virtual ~Property() { }
+
+	virtual std::string serialize() {
+		return std::string();
+		//return ::serialize<T>(_value);
+	}
+};
+
+template <class T>
+class Reflectable {
+	typedef std::string (T::*Serializer)();
+
+	std::vector<Property<T>*> _properties;
+
+public:
+	static std::map<std::string, Serializer> _serializers;
+
+	virtual ~Reflectable() {
+		for (size_t i = 0; i < _properties.size(); i++)
+			delete _properties[i];
+	}
+	inline static void addProperty(const std::string& name, Serializer getter) {
+		_serializers[name] = getter;
+	}
+};
+
+template <typename T>
+std::map<std::string, std::string (T::*)()> Reflectable<T>::_serializers;
+
+class MyReflectable : public Reflectable<MyReflectable> {
+	typedef MyReflectable __sb_CurrentClass;
+
+	int x;
+	int& __sb_get_x() {
+		return x;
+	}
+	std::string __sb_serialize_x() {
+		return serialize<int>(x);
+	}
+	static void __sb_register_x() {
+		auto serializer = &__sb_CurrentClass::__sb_serialize_x;
+		addProperty("x", serializer);
+	}
+	Caller<__sb_register_x> __sb_caller_register_x;
+
+public:
+	MyReflectable() : x(42)
+	{ }
+
+	std::string serializeXPropety() {
+		auto serializer = _serializers["x"];
+		auto result = (this->*serializer)();
+		return result;
+	}
+};
+
+/* void edit(Property& property) {
+	if (property.getTypeName() == SB_NAMEOF(int)) 
+		convertAndEdit<float>(property);
+	else
+		exit(0);
+} */
+
+void demo0 () {
+	MyReflectable reflectable;
+
+	auto result = reflectable.serializeXPropety();
+	std::cout << result << std::endl;
+
+	/*
+	MyReflectable reflectable;
+	std::cout << reflectable.getTypeName() << std::endl;
+	auto properties = reflectable.getProperties();
+	for (size_t i = 0; i < properties.size(); i++)
+		std::cout << properties[i]->getName() << " " << properties[i]->getTypeName() << " " << properties[i]->serialize() << std::endl;
+
+	edit(properties[0]);
+
+	*/
+}
+
+// next: serialize
 
 int main() {
 	version();
 
-	demo1000();
+	demo0();
+	//demo1000();
 
 	std::cin.get();
 	return 0;
