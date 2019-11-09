@@ -141,12 +141,12 @@ std::string serialize<int>(int& f) {
 
 template <class T>
 class Property {
-	typedef std::string(T::*Serializer)();
+	typedef std::string(T::*SerializeMethod)();
 	const std::string _name;
 	const std::string _typename;
 
 public:
-	Property(const std::string& name, const std::string& typeName, Serializer serializer)
+	Property(const std::string& name, const std::string& typeName, SerializeMethod serializer)
 		:  _name(name)
 	{ }
 
@@ -158,26 +158,54 @@ public:
 	}
 };
 
+class ConsoleEditor {
+public:
+	template <class U>
+	static void edit(U& t) {
+
+	}
+};
+
+class EditorCaller {
+public:	
+	ConsoleEditor editor;
+	
+	template <class T>
+	void edit(T& t) {
+		editor.edit<T>(t);
+		//editor.edit(t);
+	}
+
+	/*template <class T>
+	void edit(T& t) { editor.edit(u); }*/
+};
+
 template <class T>
 class Reflectable {
-	typedef std::string (T::*Serializer)();
+	typedef std::string (T::*SerializeMethod)();
+	typedef void(T::*EditMethod)(EditorCaller&);
 
-	std::vector<Property<T>*> _properties;
+	static std::map<std::string, SerializeMethod> _serializersMethods;
+	static std::map<std::string, EditMethod> _editMethods;
 
 public:
-	static std::map<std::string, Serializer> _serializers;
-
-	virtual ~Reflectable() {
-		for (size_t i = 0; i < _properties.size(); i++)
-			delete _properties[i];
+	inline static void addProperty(const std::string& name, SerializeMethod serializeMethod, EditMethod editMethod) {
+		_serializersMethods[name] = serializeMethod;
+		_editMethods[name] = editMethod;
 	}
-	inline static void addProperty(const std::string& name, Serializer getter) {
-		_serializers[name] = getter;
+
+	std::string serializeXPropety() {
+		auto serialize = _serializersMethods["x"];
+		T* instance = (T*)this;
+		auto result = (instance->*serialize)();
+		return result;
 	}
 };
 
 template <typename T>
-std::map<std::string, std::string (T::*)()> Reflectable<T>::_serializers;
+std::map<std::string, std::string (T::*)()> Reflectable<T>::_serializersMethods;
+template <typename T>
+std::map<std::string, void(T::*)(EditorCaller&)> Reflectable<T>::_editMethods;
 
 class MyReflectable : public Reflectable<MyReflectable> {
 	typedef MyReflectable __sb_CurrentClass;
@@ -186,27 +214,31 @@ class MyReflectable : public Reflectable<MyReflectable> {
 	int& __sb_get_x() {
 		return x;
 	}
+	// todo: inject a serializer class
 	std::string __sb_serialize_x() {
 		return serialize<int>(x);
 	}
+	void __sb_edit_x(EditorCaller& editor) {
+		// return editor.edit<int>(x);
+	}
 	static void __sb_register_x() {
-		auto serializer = &__sb_CurrentClass::__sb_serialize_x;
-		addProperty("x", serializer);
+		addProperty("x", &MyReflectable::__sb_serialize_x, &MyReflectable::__sb_edit_x);
 	}
 	Caller<__sb_register_x> __sb_caller_register_x;
 
 public:
 	MyReflectable() : x(42)
 	{ }
-
-	std::string serializeXPropety() {
-		auto serializer = _serializers["x"];
-		auto result = (this->*serializer)();
-		return result;
-	}
 };
 
-/* void edit(Property& property) {
+/* 
+	... 
+	template <>
+	void edit<float>(float & float) {
+		...
+	}
+
+	void edit(Property& property) {
 	if (property.getTypeName() == SB_NAMEOF(int)) 
 		convertAndEdit<float>(property);
 	else
@@ -228,10 +260,11 @@ void demo0 () {
 
 	edit(properties[0]);
 
+	properties[0]->deserialize("3.1415");
+	
+
 	*/
 }
-
-// next: serialize
 
 int main() {
 	version();
