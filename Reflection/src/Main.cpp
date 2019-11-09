@@ -158,44 +158,65 @@ public:
 	}
 };
 
-class ConsoleEditor {
+template <class T>
+class Inspector {
+public: 
+	virtual void edit(T& t) = 0;
+};
+
+class Editor {
 public:
-	template <class U>
-	static void edit(U& t) {
-
+	template <class T> 
+	void edit(T& t) { 
+		//Inspector<T> inspector; 
+		//inspector.edit(t);
 	}
 };
 
-class EditorCaller {
-public:	
-	ConsoleEditor editor;
-	
+template <class T>
+class ConsoleInspector : public Inspector<T> {
+public:
 	template <class T>
-	void edit(T& t) {
-		editor.edit<T>(t);
-		//editor.edit(t);
-	}
-
-	/*template <class T>
-	void edit(T& t) { editor.edit(u); }*/
+	static void edit(T& t) { std::cout << "okay"; }
 };
+
+class EditorCreator {
+};
+
+class BaseEditor {
+public:
+	template <class T>
+	void edit(T& value) {
+
+	}
+};
+
+void test(Editor& editor) {
+	int a = 2;;
+	editor.edit<int>(a);
+}
+
+void test2() {
+	//ConsoleEditor editor;
+	//test(editor);
+}
 
 template <class T>
 class Reflectable {
 	typedef std::string (T::*SerializeMethod)();
-	typedef void(T::*EditMethod)(EditorCaller&);
+	//typedef void(T::*EditMethod)(EditorCreator&);
 
-	static std::map<std::string, SerializeMethod> _serializersMethods;
-	static std::map<std::string, EditMethod> _editMethods;
+	static std::map<std::string, SerializeMethod> _serializerMethods;
+	//static std::map<std::string, EditMethod> _editMethods;
 
 public:
-	inline static void addProperty(const std::string& name, SerializeMethod serializeMethod, EditMethod editMethod) {
-		_serializersMethods[name] = serializeMethod;
-		_editMethods[name] = editMethod;
+	inline static void addProperty(const std::string& name, SerializeMethod serializeMethod/*, EditMethod editMethod*/) {
+		_serializerMethods[name] = serializeMethod;
+		//_editMethods[name] = editMethod;
 	}
 
 	std::string serializeXPropety() {
-		auto serialize = _serializersMethods["x"];
+		auto serialize = _serializerMethods["x"];
 		T* instance = (T*)this;
 		auto result = (instance->*serialize)();
 		return result;
@@ -203,9 +224,9 @@ public:
 };
 
 template <typename T>
-std::map<std::string, std::string (T::*)()> Reflectable<T>::_serializersMethods;
-template <typename T>
-std::map<std::string, void(T::*)(EditorCaller&)> Reflectable<T>::_editMethods;
+std::map<std::string, std::string (T::*)()> Reflectable<T>::_serializerMethods;
+//template <typename T>
+//std::map<std::string, void(T::*)(EditorCreator&)> Reflectable<T>::_editMethods;
 
 class MyReflectable : public Reflectable<MyReflectable> {
 	typedef MyReflectable __sb_CurrentClass;
@@ -218,11 +239,11 @@ class MyReflectable : public Reflectable<MyReflectable> {
 	std::string __sb_serialize_x() {
 		return serialize<int>(x);
 	}
-	void __sb_edit_x(EditorCaller& editor) {
-		// return editor.edit<int>(x);
+	void __sb_edit_x(EditorCreator& editorCreator) {
+		// return editorCaller.edit<int>(x);
 	}
 	static void __sb_register_x() {
-		addProperty("x", &MyReflectable::__sb_serialize_x, &MyReflectable::__sb_edit_x);
+		addProperty("x", &MyReflectable::__sb_serialize_x/*, &MyReflectable::__sb_edit_x*/);
 	}
 	Caller<__sb_register_x> __sb_caller_register_x;
 
@@ -246,6 +267,8 @@ public:
 } */
 
 void demo0 () {
+	test2();
+
 	MyReflectable reflectable;
 
 	auto result = reflectable.serializeXPropety();
