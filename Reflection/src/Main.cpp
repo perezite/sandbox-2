@@ -117,6 +117,12 @@ void demo1000() {
 */
 }
 
+void error(const std::string& message) {
+	std::cout << message << std::endl;
+	std::cin.get();
+	exit(0);
+}
+
 template <void(*Func)()>
 class Caller {
 public:
@@ -127,9 +133,7 @@ public:
 
 template <class T>
 std::string serialize(T& t) {
-	std::cout << "Serialization for this type is not specified" << std::endl;
-	std::cin.get();
-	exit(0);
+	error("Serialization for this type is not specified");
 }
 
 template <>
@@ -159,49 +163,6 @@ public:
 };
 
 template <class T>
-class Inspector {
-public: 
-	virtual void edit(T& t) = 0;
-};
-
-class Editor {
-public:
-	template <class T> 
-	void edit(T& t) { 
-		//Inspector<T> inspector; 
-		//inspector.edit(t);
-	}
-};
-
-template <class T>
-class ConsoleInspector : public Inspector<T> {
-public:
-	template <class T>
-	static void edit(T& t) { std::cout << "okay"; }
-};
-
-class EditorCreator {
-};
-
-class BaseEditor {
-public:
-	template <class T>
-	void edit(T& value) {
-
-	}
-};
-
-void test(Editor& editor) {
-	int a = 2;;
-	editor.edit<int>(a);
-}
-
-void test2() {
-	//ConsoleEditor editor;
-	//test(editor);
-}
-
-template <class T>
 class Reflectable {
 	typedef std::string (T::*SerializeMethod)();
 	//typedef void(T::*EditMethod)(EditorCreator&);
@@ -210,6 +171,17 @@ class Reflectable {
 	//static std::map<std::string, EditMethod> _editMethods;
 
 public:
+	//Editor* editor
+
+	Reflectable()
+	{
+
+	}
+
+	virtual ~Reflectable() {
+
+	}
+
 	inline static void addProperty(const std::string& name, SerializeMethod serializeMethod/*, EditMethod editMethod*/) {
 		_serializerMethods[name] = serializeMethod;
 		//_editMethods[name] = editMethod;
@@ -223,10 +195,128 @@ public:
 	}
 };
 
+//template <class T>
+//class Editor {
+//public:
+//	static void edit(T& t) { std::cout << "Editor"; }
+//};
+//
+//template <class T>
+//class ConsoleEditor : Editor<T> {
+//public:
+//	static void edit(T& t) { std::cout << "Console editor"; }
+//};
+
+//
+//template <class T> 
+//class BaseEditorInstanceProvider {
+//	virtual Editor<T>& getInstance() = 0;
+//};
+
+//template <class T, class U>
+//class EditorInstanceProvider {
+//	static Editor<T>& getInstance() {
+//
+//		static U<T> instance = U<T>();
+//		return instance;
+//	}
+//};
+
+//template <class T>
+//class EditorProvider {
+//public:
+//	//static Editor<T>* editor;
+//	//static EditorInstanceProvider<T> provider;
+//
+//	static Editor<T>& getEditor() { return *(new Editor<T>()); }
+//};
+//
+//class EditorImpl {
+//public:
+//	
+//	template <class T>
+//	edit(T &t) 
+//};
+
+//class Editor {
+//public:
+//	virtual EditorImpl getImpl() = 0;
+//};
+//
+//class ConsoleEditor : public Editor {
+//	EditorImpl _impl;
+//public:
+//	virtual EditorImpl getImpl() { return _impl; }
+//
+//};
+
+//
+//template <class U, class U>
+//class MyProvider {
+//public:
+//	T<U> getInstance() {
+//
+//	}
+//};
+//
+//template <class T>
+//Editor<T> getInstance() {
+//
+//}
+
 template <typename T>
 std::map<std::string, std::string (T::*)()> Reflectable<T>::_serializerMethods;
 //template <typename T>
 //std::map<std::string, void(T::*)(EditorCreator&)> Reflectable<T>::_editMethods;
+
+template <class T>
+class Editor {
+public:
+	virtual void edit(T &t) {};
+};
+
+template <class T>
+class ConsoleEditor : public Editor<T> {
+public:
+	void edit(T& t) {
+	}
+};
+
+template <class T>
+class OtherEditor : public Editor<T> {
+public:
+	void edit(T& t) {
+	}
+};
+
+class EditorFactory {
+public:
+	static size_t current;
+
+	template <class T>
+	static Editor<T>& getInstance() {
+		if (current == 0) {
+			static auto ed = ConsoleEditor<T>();
+			return ed;
+		}
+		if (current == 1) {
+			static auto ed = OtherEditor<T>();
+			return ed;
+		}
+
+		error("bad index");
+		static auto ed = OtherEditor<T>();
+		return ed;
+	}
+};
+
+size_t EditorFactory::current = 0;
+
+template <class T>
+void edit(T& t) {
+	auto editor = EditorFactory::getInstance<T>();
+	editor.edit(t);
+}
 
 class MyReflectable : public Reflectable<MyReflectable> {
 	typedef MyReflectable __sb_CurrentClass;
@@ -239,7 +329,11 @@ class MyReflectable : public Reflectable<MyReflectable> {
 	std::string __sb_serialize_x() {
 		return serialize<int>(x);
 	}
-	void __sb_edit_x(EditorCreator& editorCreator) {
+	void __sb_edit_x(EditorFactory& factory) {
+		edit<int>(x);
+		//ConsoleEditor<int> bla;
+		//auto editor = EditorProvider<int>::getEditor();
+		//editor.edit(x);
 		// return editorCaller.edit<int>(x);
 	}
 	static void __sb_register_x() {
@@ -266,8 +360,7 @@ public:
 		exit(0);
 } */
 
-void demo0 () {
-	test2();
+void demo10() {
 
 	MyReflectable reflectable;
 
@@ -287,6 +380,46 @@ void demo0 () {
 	
 
 	*/
+}
+
+class BaseStaticCallback {
+public:
+	virtual void call() = 0;
+};
+
+class StaticCallback : public BaseStaticCallback {
+	std::string(*_functionPointer)();
+public:
+	StaticCallback(std::string(*functionPointer)())
+		: _functionPointer(functionPointer)
+	{ }
+	virtual void call() {
+		std::cout << _functionPointer() << std::endl;
+	}
+};
+
+class MyClass {
+public:
+	static std::string someCallback() {
+		return "MyClass::someCallback";
+	}
+};
+
+class MyOtherClass {
+public:
+	static std::string someOtherCallback() {
+		return "MyOtherClass::someOtherCallback";
+	}
+};
+
+void demo0() {
+	StaticCallback myStaticCallback(&MyClass::someCallback);
+	StaticCallback myOtherStaticCallback(&MyOtherClass::someOtherCallback);
+	std::vector<BaseStaticCallback*> staticCallbacks;
+	staticCallbacks.push_back(&myStaticCallback);
+	staticCallbacks.push_back(&myOtherStaticCallback);
+	for (size_t i = 0; i < staticCallbacks.size(); i++)
+		staticCallbacks[i]->call();
 }
 
 int main() {
