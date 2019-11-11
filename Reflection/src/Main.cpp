@@ -134,6 +134,7 @@ public:
 template <class T>
 std::string serialize(T& t) {
 	error("Serialization for this type is not specified");
+	return "";
 }
 
 template <>
@@ -453,11 +454,6 @@ public:
 	}
 };
 
-template <class T>
-std::string serialize10(T& reference) {
-	return SB_SERIALIZER::serialize(reference);
-}
-
 template <>
 std::string StarTextSerializer::serialize<int>(int& t) {
 	std::ostringstream os; os << t; return "***" + os.str() + "***";
@@ -475,12 +471,16 @@ public:
 };
 
 template <class T>
+std::string serialize10(T& reference) {
+	return SB_SERIALIZER::serialize(reference);
+}
+
+template <class T>
 class Property10 : public BaseProperty10 {
 	T _reference;
 public:
 	Property10(T& reference) : _reference(reference)
 	{ }
-
 	std::string serialize() {
 		return serialize10(_reference);
 	}
@@ -497,7 +497,6 @@ protected:
 		for (size_t i = 0; i < _propertyCreators.size(); i++)
 			(instance->*_propertyCreators[i])();
 	}
-
 public:
 	virtual ~Reflectable10() {
 		for (size_t i = 0; i < _properties.size(); i++)
@@ -546,7 +545,36 @@ public:
 	SB_PROPERTY(float, myFloat)
 };
 
+class MyBaseBase {
+	virtual void myFunc() {
+
+	}
+};
+
+template <class T>
+class MyBase : public MyBaseBase {
+public:
+	template <class U> 
+	static void myFunc(U& t) {
+		T::myFunc(t);
+	}
+};
+
+class MyDerived : public MyBase<MyDerived> {
+public:
+	template <class T>
+	static void myFunc(T& t) {
+		std::cout << t << std::endl;
+	}
+};
+
 void demo10() {
+	MyDerived myDerived;
+	MyBase<MyDerived>& myBase = myDerived;
+	auto myInt = 42;
+	myBase.myFunc<int>(myInt);
+
+	// setSerializer<TextSerializer>();
 	MyReflectable10 myReflectable;
 	myReflectable.myInt = 42;
 	myReflectable.myFloat = 3.1415f;
@@ -575,7 +603,7 @@ void demo15() {
 int main() {
 	version();
 
-	demo15();
+	demo10();
 
 	std::cin.get();
 	return 0;
