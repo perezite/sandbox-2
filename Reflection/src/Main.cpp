@@ -360,7 +360,7 @@ public:
 		exit(0);
 } */
 
-void demo10() {
+void demo100() {
 
 	MyReflectable reflectable;
 
@@ -422,12 +422,112 @@ void demo0() {
 		staticCallbacks[i]->call();
 }
 
+class BaseProperty10 {
+public:
+	virtual ~BaseProperty10() { }
+	virtual std::string serialize() = 0;
+};
+
+template <class T>
+std::string serialize10(T& t) {
+	error("serialization not specified for given type");
+}
+
+template <>
+std::string serialize10<int>(int& t) {
+	std::ostringstream os; os << t; return os.str();
+}
+
+template <class T>
+class Property10 : public BaseProperty10 {
+	T _reference;
+public:
+	Property10(T& reference) : _reference(reference)
+	{ }
+	virtual std::string serialize() {
+		return serialize10<T>(_reference);
+	}
+};
+
+template <class T>
+class Reflectable10 {
+	typedef void(T::*PropertyCreator)();
+	static std::vector<PropertyCreator> _propertyCreators;
+	std::vector<BaseProperty10*> _properties;
+protected:
+	void createProperties() {
+		T* instance = (T*)this;
+		for (size_t i = 0; i < _propertyCreators.size(); i++)
+			(instance->*_propertyCreators[i])();
+	}
+
+public:
+	virtual ~Reflectable10() {
+		for (size_t i = 0; i < _properties.size(); i++)
+			delete _properties[i];
+	}
+	const std::vector<BaseProperty10*>& getProperties() { 
+		createProperties();
+		return _properties;
+	};
+	template <class U>
+	void createProperty(const std::string& name, U& reference) {
+		_properties.push_back(new Property10<U>(reference));
+	}
+	static void addPropertyCreator(PropertyCreator creator) {
+		_propertyCreators.push_back(creator);
+	}
+};
+
+template <typename T>
+std::vector<void(T::*)()> Reflectable10<T>::_propertyCreators;
+
+template <void(*Func)()>
+class Caller10 {
+public:
+	Caller10() {
+		Func();
+	}
+};
+
+class MyReflectable10 : public Reflectable10<MyReflectable10> {
+public:
+	int myInt;
+	void create_property_x() {
+		createProperty<int>("myInt", myInt);
+	}
+	static void register_x() {
+		addPropertyCreator(&MyReflectable10::create_property_x);
+	}
+	Caller10<register_x> caller_x;
+};
+
+//template <void(*MyReflectable10::Func)()>
+//class Caller10 {
+//public:
+//	Caller() {
+//		Func();
+//	}
+//};
+
+void demo10() {
+	MyReflectable10 myReflectable;
+	 //auto test2 = &MyReflectable10::serialize_x;
+	//Caller10<&myReflectable.serialize_x> caller;
+	myReflectable.myInt = 42;
+	auto test = myReflectable.getProperties();
+	std::cout << myReflectable.getProperties()[0]->serialize() << std::endl;
+	// std::cout << myReflectable.getProperties[0].serialize() << std::endl;
+	// std::cout << myReflectable.getProperties[1].serialize() << std::endl;
+}
+
 int main() {
 	version();
 
-	demo0();
+	demo10();
 	//demo1000();
 
 	std::cin.get();
 	return 0;
 }
+
