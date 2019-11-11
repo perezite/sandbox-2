@@ -475,16 +475,61 @@ std::string serialize10(T& reference) {
 	return SB_SERIALIZER::serialize(reference);
 }
 
+class SerializerBase {
+public:
+	virtual void serialize(void* value) = 0;
+};
+
+template <class T>
+class SerializerDerived : public SerializerBase {
+public:
+	virtual void serialize(void* value) {
+		auto restoredValue = (T*)value;
+		doSerialize(*restoredValue);
+	}
+	static void serialize2(T& t) {
+		std::cout << t << std::endl;
+	}
+
+	static void doSerialize(T& t) {
+		std::cout << t << std::endl;
+	}
+};
+
 template <class T>
 class Property10 : public BaseProperty10 {
 	T _reference;
 public:
 	Property10(T& reference) : _reference(reference)
 	{ }
+	template <template<class> class S>
+	std::string doSerialize() {
+		S<T> serializer;
+		serializer.serialize2(_reference);
+		//serializer.serialize((void*)_reference);
+
+		//V<S, T> serializer;
+		//serializer.serialize(_reference);
+		//SerializerBase& base = serializer;
+		//doSerialize2<S, S<T>>();
+	}
+	/*template <typename TTrainer, template <typename TTrainer> struct T>
+	struct graveyard;*/
+	//template <class S, template <class S> class V>
+	//std::string doSerialize2() {
+	//	
+	//}
 	std::string serialize() {
 		return serialize10(_reference);
 	}
 };
+
+void propertyTest() {
+	int val = 42;
+	Property10<int> property(val);
+	property.doSerialize<SerializerDerived>();
+	//property.doSerialize<
+}
 
 template <class T>
 class Reflectable10 {
@@ -545,34 +590,11 @@ public:
 	SB_PROPERTY(float, myFloat)
 };
 
-class MyBaseBase {
-	virtual void myFunc() {
-
-	}
-};
-
-template <class T>
-class MyBase : public MyBaseBase {
-public:
-	template <class U> 
-	static void myFunc(U& t) {
-		T::myFunc(t);
-	}
-};
-
-class MyDerived : public MyBase<MyDerived> {
-public:
-	template <class T>
-	static void myFunc(T& t) {
-		std::cout << t << std::endl;
-	}
-};
-
 void demo10() {
-	MyDerived myDerived;
-	MyBase<MyDerived>& myBase = myDerived;
-	auto myInt = 42;
-	myBase.myFunc<int>(myInt);
+	auto val = 42;
+	SerializerDerived<int> myDerived;
+	SerializerBase& base = myDerived;
+	base.serialize(&val);
 
 	// setSerializer<TextSerializer>();
 	MyReflectable10 myReflectable;
