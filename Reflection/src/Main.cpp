@@ -444,7 +444,6 @@ std::string TextSerializer::serialize<float>(float& t) {
 	std::ostringstream os; os << t; return os.str();
 }
 
-
 class StarTextSerializer {
 public:
 	template <class T>
