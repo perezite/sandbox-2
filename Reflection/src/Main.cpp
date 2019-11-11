@@ -527,25 +527,25 @@ public:
 	}
 };
 
-class MyReflectable10 : public Reflectable10<MyReflectable10> {
-public:
-	int myInt;
-	void create_property_myInt() {
-		createProperty<int>("myInt", myInt);
-	}
-	static void add_property_creator_myInt() {
-		addPropertyCreator(&MyReflectable10::create_property_myInt);
-	}
-	Caller10<add_property_creator_myInt> caller_myInt;
+#define SB_REFLECT(className) typedef className CurrentClass;
 
-	float myFloat;
-	void create_myFloat() {
-		createProperty<float>("myFloat", myFloat);
-	}
-	static void add_property_creator_myFloat() {
-		addPropertyCreator(&MyReflectable10::create_myFloat);
-	}
-	Caller10<add_property_creator_myFloat> caller_myFloat;
+#define SB_PROPERTY(type, value)										\
+	type value;															\
+	void create_property_##value() {									\
+		createProperty<type>(#value, value);							\
+	}																	\
+	static void add_property_creator_##value() {						\
+		addPropertyCreator(&CurrentClass::create_property_##value);		\
+	}																	\
+	Caller10<add_property_creator_##value> caller_##value;				\
+
+class MyReflectable10 : public Reflectable10<MyReflectable10> {
+	SB_REFLECT(MyReflectable10)
+
+public:
+	SB_PROPERTY(int, myInt)
+
+	SB_PROPERTY(float, myFloat)
 };
 
 void demo10() {
