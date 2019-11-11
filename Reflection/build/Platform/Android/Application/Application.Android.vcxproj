@@ -128,7 +128,7 @@
       <ExceptionHandling>Enabled</ExceptionHandling>
       <CppLanguageStandard>c++11</CppLanguageStandard>
       <ForcedIncludeFiles>Precompiled.h</ForcedIncludeFiles>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <LibraryDependencies>m;log;GLESv2;SDL2;SDL2_image;SDL2_mixer;%(LibraryDependencies)</LibraryDependencies>
@@ -153,7 +153,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <DataLevelLinking>true</DataLevelLinking>
       <ForcedIncludeFiles>Precompiled.h</ForcedIncludeFiles>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <LibraryDependencies>m;log;GLESv2;SDL2;SDL2_image;SDL2_mixer;%(LibraryDependencies)</LibraryDependencies>
@@ -173,7 +173,7 @@
       <CppLanguageStandard>c++11</CppLanguageStandard>
       <PreprocessorDefinitions>SDL_MAIN_HANDLED;_DEBUG</PreprocessorDefinitions>
       <ForcedIncludeFiles>Precompiled.h</ForcedIncludeFiles>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <LibraryDependencies>m;log;GLESv2;SDL2;SDL2_image;SDL2_mixer;%(LibraryDependencies)</LibraryDependencies>
@@ -198,7 +198,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <DataLevelLinking>true</DataLevelLinking>
       <ForcedIncludeFiles>Precompiled.h</ForcedIncludeFiles>
-      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <EnableNeonCodegen>false</EnableNeonCodegen>
     </ClCompile>

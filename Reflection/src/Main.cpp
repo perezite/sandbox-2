@@ -423,8 +423,6 @@ void demo0() {
 		staticCallbacks[i]->call();
 }
 
-#define SB_SERIALIZER StarTextSerializer
-
 class TextSerializer {
 public:
 	template <class T>
@@ -463,72 +461,24 @@ std::string StarTextSerializer::serialize<float>(float& t) {
 	std::ostringstream os; os << t; return "***" + os.str() + "***";
 }
 
-template <class T>
-std::string serialize10(T& reference) {
-	return SB_SERIALIZER::serialize(reference);
-}
-
-class SerializerBase {
-public:
-	virtual std::string serialize(void* value) = 0;
-};
-
-template <class T>
-class SerializerDerived : public SerializerBase {
-public:
-	virtual std::string serialize(void* value) {
-		auto restoredValue = (T*)value;
-		return doSerialize(*restoredValue);
-	}
-	static std::string doSerialize(T& t) {
-		std::ostringstream os; os << t; return os.str();
-	}
-};
-
-class PropertyExtension {
-public:
-	virtual std::string serializeWith(SerializerBase& base) = 0;
-};
-
 class BaseProperty10 {
-	void* _derived;
 public:
-	BaseProperty10(void* derived) : _derived(derived) 
-	{ }
 	virtual ~BaseProperty10() { }
 	virtual std::string serialize() = 0;
-	template <class S>
-	std::string serializeWith() {
-		S serializer;
-		PropertyExtension* ext = (PropertyExtension*)_derived;
-		return "";
-	}
 };
+
+#define SB_SERIALIZER StarTextSerializer
 
 template <class T>
-class Property10 : public BaseProperty10, public PropertyExtension {
+class Property10 : public BaseProperty10 {
 	T _reference;
 public:
-	Property10(T& reference) : BaseProperty10(*this), _reference(reference)
+	Property10(T& reference) : _reference(reference)
 	{ }
-	template <class S>
-	std::string doSerialize() {
-		static S serializer;
-		return serializer.serialize(_reference);
-	}
-	virtual std::string serializeWith(SerializerBase& base) {
-		return base.serialize((void*)&_reference);
-	}
-	std::string serialize() {
-		return serialize10(_reference);
+	inline std::string serialize() {
+		return SB_SERIALIZER::serialize(_reference);
 	}
 };
-
-void propertyTest() {
-	int val = 42;
-	Property10<int> property(val);
-	property.doSerialize<TextSerializer>();
-}
 
 template <class T>
 class Reflectable10 {
@@ -589,27 +539,12 @@ public:
 	SB_PROPERTY(float, myFloat)
 };
 
-class MySerializer {
-
-};
-
 void demo10() {
-	auto val = 42;
-	SerializerDerived<int> myDerived;
-	SerializerBase& base = myDerived;
-	base.serialize(&val);
-
-	// setSerializer<TextSerializer>();
 	MyReflectable10 myReflectable;
 	myReflectable.myInt = 42;
 	myReflectable.myFloat = 3.1415f;
 	std::cout << myReflectable.getProperties()[0]->serialize() << std::endl;
 	std::cout << myReflectable.getProperties()[1]->serialize() << std::endl;
-	auto prop = myReflectable.getProperties()[1];
-	//prop->test<MySerializer>();
-	prop->serializeWith<MySerializer>();
-	//std::cout << myReflectable.getProperties()[1]->serializeWith<SerializerDerived>() << std::endl;
-
 }
 
 class Position15 : public Reflectable10<Position15> {
@@ -626,14 +561,43 @@ public:
 	SB_PROPERTY(Position15, myPosition)
 };
 
-void demo15() {
+class Base {
+public:
+	virtual void test() {
+		std::cout << "Base::test()" << std::endl;
+	}
+};
 
+class Derived : public Base {
+public:
+	virtual void test() {
+		std::cout << "Derived::test()" << std::endl;
+	}
+};
+
+template <class T>
+void call(T& t) {
+	std::cout << "call<T>()" << std::endl;
+	t.test();
+}
+
+template <>
+void call<Base>(Base& b) {
+	std::cout << "call<Base>()" << std::endl;
+	b.test();
+}
+
+void demo15() {
+	Derived derived;
+	Base& base = derived;
+	call(derived);
+	call(base);
 }
 
 int main() {
 	version();
 
-	demo10();
+	demo15();
 
 	std::cin.get();
 	return 0;
