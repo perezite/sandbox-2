@@ -429,6 +429,7 @@ public:
 	template <class T>
 	static std::string serialize(T& t) {
 		error("serialization not specified for given type");
+		return "";
 	}
 };
 
@@ -437,11 +438,18 @@ std::string TextSerializer::serialize<int>(int& t) {
 	std::ostringstream os; os << t; return os.str();
 }
 
+template <>
+std::string TextSerializer::serialize<float>(float& t) {
+	std::ostringstream os; os << t; return os.str();
+}
+
+
 class StarTextSerializer {
 public:
 	template <class T>
 	static std::string serialize(T& t) {
 		error("serialization not specified for given type");
+		return "";
 	}
 };
 
@@ -452,6 +460,11 @@ std::string serialize10(T& reference) {
 
 template <>
 std::string StarTextSerializer::serialize<int>(int& t) {
+	std::ostringstream os; os << t; return "***" + os.str() + "***";
+}
+
+template <>
+std::string StarTextSerializer::serialize<float>(float& t) {
 	std::ostringstream os; os << t; return "***" + os.str() + "***";
 }
 
@@ -517,19 +530,30 @@ public:
 class MyReflectable10 : public Reflectable10<MyReflectable10> {
 public:
 	int myInt;
-	void create_property_x() {
+	void create_property_myInt() {
 		createProperty<int>("myInt", myInt);
 	}
-	static void register_x() {
-		addPropertyCreator(&MyReflectable10::create_property_x);
+	static void add_property_creator_myInt() {
+		addPropertyCreator(&MyReflectable10::create_property_myInt);
 	}
-	Caller10<register_x> caller_x;
+	Caller10<add_property_creator_myInt> caller_myInt;
+
+	float myFloat;
+	void create_myFloat() {
+		createProperty<float>("myFloat", myFloat);
+	}
+	static void add_property_creator_myFloat() {
+		addPropertyCreator(&MyReflectable10::create_myFloat);
+	}
+	Caller10<add_property_creator_myFloat> caller_myFloat;
 };
 
 void demo10() {
 	MyReflectable10 myReflectable;
 	myReflectable.myInt = 42;
+	myReflectable.myFloat = 3.1415f;
 	std::cout << myReflectable.getProperties()[0]->serialize() << std::endl;
+	std::cout << myReflectable.getProperties()[1]->serialize() << std::endl;
 }
 
 int main() {
