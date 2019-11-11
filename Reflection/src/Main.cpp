@@ -422,24 +422,9 @@ void demo0() {
 		staticCallbacks[i]->call();
 }
 
-inline int generateTypeId() {
-	static int typeId = -1;
-	typeId++;
-	return typeId;
-}
+#define SB_SERIALIZER StarTextSerializer
 
-template <class T>
-class Serializer {
-public:
-	static int getStaticTypeId() {
-		static int typeId = generateTypeId();
-		return typeId;
-	}
-
-	const int getTypeId() const { return getStaticTypeId(); }
-};
-
-class TextSerializer : public Serializer<TextSerializer> {
+class TextSerializer {
 public:
 	template <class T>
 	static std::string serialize(T& t) {
@@ -452,18 +437,29 @@ std::string TextSerializer::serialize<int>(int& t) {
 	std::ostringstream os; os << t; return os.str();
 }
 
-class BaseProperty10 {
-	static int _serializerTypeId;
+class StarTextSerializer {
 public:
-	virtual ~BaseProperty10() { }
 	template <class T>
-	static void setSerializer() {
-		_serializerTypeId = T::getStaticTypeId();
+	static std::string serialize(T& t) {
+		error("serialization not specified for given type");
 	}
-	virtual std::string serialize() = 0;
 };
 
-int BaseProperty10::_serializerTypeId;
+template <class T>
+std::string serialize10(T& reference) {
+	return SB_SERIALIZER::serialize(reference);
+}
+
+template <>
+std::string StarTextSerializer::serialize<int>(int& t) {
+	std::ostringstream os; os << t; return "***" + os.str() + "***";
+}
+
+class BaseProperty10 {
+public:
+	virtual ~BaseProperty10() { }
+	virtual std::string serialize() = 0;
+};
 
 template <class T>
 class Property10 : public BaseProperty10 {
@@ -473,7 +469,7 @@ public:
 	{ }
 
 	std::string serialize() {
-		return TextSerializer::serialize<T>(_reference);
+		return serialize10(_reference);
 	}
 };
 
@@ -533,8 +529,6 @@ public:
 void demo10() {
 	MyReflectable10 myReflectable;
 	myReflectable.myInt = 42;
-	auto test = myReflectable.getProperties();
-	BaseProperty10::setSerializer<TextSerializer>();
 	std::cout << myReflectable.getProperties()[0]->serialize() << std::endl;
 }
 
@@ -542,7 +536,6 @@ int main() {
 	version();
 
 	demo10();
-	//demo1000();
 
 	std::cin.get();
 	return 0;
