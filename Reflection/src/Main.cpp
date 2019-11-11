@@ -422,21 +422,48 @@ void demo0() {
 		staticCallbacks[i]->call();
 }
 
+inline int generateTypeId() {
+	static int typeId = -1;
+	typeId++;
+	return typeId;
+}
+
+template <class T>
+class Serializer {
+public:
+	static int getStaticTypeId() {
+		static int typeId = generateTypeId();
+		return typeId;
+	}
+
+	const int getTypeId() const { return getStaticTypeId(); }
+};
+
+class TextSerializer : public Serializer<TextSerializer> {
+public:
+	template <class T>
+	static std::string serialize(T& t) {
+		error("serialization not specified for given type");
+	}
+};
+
+template <>
+std::string TextSerializer::serialize<int>(int& t) {
+	std::ostringstream os; os << t; return os.str();
+}
+
 class BaseProperty10 {
+	static int _serializerTypeId;
 public:
 	virtual ~BaseProperty10() { }
+	template <class T>
+	static void setSerializer() {
+		_serializerTypeId = T::getStaticTypeId();
+	}
 	virtual std::string serialize() = 0;
 };
 
-template <class T>
-std::string serialize10(T& t) {
-	error("serialization not specified for given type");
-}
-
-template <>
-std::string serialize10<int>(int& t) {
-	std::ostringstream os; os << t; return os.str();
-}
+int BaseProperty10::_serializerTypeId;
 
 template <class T>
 class Property10 : public BaseProperty10 {
@@ -444,8 +471,9 @@ class Property10 : public BaseProperty10 {
 public:
 	Property10(T& reference) : _reference(reference)
 	{ }
-	virtual std::string serialize() {
-		return serialize10<T>(_reference);
+
+	std::string serialize() {
+		return TextSerializer::serialize<T>(_reference);
 	}
 };
 
@@ -502,23 +530,12 @@ public:
 	Caller10<register_x> caller_x;
 };
 
-//template <void(*MyReflectable10::Func)()>
-//class Caller10 {
-//public:
-//	Caller() {
-//		Func();
-//	}
-//};
-
 void demo10() {
 	MyReflectable10 myReflectable;
-	 //auto test2 = &MyReflectable10::serialize_x;
-	//Caller10<&myReflectable.serialize_x> caller;
 	myReflectable.myInt = 42;
 	auto test = myReflectable.getProperties();
+	BaseProperty10::setSerializer<TextSerializer>();
 	std::cout << myReflectable.getProperties()[0]->serialize() << std::endl;
-	// std::cout << myReflectable.getProperties[0].serialize() << std::endl;
-	// std::cout << myReflectable.getProperties[1].serialize() << std::endl;
 }
 
 int main() {
