@@ -527,7 +527,7 @@ public:
 	}
 };
 
-#define SB_REFLECT(className) typedef className CurrentClass;
+#define SB_CLASS(className) typedef className CurrentClass;
 
 #define SB_PROPERTY(type, value)										\
 	type value;															\
@@ -540,11 +540,9 @@ public:
 	Caller10<add_property_creator_##value> caller_##value;				\
 
 class MyReflectable10 : public Reflectable10<MyReflectable10> {
-	SB_REFLECT(MyReflectable10)
-
+	SB_CLASS(MyReflectable10)
 public:
 	SB_PROPERTY(int, myInt)
-
 	SB_PROPERTY(float, myFloat)
 };
 
@@ -556,10 +554,28 @@ void demo10() {
 	std::cout << myReflectable.getProperties()[1]->serialize() << std::endl;
 }
 
+class Position15 : public Reflectable10<Position15> {
+	SB_CLASS(Position15)
+public:
+	SB_PROPERTY(std::string, myString)
+	SB_PROPERTY(float, myFloat)
+};
+
+class MyReflectable15 : public Reflectable10<MyReflectable15> {
+	SB_CLASS(MyReflectable15)
+public:
+	SB_PROPERTY(int, myInt)
+	SB_PROPERTY(Position15, myPosition)
+};
+
+void demo15() {
+
+}
+
 int main() {
 	version();
 
-	demo10();
+	demo15();
 
 	std::cin.get();
 	return 0;
