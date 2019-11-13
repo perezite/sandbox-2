@@ -157,7 +157,7 @@ public:
 
 	virtual ~Property() { }
 
-	virtual std::string serialize() {
+	virtual std::string serialize(size_t) {
 		return std::string();
 		//return ::serialize<T>(_value);
 	}
@@ -423,67 +423,102 @@ void demo0() {
 		staticCallbacks[i]->call();
 }
 
-class TextSerializer {
+// https://stackoverflow.com/questions/37031844/logic-of-stdis-base-of-in-c-11
+template<typename D, typename B>
+class IsDerivedFrom
+{
+	class No { };
+	class Yes { No no[2]; };
+
+	static Yes Test(B*) {};
+	static No Test(...) {};
 public:
-	template <class T>
-	static std::string serialize(T& t) {
-		error("serialization not specified for given type");
-		return "";
+	static bool value() {
+		return sizeof(Test(static_cast<D*>(0))) == sizeof(Yes);
 	}
 };
 
-template <>
-std::string TextSerializer::serialize<int>(int& t) {
-	std::ostringstream os; os << t; return os.str();
+template <class B, class D>
+bool isDerivedFrom(D& d) {
+	return IsDerivedFrom<D, B>::value();
 }
 
-template <>
-std::string TextSerializer::serialize<float>(float& t) {
-	std::ostringstream os; os << t; return os.str();
-}
+#define SB_SERIALIZER TextSerializer
 
-class StarTextSerializer {
-public:
-	template <class T>
-	static std::string serialize(T& t) {
-		error("serialization not specified for given type");
-		return "";
-	}
-};
-
-template <>
-std::string StarTextSerializer::serialize<int>(int& t) {
-	std::ostringstream os; os << t; return "***" + os.str() + "***";
-}
-
-template <>
-std::string StarTextSerializer::serialize<float>(float& t) {
-	std::ostringstream os; os << t; return "***" + os.str() + "***";
-}
+template <class T>
+std::string serialize10(T& t, const std::string& typeName, size_t depth = 0);
 
 class BaseProperty10 {
 public:
 	virtual ~BaseProperty10() { }
-	virtual std::string serialize() = 0;
-};
-
-#define SB_SERIALIZER StarTextSerializer
-
-template <class T>
-class Property10 : public BaseProperty10 {
-	T _reference;
-public:
-	Property10(T& reference) : _reference(reference)
-	{ }
-	inline std::string serialize() {
-		return SB_SERIALIZER::serialize(_reference);
-	}
+	virtual std::string serialize(size_t depth = 0) = 0;
 };
 
 class BaseReflectable {
 public:
-	std::string serialize() {
-		SB_SERIALIZER::serialize(*this);
+	std::string serialize(size_t depth = 0) {
+		return ::serialize10(*this, getTypeName(), depth);
+	}
+	virtual const std::string getTypeName() = 0;
+	virtual	const std::vector<BaseProperty10*>& getProperties() = 0;
+};
+
+class TextSerializer {
+protected:
+	static std::string serializeReflectable(BaseReflectable& baseReflectable, size_t depth = 0) {
+		std::ostringstream os; os << std::string(depth, ' ') << baseReflectable.getTypeName() << std::endl;
+		auto& properties = baseReflectable.getProperties();
+		for (size_t i = 0; i < properties.size(); i++)
+			os << properties[i]->serialize(depth + 1);
+		return os.str();
+	}
+	template <class T>
+	static std::string serializePrimitive(T& t, const std::string typeName, size_t depth) {
+		std::ostringstream os; os << std::string(depth, ' ') << typeName << std::endl 
+			<< std::string(depth + 1, ' ') << t << std::endl; return os.str();
+	}
+public:
+	template <class T>
+	static std::string serialize(T& t, const std::string typeName, size_t depth = 0) {
+		if (IsDerivedFrom<T, BaseReflectable>::value()) {
+			return serializeReflectable((BaseReflectable&)t, depth);
+		}
+			
+		error("serialization not specified for type '" + typeName + "'");
+		return "";
+	}
+};
+
+template <>
+std::string TextSerializer::serialize<int>(int& t, const std::string typeName, size_t depth) {
+	return serializePrimitive(t, typeName, depth);
+}
+
+template <>
+std::string TextSerializer::serialize<float>(float& t, const std::string typeName, size_t depth) {
+	return serializePrimitive(t, typeName, depth);
+}
+
+template <>
+std::string TextSerializer::serialize<std::string>(std::string& t, const std::string typeName, size_t depth) {
+	return serializePrimitive(t, typeName, depth);
+}
+
+template <class T>
+std::string serialize10(T& t, const std::string& typeName, size_t depth) {
+	return SB_SERIALIZER::serialize(t, typeName, depth);
+}
+
+template <class T>
+class Property10 : public BaseProperty10 {
+	T _reference;
+	std::string _typeName;
+public:
+	Property10(T& reference, const std::string& typeName)
+		: _reference(reference), _typeName(typeName)
+	{ }
+	inline std::string serialize(size_t depth = 0) {
+		return ::serialize10(_reference, _typeName, depth);
 	}
 };
 
@@ -503,13 +538,13 @@ public:
 		for (size_t i = 0; i < _properties.size(); i++)
 			delete _properties[i];
 	}
-	const std::vector<BaseProperty10*>& getProperties() { 
+	virtual const std::vector<BaseProperty10*>& getProperties() { 
 		createProperties();
 		return _properties;
 	};
 	template <class U>
-	void createProperty(const std::string& name, U& reference) {
-		_properties.push_back(new Property10<U>(reference));
+	void createProperty(const std::string& name, U& reference, const std::string& typeName) {
+		_properties.push_back(new Property10<U>(reference, typeName));
 	}
 	static void addPropertyCreator(PropertyCreator creator) {
 		_propertyCreators.push_back(creator);
@@ -527,21 +562,23 @@ public:
 	}
 };
 
-#define SB_CLASS(className) typedef className CurrentClass;
+#define SB_CLASS(className) \
+	typedef className CurrentClass; \
+	inline virtual const std::string getTypeName() { return #className; }
 
 #define SB_PROPERTY(type, value)										\
 	type value;															\
 	void create_property_##value() {									\
-		createProperty<type>(#value, value);							\
+		createProperty<type>(#value, value, #type);						\
 	}																	\
 	static void add_property_creator_##value() {						\
 		addPropertyCreator(&CurrentClass::create_property_##value);		\
 	}																	\
-	Caller10<add_property_creator_##value> caller_##value;				\
+	Caller10<add_property_creator_##value> caller_##value;				
 
 class MyReflectable10 : public Reflectable10<MyReflectable10> {
-	SB_CLASS(MyReflectable10)
 public:
+	SB_CLASS(MyReflectable10)
 	SB_PROPERTY(int, myInt)
 	SB_PROPERTY(float, myFloat)
 };
@@ -580,31 +617,9 @@ void call<Base>(Base& b) {
 	b.test();
 }
 
-// https://stackoverflow.com/questions/37031844/logic-of-stdis-base-of-in-c-11
-template<typename D, typename B>
-class IsDerivedFrom
-{
-	class No { };
-	class Yes { No no[2]; };
-
-	static Yes Test(B*) {};
-	static No Test(...) {};
-public:
-	static bool value() {
-		return sizeof(Test(static_cast<D*>(0))) == sizeof(Yes);
-	}
-};
-
 class Something { };
 
-template <class B, class D>
-bool isDerivedFrom(D& d) {
-	return IsDerivedFrom<D, B>::value();
-}
-
 void demo15() {
-	Base* test = static_cast<Derived*>(0);
-
 	std::cout << IsDerivedFrom<Derived, Base>::value();
 	std::cout << IsDerivedFrom<Something, Base>::value();
 
@@ -616,29 +631,45 @@ void demo15() {
 
 
 class Position16 : public Reflectable10<Position16> {
-	SB_CLASS(Position16)
 public:
+	SB_CLASS(Position16)
 	SB_PROPERTY(std::string, myString)
 	SB_PROPERTY(float, myFloat)
 };
 
 class MyReflectable16 : public Reflectable10<MyReflectable16> {
-	SB_CLASS(MyReflectable16)
 public:
+	SB_CLASS(MyReflectable16)
 	SB_PROPERTY(int, myInt)
+	SB_PROPERTY(float, myFloat)
 	SB_PROPERTY(Position16, myPosition)
 };
 
 void demo16() {
 	MyReflectable16 myReflectable;
-	//auto result = myReflectable.serialize();
+	myReflectable.myInt = 42;
+	myReflectable.myFloat = 3.1415f;
+	myReflectable.myPosition.myString = "position string";
+	myReflectable.myPosition.myFloat = 2.72f;
+	auto result = myReflectable.serialize();
+	std::cout << result;
 }
 
 int main() {
 	version();
 
-	demo15();
+	demo16();
 
 	std::cin.get();
 	return 0;
 }
+
+// test on android
+// cleanup
+// header and source files
+// split into lib and app
+// deserialize
+// inspector
+// save / load demo
+// console editor demo
+// item to incorporate into renderer
