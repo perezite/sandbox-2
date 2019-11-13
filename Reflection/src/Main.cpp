@@ -480,8 +480,15 @@ public:
 	}
 };
 
+class BaseReflectable {
+public:
+	std::string serialize() {
+		SB_SERIALIZER::serialize(*this);
+	}
+};
+
 template <class T>
-class Reflectable10 {
+class Reflectable10 : public BaseReflectable {
 	typedef void(T::*PropertyCreator)();
 	static std::vector<PropertyCreator> _propertyCreators;
 	std::vector<BaseProperty10*> _properties;
@@ -547,20 +554,6 @@ void demo10() {
 	std::cout << myReflectable.getProperties()[1]->serialize() << std::endl;
 }
 
-class Position15 : public Reflectable10<Position15> {
-	SB_CLASS(Position15)
-public:
-	SB_PROPERTY(std::string, myString)
-	SB_PROPERTY(float, myFloat)
-};
-
-class MyReflectable15 : public Reflectable10<MyReflectable15> {
-	SB_CLASS(MyReflectable15)
-public:
-	SB_PROPERTY(int, myInt)
-	SB_PROPERTY(Position15, myPosition)
-};
-
 class Base {
 public:
 	virtual void test() {
@@ -587,11 +580,58 @@ void call<Base>(Base& b) {
 	b.test();
 }
 
+// https://stackoverflow.com/questions/37031844/logic-of-stdis-base-of-in-c-11
+template<typename D, typename B>
+class IsDerivedFrom
+{
+	class No { };
+	class Yes { No no[2]; };
+
+	static Yes Test(B*) {};
+	static No Test(...) {};
+public:
+	static bool value() {
+		return sizeof(Test(static_cast<D*>(0))) == sizeof(Yes);
+	}
+};
+
+class Something { };
+
+template <class B, class D>
+bool isDerivedFrom(D& d) {
+	return IsDerivedFrom<D, B>::value();
+}
+
 void demo15() {
+	Base* test = static_cast<Derived*>(0);
+
+	std::cout << IsDerivedFrom<Derived, Base>::value();
+	std::cout << IsDerivedFrom<Something, Base>::value();
+
 	Derived derived;
-	Base& base = derived;
-	call(derived);
-	call(base);
+	Something some;
+	std::cout << isDerivedFrom<Base>(derived);
+	std::cout << isDerivedFrom<Base>(some);
+}
+
+
+class Position16 : public Reflectable10<Position16> {
+	SB_CLASS(Position16)
+public:
+	SB_PROPERTY(std::string, myString)
+	SB_PROPERTY(float, myFloat)
+};
+
+class MyReflectable16 : public Reflectable10<MyReflectable16> {
+	SB_CLASS(MyReflectable16)
+public:
+	SB_PROPERTY(int, myInt)
+	SB_PROPERTY(Position16, myPosition)
+};
+
+void demo16() {
+	MyReflectable16 myReflectable;
+	//auto result = myReflectable.serialize();
 }
 
 int main() {
@@ -602,4 +642,3 @@ int main() {
 	std::cin.get();
 	return 0;
 }
-
