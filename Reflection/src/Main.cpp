@@ -477,9 +477,14 @@ protected:
 		std::ostringstream os; os << std::string(depth, ' ') << typeName << std::endl 
 			<< std::string(depth + 1, ' ') << t << std::endl; return os.str();
 	}
+	static std::string stripTemplateTypename(const std::string& typeName) {
+		auto left = typeName.find('<');
+		auto right = typeName.rfind('>');
+		return typeName.substr(left + 1, right - left - 1);
+	}
 public:
 	template <class T>
-	static std::string serialize(T& t, const std::string typeName, size_t depth = 0) {
+	static std::string serialize(T& t, const std::string& typeName, size_t depth = 0) {
 		if (IsDerivedFrom<T, BaseReflectable>::value()) {
 			return serializeReflectable((BaseReflectable&)t, depth);
 		}
@@ -487,22 +492,34 @@ public:
 		error("serialization not specified for type '" + typeName + "'");
 		return "";
 	}
+	template <class T>
+	static std::string serialize(std::vector<T>& v, const std::string& typeName, size_t depth = 0) {
+		std::ostringstream os; os << std::string(depth, ' ') << typeName << std::endl;
+		for (auto it = v.begin(); it != v.end(); it++) 
+			os << serialize10(*it, stripTemplateTypename(typeName), depth + 1);
+		return os.str();
+	}
 };
 
 template <>
-std::string TextSerializer::serialize<int>(int& t, const std::string typeName, size_t depth) {
+std::string TextSerializer::serialize<int>(int& t, const std::string& typeName, size_t depth) {
 	return serializePrimitive(t, typeName, depth);
 }
 
 template <>
-std::string TextSerializer::serialize<float>(float& t, const std::string typeName, size_t depth) {
+std::string TextSerializer::serialize<float>(float& t, const std::string& typeName, size_t depth) {
 	return serializePrimitive(t, typeName, depth);
 }
 
 template <>
-std::string TextSerializer::serialize<std::string>(std::string& t, const std::string typeName, size_t depth) {
+std::string TextSerializer::serialize<std::string>(std::string& t, const std::string& typeName, size_t depth) {
 	return serializePrimitive(t, typeName, depth);
 }
+
+//template <>
+//std::string TextSerializer::serialize<template <> std::vector<T>>(std::vector<T>& t, const std::string typeName, size_t depth) {
+//	
+//}
 
 template <class T>
 std::string serialize10(T& t, const std::string& typeName, size_t depth) {
@@ -526,33 +543,56 @@ template <class T>
 class Reflectable10 : public BaseReflectable {
 	typedef void(T::*PropertyCreator)();
 	static std::vector<PropertyCreator> _propertyCreators;
+	static std::vector<std::string> _propertyCreatorNames;
+	static bool _allCreatorsAdded;
 	std::vector<BaseProperty10*> _properties;
+	bool _propertiesCreated;
 protected:
 	void createProperties() {
 		T* instance = (T*)this;
 		for (size_t i = 0; i < _propertyCreators.size(); i++)
 			(instance->*_propertyCreators[i])();
+		_propertiesCreated = true;
+	}
+	static inline bool creatorWasAlreadyAdded(const std::string propertyName) {
+		return std::find(_propertyCreatorNames.begin(), 
+			_propertyCreatorNames.end(), propertyName) != _propertyCreatorNames.end();
 	}
 public:
+	Reflectable10() : _propertiesCreated(false)
+	{ }
 	virtual ~Reflectable10() {
 		for (size_t i = 0; i < _properties.size(); i++)
 			delete _properties[i];
 	}
 	virtual const std::vector<BaseProperty10*>& getProperties() { 
-		createProperties();
+		if (!_propertiesCreated)
+			createProperties();
 		return _properties;
 	};
 	template <class U>
 	void createProperty(const std::string& name, U& reference, const std::string& typeName) {
 		_properties.push_back(new Property10<U>(reference, typeName));
 	}
-	static void addPropertyCreator(PropertyCreator creator) {
+	static void addPropertyCreator(PropertyCreator creator, const std::string& propertyName) {
+		if (_allCreatorsAdded)
+			return;
+		if (creatorWasAlreadyAdded(propertyName)) {
+			_allCreatorsAdded = true;
+			return;
+		}
+
 		_propertyCreators.push_back(creator);
+		_propertyCreatorNames.push_back(propertyName);
 	}
 };
 
 template <typename T>
 std::vector<void(T::*)()> Reflectable10<T>::_propertyCreators;
+template <typename T>
+std::vector<std::string> Reflectable10<T>::_propertyCreatorNames;
+template <typename T>
+bool Reflectable10<T>::_allCreatorsAdded = false;
 
 template <void(*Func)()>
 class Caller10 {
@@ -566,15 +606,15 @@ public:
 	typedef className CurrentClass; \
 	inline virtual const std::string getTypeName() { return #className; }
 
-#define SB_PROPERTY(type, value)										\
-	type value;															\
-	void create_property_##value() {									\
-		createProperty<type>(#value, value, #type);						\
-	}																	\
-	static void add_property_creator_##value() {						\
-		addPropertyCreator(&CurrentClass::create_property_##value);		\
-	}																	\
-	Caller10<add_property_creator_##value> caller_##value;				
+#define SB_PROPERTY(type, name)													\
+	type name;																	\
+	void create_property_##name() {												\
+		createProperty<type>(#name, name, #type);								\
+	}																			\
+	static void add_property_creator_##name() {									\
+		addPropertyCreator(&CurrentClass::create_property_##name, #name);		\
+	}																			\
+	Caller10<add_property_creator_##name> caller_##name;				
 
 class MyReflectable10 : public Reflectable10<MyReflectable10> {
 public:
@@ -629,7 +669,6 @@ void demo15() {
 	std::cout << isDerivedFrom<Base>(some);
 }
 
-
 class Position16 : public Reflectable10<Position16> {
 public:
 	SB_CLASS(Position16)
@@ -655,10 +694,39 @@ void demo16() {
 	std::cout << result;
 }
 
+class MyLocation17 : public Reflectable10<MyLocation17> {
+public:
+	SB_CLASS(MyLocation17)
+	SB_PROPERTY(float, myFloat)
+	SB_PROPERTY(std::string, myString)
+};
+
+class MyReflectable17 : public Reflectable10<MyReflectable17> {
+public:
+	SB_CLASS(MyReflectable17)
+	SB_PROPERTY(std::vector<int>, myInts)
+	SB_PROPERTY(std::vector<MyLocation17>, myLocations)
+};
+
+void demo17() {
+	MyReflectable17 myReflectable;
+	myReflectable.myInts.push_back(1);
+	myReflectable.myInts.push_back(2);
+	myReflectable.myLocations.emplace_back();
+	myReflectable.myLocations.emplace_back();
+	myReflectable.myLocations[0].myFloat = 1.1415f;
+	myReflectable.myLocations[0].myString = "first string";
+	myReflectable.myLocations[1].myFloat = 2.1415f;
+	myReflectable.myLocations[1].myString = "second string";
+
+	auto result = myReflectable.serialize();
+	std::cout << result;
+}
+
 int main() {
 	version();
 
-	demo16();
+	demo17();
 
 	std::cin.get();
 	return 0;
@@ -666,8 +734,10 @@ int main() {
 
 // test on android
 // cleanup
+// hide internal reflection stuff from intellisense
 // header and source files
 // split into lib and app
+// serializer setting if error or not on non serializable types
 // deserialize
 // inspector
 // save / load demo
