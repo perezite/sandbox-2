@@ -732,7 +732,6 @@ int main() {
 	return 0;
 }
 
-// test on android
 // cleanup
 // hide internal reflection stuff from intellisense
 // header and source files
