@@ -558,18 +558,6 @@ protected:
 		return std::find(_propertyCreatorNames.begin(), 
 			_propertyCreatorNames.end(), propertyName) != _propertyCreatorNames.end();
 	}
-public:
-	Reflectable10() : _propertiesCreated(false)
-	{ }
-	virtual ~Reflectable10() {
-		for (size_t i = 0; i < _properties.size(); i++)
-			delete _properties[i];
-	}
-	virtual const std::vector<BaseProperty10*>& getProperties() { 
-		if (!_propertiesCreated)
-			createProperties();
-		return _properties;
-	};
 	template <class U>
 	void createProperty(const std::string& name, U& reference, const std::string& typeName) {
 		_properties.push_back(new Property10<U>(reference, typeName));
@@ -585,6 +573,18 @@ public:
 		_propertyCreators.push_back(creator);
 		_propertyCreatorNames.push_back(propertyName);
 	}
+public:
+	Reflectable10() : _propertiesCreated(false)
+	{ }
+	virtual ~Reflectable10() {
+		for (size_t i = 0; i < _properties.size(); i++)
+			delete _properties[i];
+	}
+	virtual const std::vector<BaseProperty10*>& getProperties() { 
+		if (!_propertiesCreated)
+			createProperties();
+		return _properties;
+	};
 };
 
 template <typename T>
@@ -606,15 +606,19 @@ public:
 	typedef className CurrentClass; \
 	inline virtual const std::string getTypeName() { return #className; }
 
-#define SB_PROPERTY(type, name)													\
-	type name;																	\
-	void create_property_##name() {												\
-		createProperty<type>(#name, name, #type);								\
-	}																			\
-	static void add_property_creator_##name() {									\
-		addPropertyCreator(&CurrentClass::create_property_##name, #name);		\
-	}																			\
-	Caller10<add_property_creator_##name> caller_##name;				
+#ifndef __INTELLISENSE__
+	#define SB_PROPERTY(type, name)													\
+		type name;																	\
+		void create_property_##name() {												\
+			createProperty<type>(#name, name, #type);								\
+		}																			\
+		static void add_property_creator_##name() {									\
+			addPropertyCreator(&CurrentClass::create_property_##name, #name);		\
+		}																			\
+		Caller10<add_property_creator_##name> caller_##name;						
+#else
+	#define SB_PROPERTY(type, name) type name;
+#endif
 
 class MyReflectable10 : public Reflectable10<MyReflectable10> {
 public:
