@@ -13,382 +13,12 @@ void version() {
 	SB_MESSAGE("Audio - Build: " << configuration << ", " << __DATE__ << ", " << __TIME__);
 }
 
-/*
-struct Vector2f : Reflectable {
-	float x, y;
-
-	REFLECT_CLASS(Vector2f)
-};
-
-class Hero : Reflectable {
-	SB_PROPERTY (Vector2f, position)
-	SB_PROPERTY (int, health)
-	SB_PROPERTY (std::string name)
-
-	REFLECT_TYPE(Hero);
-};*/
-
-/*
-template <class T>
-inline std::string serializePrimitive(T& t, const std::string& name, size_t depth = 0) {
-	std::ostringstream os;
-	tabify(os, depth);
-	os << std::string(depth, ' ') << name << " " << t << std::endl:
-	return os.str();
-}
-
-template <class R>
-std::string serialize(R& r, const std::string name, size_t depth = 0) {
-	std::cout << std::string(depth, ' ') << name << std::endl;
-	auto properties = r.getProperties();
-	for (size_t i = 0; i < r.getProperties(); i++)
-		serialize(properties[i]);
-}
-
-template <>
-std::string serialize<float>(float& t, const st::string& name, size_t depth = 0) { return serializePrimitive(t, name); }
-template <>
-std::string serialize<int>(int& t, const std::string& name, size_t depth = 0) { return serializePrimitive(t, name); }
-
-template <class T>
-void serialize() {
-}
-
-void serialize(Hero& hero) {
-	SB_ERROR("Implement!");
-}
-
-template <class T>
-std::string getName() {
-	SB_ERROR("The type name is not specified");
-}
-
-DECLARE_TYPENAME(Vector2f)
-//template <>
-//std::string getName<Vector2f>() {
-//	return "float";
-//}
-
-template <class T>
-void edit(T& t, const std::string typeName) {
-	SB_ERROR("edit is not implemented for type " + typeName);		
-}
-
-template <class Vector2f>
-void edit<Vector2f>(Vector2f& v, const std::string& typeName) {
-	std::cout << "x: ";
-	std::cin >> v.x;
-	std::cout << std::endl << "y:";
-	std::cin >> v.y;
-	std::cout << std::endl;
-}
-
-template <class T>
-void editAll(std::vector<Property>& properties) {
-	for (size_t i = 0; i < properties.size(); i++) {
-		if (properties[i].getType() == getType<T>()) 
-			edit<T>(properties[i], getType<T>);
-
-		editAll<T>(properties[i].getChildren());
-	}
-}
-
-template <class T> 
-void editAll(T& t) {
-	editAll(t.getProperties());
-}
-
-*/
-
-void demo1000() {
-/*
-	Hero hero;
-	hero.name = "The Hero";
-	hero.health = 42;
-	hero.position.x = 1;
-	hero.position.y = 2;
-
-	std::string heroString = serialize(hero);
-
-	Hero returnedHero;
-	deserialize(returnedHero, heroString);
-
-	editAll<Vector2f>(returnedHero);
-*/
-}
-
-void error(const std::string& message) {
-	std::cout << message << std::endl;
-	std::cin.get();
-	exit(0);
-}
-
-template <void(*Func)()>
-class Caller {
-public:
-	Caller() {
-		Func();
-	}
-};
-
-template <class T>
-std::string serialize(T& t) {
-	error("Serialization for this type is not specified");
-	return "";
-}
-
-template <>
-std::string serialize<int>(int& f) {
-	std::ostringstream os;
-	os << f;
-	return os.str();
-}
-
-template <class T>
-class Property {
-	typedef std::string(T::*SerializeMethod)();
-	const std::string _name;
-	const std::string _typename;
-
-public:
-	Property(const std::string& name, const std::string& typeName, SerializeMethod serializer)
-		:  _name(name)
-	{ }
-
-	virtual ~Property() { }
-
-	virtual std::string serialize(size_t) {
-		return std::string();
-		//return ::serialize<T>(_value);
-	}
-};
-
-template <class T>
-class Reflectable {
-	typedef std::string (T::*SerializeMethod)();
-	//typedef void(T::*EditMethod)(EditorCreator&);
-
-	static std::map<std::string, SerializeMethod> _serializerMethods;
-	//static std::map<std::string, EditMethod> _editMethods;
-
-public:
-	//Editor* editor
-
-	Reflectable()
-	{
-
-	}
-
-	virtual ~Reflectable() {
-
-	}
-
-	inline static void addProperty(const std::string& name, SerializeMethod serializeMethod/*, EditMethod editMethod*/) {
-		_serializerMethods[name] = serializeMethod;
-		//_editMethods[name] = editMethod;
-	}
-
-	std::string serializeXPropety() {
-		auto serialize = _serializerMethods["x"];
-		T* instance = (T*)this;
-		auto result = (instance->*serialize)();
-		return result;
-	}
-};
-
-//template <class T>
-//class Editor {
-//public:
-//	static void edit(T& t) { std::cout << "Editor"; }
-//};
-//
-//template <class T>
-//class ConsoleEditor : Editor<T> {
-//public:
-//	static void edit(T& t) { std::cout << "Console editor"; }
-//};
-
-//
-//template <class T> 
-//class BaseEditorInstanceProvider {
-//	virtual Editor<T>& getInstance() = 0;
-//};
-
-//template <class T, class U>
-//class EditorInstanceProvider {
-//	static Editor<T>& getInstance() {
-//
-//		static U<T> instance = U<T>();
-//		return instance;
-//	}
-//};
-
-//template <class T>
-//class EditorProvider {
-//public:
-//	//static Editor<T>* editor;
-//	//static EditorInstanceProvider<T> provider;
-//
-//	static Editor<T>& getEditor() { return *(new Editor<T>()); }
-//};
-//
-//class EditorImpl {
-//public:
-//	
-//	template <class T>
-//	edit(T &t) 
-//};
-
-//class Editor {
-//public:
-//	virtual EditorImpl getImpl() = 0;
-//};
-//
-//class ConsoleEditor : public Editor {
-//	EditorImpl _impl;
-//public:
-//	virtual EditorImpl getImpl() { return _impl; }
-//
-//};
-
-//
-//template <class U, class U>
-//class MyProvider {
-//public:
-//	T<U> getInstance() {
-//
-//	}
-//};
-//
-//template <class T>
-//Editor<T> getInstance() {
-//
-//}
-
-template <typename T>
-std::map<std::string, std::string (T::*)()> Reflectable<T>::_serializerMethods;
-//template <typename T>
-//std::map<std::string, void(T::*)(EditorCreator&)> Reflectable<T>::_editMethods;
-
-template <class T>
-class Editor {
-public:
-	virtual void edit(T &t) {};
-};
-
-template <class T>
-class ConsoleEditor : public Editor<T> {
-public:
-	void edit(T& t) {
-	}
-};
-
-template <class T>
-class OtherEditor : public Editor<T> {
-public:
-	void edit(T& t) {
-	}
-};
-
-class EditorFactory {
-public:
-	static size_t current;
-
-	template <class T>
-	static Editor<T>& getInstance() {
-		if (current == 0) {
-			static auto ed = ConsoleEditor<T>();
-			return ed;
-		}
-		if (current == 1) {
-			static auto ed = OtherEditor<T>();
-			return ed;
-		}
-
-		error("bad index");
-		static auto ed = OtherEditor<T>();
-		return ed;
-	}
-};
-
-size_t EditorFactory::current = 0;
-
-template <class T>
-void edit(T& t) {
-	auto editor = EditorFactory::getInstance<T>();
-	editor.edit(t);
-}
-
-class MyReflectable : public Reflectable<MyReflectable> {
-	typedef MyReflectable __sb_CurrentClass;
-
-	int x;
-	int& __sb_get_x() {
-		return x;
-	}
-	// todo: inject a serializer class
-	std::string __sb_serialize_x() {
-		return serialize<int>(x);
-	}
-	void __sb_edit_x(EditorFactory& factory) {
-		edit<int>(x);
-		//ConsoleEditor<int> bla;
-		//auto editor = EditorProvider<int>::getEditor();
-		//editor.edit(x);
-		// return editorCaller.edit<int>(x);
-	}
-	static void __sb_register_x() {
-		addProperty("x", &MyReflectable::__sb_serialize_x/*, &MyReflectable::__sb_edit_x*/);
-	}
-	Caller<__sb_register_x> __sb_caller_register_x;
-
-public:
-	MyReflectable() : x(42)
-	{ }
-};
-
-/* 
-	... 
-	template <>
-	void edit<float>(float & float) {
-		...
-	}
-
-	void edit(Property& property) {
-	if (property.getTypeName() == SB_NAMEOF(int)) 
-		convertAndEdit<float>(property);
-	else
-		exit(0);
-} */
-
-void demo100() {
-
-	MyReflectable reflectable;
-
-	auto result = reflectable.serializeXPropety();
-	std::cout << result << std::endl;
-
-	/*
-	MyReflectable reflectable;
-	std::cout << reflectable.getTypeName() << std::endl;
-	auto properties = reflectable.getProperties();
-	for (size_t i = 0; i < properties.size(); i++)
-		std::cout << properties[i]->getName() << " " << properties[i]->getTypeName() << " " << properties[i]->serialize() << std::endl;
-
-	edit(properties[0]);
-
-	properties[0]->deserialize("3.1415");
-	
-
-	*/
-}
-
-class BaseStaticCallback {
+class BaseStaticCallback0 {
 public:
 	virtual void call() = 0;
 };
 
-class StaticCallback : public BaseStaticCallback {
+class StaticCallback : public BaseStaticCallback0 {
 	std::string(*_functionPointer)();
 public:
 	StaticCallback(std::string(*functionPointer)())
@@ -399,24 +29,24 @@ public:
 	}
 };
 
-class MyClass {
+class MyClass0 {
 public:
 	static std::string someCallback() {
-		return "MyClass::someCallback";
+		return "MyClass0::someCallback";
 	}
 };
 
-class MyOtherClass {
+class MyOtherClass0 {
 public:
 	static std::string someOtherCallback() {
-		return "MyOtherClass::someOtherCallback";
+		return "MyOtherClass0::someOtherCallback";
 	}
 };
 
 void demo0() {
-	StaticCallback myStaticCallback(&MyClass::someCallback);
-	StaticCallback myOtherStaticCallback(&MyOtherClass::someOtherCallback);
-	std::vector<BaseStaticCallback*> staticCallbacks;
+	StaticCallback myStaticCallback(&MyClass0::someCallback);
+	StaticCallback myOtherStaticCallback(&MyOtherClass0::someOtherCallback);
+	std::vector<BaseStaticCallback0*> staticCallbacks;
 	staticCallbacks.push_back(&myStaticCallback);
 	staticCallbacks.push_back(&myOtherStaticCallback);
 	for (size_t i = 0; i < staticCallbacks.size(); i++)
@@ -425,7 +55,7 @@ void demo0() {
 
 // https://stackoverflow.com/questions/37031844/logic-of-stdis-base-of-in-c-11
 template<typename D, typename B>
-class IsDerivedFrom
+class IsDerivedFrom5
 {
 	class No { };
 	class Yes { No no[2]; };
@@ -440,10 +70,54 @@ public:
 
 template <class B, class D>
 bool isDerivedFrom(D& d) {
-	return IsDerivedFrom<D, B>::value();
+	return IsDerivedFrom5<D, B>::value();
 }
 
-#define SB_SERIALIZER TextSerializer
+class Base5 {
+public:
+	virtual void test() {
+		std::cout << "Base::test()" << std::endl;
+	}
+};
+
+class Derived5 : public Base5 {
+public:
+	virtual void test() {
+		std::cout << "Derived5::test()" << std::endl;
+	}
+};
+
+template <class T>
+void call(T& t) {
+	std::cout << "call<T>()" << std::endl;
+	t.test();
+}
+
+template <>
+void call<Base5>(Base5& b) {
+	std::cout << "call<Base>()" << std::endl;
+	b.test();
+}
+
+class Something5 { };
+
+void demo5() {
+	std::cout << IsDerivedFrom5<Derived5, Base5>::value();
+	std::cout << IsDerivedFrom5<Something5, Base5>::value();
+
+	Derived5 derived;
+	Something5 some;
+	std::cout << isDerivedFrom<Base5>(derived);
+	std::cout << isDerivedFrom<Base5>(some);
+}
+
+void error10(const std::string& message) {
+	std::cout << message << std::endl;
+	std::cin.get();
+	exit(0);
+}
+
+#define SB_SERIALIZER TextSerializer10
 
 template <class T>
 std::string serialize10(T& t, const std::string& typeName, size_t depth = 0);
@@ -454,7 +128,7 @@ public:
 	virtual std::string serialize(size_t depth = 0) = 0;
 };
 
-class BaseReflectable {
+class BaseReflectable10 {
 public:
 	std::string serialize(size_t depth = 0) {
 		return ::serialize10(*this, getTypeName(), depth);
@@ -463,9 +137,9 @@ public:
 	virtual	const std::vector<BaseProperty10*>& getProperties() = 0;
 };
 
-class TextSerializer {
+class TextSerializer10 {
 protected:
-	static std::string serializeReflectable(BaseReflectable& baseReflectable, size_t depth = 0) {
+	static std::string serializeReflectable(BaseReflectable10& baseReflectable, size_t depth = 0) {
 		std::ostringstream os; os << std::string(depth, ' ') << baseReflectable.getTypeName() << std::endl;
 		auto& properties = baseReflectable.getProperties();
 		for (size_t i = 0; i < properties.size(); i++)
@@ -485,11 +159,11 @@ protected:
 public:
 	template <class T>
 	static std::string serialize(T& t, const std::string& typeName, size_t depth = 0) {
-		if (IsDerivedFrom<T, BaseReflectable>::value()) {
-			return serializeReflectable((BaseReflectable&)t, depth);
+		if (IsDerivedFrom5<T, BaseReflectable10>::value()) {
+			return serializeReflectable((BaseReflectable10&)t, depth);
 		}
 			
-		error("serialization not specified for type '" + typeName + "'");
+		error10("serialization not specified for type '" + typeName + "'");
 		return "";
 	}
 	template <class T>
@@ -502,24 +176,19 @@ public:
 };
 
 template <>
-std::string TextSerializer::serialize<int>(int& t, const std::string& typeName, size_t depth) {
+std::string TextSerializer10::serialize<int>(int& t, const std::string& typeName, size_t depth) {
 	return serializePrimitive(t, typeName, depth);
 }
 
 template <>
-std::string TextSerializer::serialize<float>(float& t, const std::string& typeName, size_t depth) {
+std::string TextSerializer10::serialize<float>(float& t, const std::string& typeName, size_t depth) {
 	return serializePrimitive(t, typeName, depth);
 }
 
 template <>
-std::string TextSerializer::serialize<std::string>(std::string& t, const std::string& typeName, size_t depth) {
+std::string TextSerializer10::serialize<std::string>(std::string& t, const std::string& typeName, size_t depth) {
 	return serializePrimitive(t, typeName, depth);
 }
-
-//template <>
-//std::string TextSerializer::serialize<template <> std::vector<T>>(std::vector<T>& t, const std::string typeName, size_t depth) {
-//	
-//}
 
 template <class T>
 std::string serialize10(T& t, const std::string& typeName, size_t depth) {
@@ -540,7 +209,7 @@ public:
 };
 
 template <class T>
-class Reflectable10 : public BaseReflectable {
+class Reflectable10 : public BaseReflectable10 {
 	typedef void(T::*PropertyCreator)();
 	static std::vector<PropertyCreator> _propertyCreators;
 	static std::vector<std::string> _propertyCreatorNames;
@@ -595,9 +264,9 @@ template <typename T>
 bool Reflectable10<T>::_allCreatorsAdded = false;
 
 template <void(*Func)()>
-class Caller10 {
+class Invocation10 {
 public:
-	Caller10() {
+	Invocation10() {
 		Func();
 	}
 };
@@ -615,7 +284,7 @@ public:
 		static void add_property_creator_##name() {									\
 			addPropertyCreator(&CurrentClass::create_property_##name, #name);		\
 		}																			\
-		Caller10<add_property_creator_##name> caller_##name;						
+		Invocation10<add_property_creator_##name> invocation_##name;						
 #else
 	#define SB_PROPERTY(type, name) type name;
 #endif
@@ -635,61 +304,23 @@ void demo10() {
 	std::cout << myReflectable.getProperties()[1]->serialize() << std::endl;
 }
 
-class Base {
+class Position20 : public Reflectable10<Position20> {
 public:
-	virtual void test() {
-		std::cout << "Base::test()" << std::endl;
-	}
-};
-
-class Derived : public Base {
-public:
-	virtual void test() {
-		std::cout << "Derived::test()" << std::endl;
-	}
-};
-
-template <class T>
-void call(T& t) {
-	std::cout << "call<T>()" << std::endl;
-	t.test();
-}
-
-template <>
-void call<Base>(Base& b) {
-	std::cout << "call<Base>()" << std::endl;
-	b.test();
-}
-
-class Something { };
-
-void demo15() {
-	std::cout << IsDerivedFrom<Derived, Base>::value();
-	std::cout << IsDerivedFrom<Something, Base>::value();
-
-	Derived derived;
-	Something some;
-	std::cout << isDerivedFrom<Base>(derived);
-	std::cout << isDerivedFrom<Base>(some);
-}
-
-class Position16 : public Reflectable10<Position16> {
-public:
-	SB_CLASS(Position16)
+	SB_CLASS(Position20)
 	SB_PROPERTY(std::string, myString)
 	SB_PROPERTY(float, myFloat)
 };
 
-class MyReflectable16 : public Reflectable10<MyReflectable16> {
+class MyReflectable20 : public Reflectable10<MyReflectable20> {
 public:
-	SB_CLASS(MyReflectable16)
+	SB_CLASS(MyReflectable20)
 	SB_PROPERTY(int, myInt)
 	SB_PROPERTY(float, myFloat)
-	SB_PROPERTY(Position16, myPosition)
+	SB_PROPERTY(Position20, myPosition)
 };
 
-void demo16() {
-	MyReflectable16 myReflectable;
+void demo20() {
+	MyReflectable20 myReflectable;
 	myReflectable.myInt = 42;
 	myReflectable.myFloat = 3.1415f;
 	myReflectable.myPosition.myString = "position string";
@@ -698,22 +329,22 @@ void demo16() {
 	std::cout << result;
 }
 
-class MyLocation17 : public Reflectable10<MyLocation17> {
+class MyLocation30 : public Reflectable10<MyLocation30> {
 public:
-	SB_CLASS(MyLocation17)
+	SB_CLASS(MyLocation30)
 	SB_PROPERTY(float, myFloat)
 	SB_PROPERTY(std::string, myString)
 };
 
-class MyReflectable17 : public Reflectable10<MyReflectable17> {
+class MyReflectable30 : public Reflectable10<MyReflectable30> {
 public:
-	SB_CLASS(MyReflectable17)
+	SB_CLASS(MyReflectable30)
 	SB_PROPERTY(std::vector<int>, myInts)
-	SB_PROPERTY(std::vector<MyLocation17>, myLocations)
+	SB_PROPERTY(std::vector<MyLocation30>, myLocations)
 };
 
-void demo17() {
-	MyReflectable17 myReflectable;
+void demo30() {
+	MyReflectable30 myReflectable;
 	myReflectable.myInts.push_back(1);
 	myReflectable.myInts.push_back(2);
 	myReflectable.myLocations.emplace_back();
@@ -730,14 +361,16 @@ void demo17() {
 int main() {
 	version();
 
-	demo17();
+	demo30();
+	// demo20();
+	//demo10();
+	//demo5();
+	//demo0();
 
 	std::cin.get();
 	return 0;
 }
 
-// cleanup
-// hide internal reflection stuff from intellisense
 // header and source files
 // split into lib and app
 // serializer setting if error or not on non serializable types
