@@ -16,6 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Asset.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\BaseProperty.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\BaseReflectable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Body.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Camera.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Color.h" />
@@ -33,6 +35,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Memory.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\ParticleSystem.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Physics.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Property.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflectable.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Scene.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Math.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Mesh.h" />

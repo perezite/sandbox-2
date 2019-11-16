@@ -1,4 +1,5 @@
 #include "Logger.h"
+#include "Reflectable.h"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -117,7 +118,7 @@ void error10(const std::string& message) {
 	exit(0);
 }
 
-#define SB_SERIALIZER TextSerializer10
+#define DM_SERIALIZER TextSerializer10
 
 template <class T>
 std::string serialize10(T& t, const std::string& typeName, size_t depth = 0);
@@ -192,7 +193,7 @@ std::string TextSerializer10::serialize<std::string>(std::string& t, const std::
 
 template <class T>
 std::string serialize10(T& t, const std::string& typeName, size_t depth) {
-	return SB_SERIALIZER::serialize(t, typeName, depth);
+	return DM_SERIALIZER::serialize(t, typeName, depth);
 }
 
 template <class T>
@@ -211,36 +212,36 @@ public:
 template <class T>
 class Reflectable10 : public BaseReflectable10 {
 	typedef void(T::*PropertyCreator)();
-	static std::vector<PropertyCreator> _propertyCreators;
-	static std::vector<std::string> _propertyCreatorNames;
-	static bool _allCreatorsAdded;
+	static std::vector<PropertyCreator> PropertyCreators;
+	static std::vector<std::string> PropertyCreatorNames;
+	static bool AllCreatorsAdded;
 	std::vector<BaseProperty10*> _properties;
 	bool _propertiesCreated;
 protected:
 	void createProperties() {
 		T* instance = (T*)this;
-		for (size_t i = 0; i < _propertyCreators.size(); i++)
-			(instance->*_propertyCreators[i])();
+		for (size_t i = 0; i < PropertyCreators.size(); i++)
+			(instance->*PropertyCreators[i])();
 		_propertiesCreated = true;
 	}
 	static inline bool creatorWasAlreadyAdded(const std::string propertyName) {
-		return std::find(_propertyCreatorNames.begin(), 
-			_propertyCreatorNames.end(), propertyName) != _propertyCreatorNames.end();
+		return std::find(PropertyCreatorNames.begin(), 
+			PropertyCreatorNames.end(), propertyName) != PropertyCreatorNames.end();
 	}
 	template <class U>
 	void createProperty(const std::string& name, U& reference, const std::string& typeName) {
 		_properties.push_back(new Property10<U>(reference, typeName));
 	}
 	static void addPropertyCreator(PropertyCreator creator, const std::string& propertyName) {
-		if (_allCreatorsAdded)
+		if (AllCreatorsAdded)
 			return;
 		if (creatorWasAlreadyAdded(propertyName)) {
-			_allCreatorsAdded = true;
+			AllCreatorsAdded = true;
 			return;
 		}
 
-		_propertyCreators.push_back(creator);
-		_propertyCreatorNames.push_back(propertyName);
+		PropertyCreators.push_back(creator);
+		PropertyCreatorNames.push_back(propertyName);
 	}
 public:
 	Reflectable10() : _propertiesCreated(false)
@@ -257,11 +258,11 @@ public:
 };
 
 template <typename T>
-std::vector<void(T::*)()> Reflectable10<T>::_propertyCreators;
+std::vector<void(T::*)()> Reflectable10<T>::PropertyCreators;
 template <typename T>
-std::vector<std::string> Reflectable10<T>::_propertyCreatorNames;
+std::vector<std::string> Reflectable10<T>::PropertyCreatorNames;
 template <typename T>
-bool Reflectable10<T>::_allCreatorsAdded = false;
+bool Reflectable10<T>::AllCreatorsAdded = false;
 
 template <void(*Func)()>
 class Invocation10 {
@@ -271,12 +272,12 @@ public:
 	}
 };
 
-#define SB_CLASS(className) \
+#define DM_CLASS(className) \
 	typedef className CurrentClass; \
 	inline virtual const std::string getTypeName() { return #className; }
 
 #ifndef __INTELLISENSE__
-	#define SB_PROPERTY(type, name)													\
+	#define DM_PROPERTY(type, name)													\
 		type name;																	\
 		void create_property_##name() {												\
 			createProperty<type>(#name, name, #type);								\
@@ -286,14 +287,14 @@ public:
 		}																			\
 		Invocation10<add_property_creator_##name> invocation_##name;						
 #else
-	#define SB_PROPERTY(type, name) type name;
+	#define DM_PROPERTY(type, name) type name;
 #endif
 
 class MyReflectable10 : public Reflectable10<MyReflectable10> {
 public:
-	SB_CLASS(MyReflectable10)
-	SB_PROPERTY(int, myInt)
-	SB_PROPERTY(float, myFloat)
+	DM_CLASS(MyReflectable10)
+	DM_PROPERTY(int, myInt)
+	DM_PROPERTY(float, myFloat)
 };
 
 void demo10() {
@@ -306,17 +307,17 @@ void demo10() {
 
 class Position20 : public Reflectable10<Position20> {
 public:
-	SB_CLASS(Position20)
-	SB_PROPERTY(std::string, myString)
-	SB_PROPERTY(float, myFloat)
+	DM_CLASS(Position20)
+	DM_PROPERTY(std::string, myString)
+	DM_PROPERTY(float, myFloat)
 };
 
 class MyReflectable20 : public Reflectable10<MyReflectable20> {
 public:
-	SB_CLASS(MyReflectable20)
-	SB_PROPERTY(int, myInt)
-	SB_PROPERTY(float, myFloat)
-	SB_PROPERTY(Position20, myPosition)
+	DM_CLASS(MyReflectable20)
+	DM_PROPERTY(int, myInt)
+	DM_PROPERTY(float, myFloat)
+	DM_PROPERTY(Position20, myPosition)
 };
 
 void demo20() {
@@ -331,16 +332,16 @@ void demo20() {
 
 class MyLocation30 : public Reflectable10<MyLocation30> {
 public:
-	SB_CLASS(MyLocation30)
-	SB_PROPERTY(float, myFloat)
-	SB_PROPERTY(std::string, myString)
+	DM_CLASS(MyLocation30)
+	DM_PROPERTY(float, myFloat)
+	DM_PROPERTY(std::string, myString)
 };
 
 class MyReflectable30 : public Reflectable10<MyReflectable30> {
 public:
-	SB_CLASS(MyReflectable30)
-	SB_PROPERTY(std::vector<int>, myInts)
-	SB_PROPERTY(std::vector<MyLocation30>, myLocations)
+	DM_CLASS(MyReflectable30)
+	DM_PROPERTY(std::vector<int>, myInts)
+	DM_PROPERTY(std::vector<MyLocation30>, myLocations)
 };
 
 void demo30() {
@@ -358,10 +359,19 @@ void demo30() {
 	std::cout << result;
 }
 
+class MyReflectable40 : public sb::Reflectable<MyReflectable40> {
+public:
+};
+
+void demo40() {
+	//MyReflectable40 myReflectable;
+}
+
 int main() {
 	version();
 
-	demo30();
+	demo40();
+	//demo30();
 	// demo20();
 	//demo10();
 	//demo5();
