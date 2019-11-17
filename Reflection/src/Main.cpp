@@ -1,3 +1,5 @@
+#include "TextSerializer.h"
+#define SB_SERIALIZER sb::TextSerializer
 #include "Reflectable.h"
 #include "Logger.h"
 #include <string>
