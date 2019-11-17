@@ -1,13 +1,11 @@
 #pragma once
-
+#include "TextSerializer.h"
 
 namespace sb {
-	class Reflection {
-	public:
+	namespace reflection {
 		template <class T>
-		static std::string serialize(T& t, const std::string& typeName, size_t depth) {
-			//return SB_SERIALIZER::serialize(t, typeName, depth);
-			return "TODO";
+		inline static std::string serialize(T& t, const std::string& typeName, size_t depth) {
+			return TextSerializer::serialize(t, typeName, depth);
 		}
-	};
+	}
 }

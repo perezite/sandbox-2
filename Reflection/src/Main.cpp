@@ -1,5 +1,5 @@
-#include "Logger.h"
 #include "Reflectable.h"
+#include "Logger.h"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -361,18 +361,56 @@ void demo30() {
 
 class MyReflectable40 : public sb::Reflectable<MyReflectable40> {
 public:
+	SB_CLASS(MyReflectable40)
+	SB_PROPERTY(int, myInt)
+	SB_PROPERTY(float, myFloat)
 };
 
 void demo40() {
-	//MyReflectable40 myReflectable;
+	MyReflectable40 myReflectable;
+	myReflectable.myInt = 42;
+	myReflectable.myFloat = 3.1415f;
+
+	auto result = myReflectable.serialize();
+	std::cout << result;
+}
+
+class MyLocation45 : public sb::Reflectable<MyLocation45> {
+public:
+	SB_CLASS(MyLocation45)
+	SB_PROPERTY(float, myFloat)
+	SB_PROPERTY(std::string, myString)
+};
+
+class MyReflectable45 : public sb::Reflectable<MyReflectable45> {
+public:
+	SB_CLASS(MyReflectable45)
+	SB_PROPERTY(std::vector<int>, myInts)
+	SB_PROPERTY(std::vector<MyLocation45>, myLocations)
+};
+
+void demo45() {
+	MyReflectable45 myReflectable;
+	myReflectable.myInts.push_back(1);
+	myReflectable.myInts.push_back(2);
+	myReflectable.myLocations.emplace_back();
+	myReflectable.myLocations.emplace_back();
+	myReflectable.myLocations[0].myFloat = 1.1415f;
+	myReflectable.myLocations[0].myString = "first string";
+	myReflectable.myLocations[1].myFloat = 2.1415f;
+	myReflectable.myLocations[1].myString = "second string";
+
+	auto result = myReflectable.serialize();
+	std::cout << result;
 }
 
 int main() {
 	version();
 
-	demo40();
+	demo45();
+	//demo40();
 	//demo30();
-	// demo20();
+	//demo20();
 	//demo10();
 	//demo5();
 	//demo0();

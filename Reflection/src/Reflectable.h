@@ -1,4 +1,5 @@
 #pragma once
+#include "Reflection.h"
 #include "BaseReflectable.h"
 #include "Property.h"
 #include <vector>
@@ -60,3 +61,21 @@ namespace sb {
 	template <class T>
 	bool Reflectable<T>::AllCreatorsAdded = false;
 }
+
+#define SB_CLASS(className) \
+	typedef className CurrentClass; \
+	inline virtual const std::string getTypeName() { return #className; }
+
+#ifndef __INTELLISENSE__
+	#define SB_PROPERTY(type, name)													\
+		type name;																	\
+		void create_property_##name() {												\
+			createProperty<type>(#name, name, #type);								\
+		}																			\
+		static void add_property_creator_##name() {									\
+			addPropertyCreator(&CurrentClass::create_property_##name, #name);		\
+		}																			\
+		Invocation10<add_property_creator_##name> invocation_##name;						
+#else
+	#define SB_PROPERTY(type, name) type name;
+#endif
