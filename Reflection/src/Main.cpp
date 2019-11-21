@@ -406,10 +406,16 @@ void demo45() {
 	std::cout << result;
 }
 
+void demo50() {
+	int myInt = 45;
+	std::cout << sb::SimpleSerializer::toString(myInt, "myInt", "int", 0);
+}
+
 int main() {
 	version();
 
-	demo45();
+	demo50();
+	//demo45();
 	//demo40();
 	//demo30();
 	//demo20();
