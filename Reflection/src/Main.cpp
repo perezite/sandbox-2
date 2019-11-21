@@ -408,13 +408,49 @@ void demo45() {
 
 void demo50() {
 	int myInt = 45;
-	std::cout << sb::SimpleSerializer::toString(myInt, "myInt", "int", 0);
+	std::cout << sb::SimpleSerializer::toString(myInt, 0);
+}
+
+class MyReflectable55 : public sb::Reflectable<MyReflectable55> {
+public:
+	SB_CLASS(MyReflectable55)
+	SB_PROPERTY(int, myInt)
+	SB_PROPERTY(float, myFloat)
+};
+
+void demo55() {
+	MyReflectable55 myReflectable;
+	myReflectable.myInt = 42;
+	myReflectable.myFloat = 3.1415f;
+	std::cout << sb::SimpleSerializer::toString<sb::BaseReflectable>(myReflectable);
+}
+
+class MyInnerReflectable57 : public sb::Reflectable<MyInnerReflectable57> {
+public:
+	SB_CLASS(MyInnerReflectable57)
+	SB_PROPERTY(float, myFloat)
+};
+
+class MyReflectable57 : public sb::Reflectable<MyReflectable57> {
+public:
+	SB_CLASS(MyReflectable57)
+	SB_PROPERTY(int, myInt)
+	SB_PROPERTY(MyInnerReflectable57, myInnerReflectable)
+};
+
+void demo57() {
+	MyReflectable57 myReflectable;
+	myReflectable.myInt = 42;
+	myReflectable.myInnerReflectable.myFloat = 3.1415f;
+	std::cout << sb::SimpleSerializer::toString(myReflectable);
 }
 
 int main() {
 	version();
 
-	demo50();
+	demo57();
+	//demo55();
+	//demo50();
 	//demo45();
 	//demo40();
 	//demo30();
@@ -427,11 +463,11 @@ int main() {
 	return 0;
 }
 
-// header and source files
+// make inspector switchable
 // split into lib and app
 // serializer setting if error or not on non serializable types
 // deserialize
-// inspector
+// editor
 // save / load demo
 // console editor demo
 // item to incorporate into renderer

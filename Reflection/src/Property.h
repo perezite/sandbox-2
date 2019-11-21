@@ -20,5 +20,8 @@ namespace sb {
 		inline std::string serialize(size_t depth = 0) {
 			 return reflection::serialize(_reference, _typeName, depth);
 		}
+		inline void inspect(size_t depth = 0) {
+			return reflection::inspect(_reference, depth);
+		}
 	};
 }
