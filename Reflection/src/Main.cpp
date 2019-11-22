@@ -1,5 +1,4 @@
-#include "TextSerializer.h"
-#define SB_SERIALIZER sb::TextSerializer
+#include "Reflection.h"
 #include "Reflectable.h"
 #include "Logger.h"
 #include <string>
@@ -442,7 +441,10 @@ void demo57() {
 	MyReflectable57 myReflectable;
 	myReflectable.myInt = 42;
 	myReflectable.myInnerReflectable.myFloat = 3.1415f;
+	std::cout << "Brought to you by " << SB_NAMEOF(sb::SimpleSerializer) << std::endl;
 	std::cout << sb::SimpleSerializer::toString(myReflectable);
+	std::cout << "Brought to you by " << SB_NAMEOF(sb::TextSerializer) << std::endl;
+	std::cout << sb::TextSerializer::toString(myReflectable);
 }
 
 int main() {

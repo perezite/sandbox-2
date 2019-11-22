@@ -1,12 +1,9 @@
 #pragma once
-
+#include "TextSerializer.h"
 #include "InheritanceCheck.h"
-#ifndef SB_SERIALIZER
-	#include "TextSerializer.h"
-	#define SB_SERIALIZER sb::TextSerializer
-#endif
-
-#define SB_NAMEOF(entity) #entity
+#include "Logger.h"
+#include "BaseReflectable.h"
+#include "Macro.h"
 
 #define SB_SET_INSPECTOR(inspector) do { sb::reflection::inspectorTypeName = SB_NAMEOF(inspector); } while (false)
 
@@ -27,7 +24,7 @@ namespace sb {
 		}
 		template <class T>
 		static void serializePrimitive(T& t, size_t depth) {
-			std::ostringstream os; os << std::string(depth, ' ') << t << std::endl;
+			std::ostringstream os; os << std::string(depth, ' ') << "-" << t << std::endl;
 			_result += os.str();
 		}
 	public:
@@ -63,7 +60,8 @@ namespace sb {
 
 		template <class T>
 		inline std::string serialize(T& t, const std::string& typeName, size_t depth) {
-			return SB_SERIALIZER::serialize(t, typeName, depth);
+			// return SB_SERIALIZER::serialize(t, typeName, depth);
+			return std::string();
 		}
 
 		template <class T>
@@ -71,9 +69,13 @@ namespace sb {
 			if (inspectorTypeName == SB_NAMEOF(sb::SimpleSerializer))
 				sb::SimpleSerializer::inspect(t, depth);
 			else if (inspectorTypeName == SB_NAMEOF(sb::TextSerializer))
-				sb::TextSerializer::serialize(t, "someType", depth);
+				sb::TextSerializer::inspect(t, depth);
 			else
 				SB_ERROR("Inspector not supported");
+		}
+
+		inline static void setInspector(const std::string& inspectorTypeName_) {
+			inspectorTypeName = inspectorTypeName_;
 		}
 	}
 }
