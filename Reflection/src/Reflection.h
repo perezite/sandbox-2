@@ -38,7 +38,7 @@ namespace sb {
 			SB_ERROR("Type not serializable");
 		}
 		template <class T>
-		static std::string toString(T& t, size_t depth = 0) {
+		static std::string serialize(T& t, size_t depth = 0) {
 			SB_SET_INSPECTOR(sb::SimpleSerializer);
 			_result = std::string();
 			inspect<T>(t, depth);
@@ -57,12 +57,6 @@ namespace sb {
 
 namespace sb {
 	namespace reflection {
-		template <class T>
-		inline std::string serialize(T& t, const std::string& typeName, size_t depth) {
-			SB_ERROR("Deprecated");
-			return std::string();
-		}
-
 		template <class T>
 		inline void inspect(T& t, size_t depth) {
 			if (inspectorTypeName == SB_NAMEOF(sb::SimpleSerializer))

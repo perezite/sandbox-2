@@ -360,54 +360,9 @@ void demo30() {
 	std::cout << result;
 }
 
-class MyReflectable40 : public sb::Reflectable<MyReflectable40> {
-public:
-	SB_CLASS(MyReflectable40)
-	SB_PROPERTY(int, myInt)
-	SB_PROPERTY(float, myFloat)
-};
-
-void demo40() {
-	MyReflectable40 myReflectable;
-	myReflectable.myInt = 42;
-	myReflectable.myFloat = 3.1415f;
-
-	auto result = myReflectable.serialize();
-	std::cout << result;
-}
-
-class MyLocation45 : public sb::Reflectable<MyLocation45> {
-public:
-	SB_CLASS(MyLocation45)
-	SB_PROPERTY(float, myFloat)
-	SB_PROPERTY(std::string, myString)
-};
-
-class MyReflectable45 : public sb::Reflectable<MyReflectable45> {
-public:
-	SB_CLASS(MyReflectable45)
-	SB_PROPERTY(std::vector<int>, myInts)
-	SB_PROPERTY(std::vector<MyLocation45>, myLocations)
-};
-
-void demo45() {
-	MyReflectable45 myReflectable;
-	myReflectable.myInts.push_back(1);
-	myReflectable.myInts.push_back(2);
-	myReflectable.myLocations.emplace_back();
-	myReflectable.myLocations.emplace_back();
-	myReflectable.myLocations[0].myFloat = 1.1415f;
-	myReflectable.myLocations[0].myString = "first string";
-	myReflectable.myLocations[1].myFloat = 2.1415f;
-	myReflectable.myLocations[1].myString = "second string";
-
-	auto result = myReflectable.serialize();
-	std::cout << result;
-}
-
 void demo50() {
 	int myInt = 45;
-	std::cout << sb::SimpleSerializer::toString(myInt, 0);
+	std::cout << sb::SimpleSerializer::serialize(myInt, 0);
 }
 
 class MyReflectable55 : public sb::Reflectable<MyReflectable55> {
@@ -421,7 +376,7 @@ void demo55() {
 	MyReflectable55 myReflectable;
 	myReflectable.myInt = 42;
 	myReflectable.myFloat = 3.1415f;
-	std::cout << sb::SimpleSerializer::toString<sb::BaseReflectable>(myReflectable);
+	std::cout << sb::SimpleSerializer::serialize<sb::BaseReflectable>(myReflectable);
 }
 
 class MyInnerReflectable57 : public sb::Reflectable<MyInnerReflectable57> {
@@ -443,9 +398,9 @@ void demo57() {
 	myReflectable.myInnerReflectable.myFloat = 3.1415f;
 	std::ostringstream os;
 	os << "Brought to you by " << SB_NAMEOF(sb::SimpleSerializer) << std::endl;
-	os << sb::SimpleSerializer::toString(myReflectable);
+	os << sb::SimpleSerializer::serialize(myReflectable);
 	os << "Brought to you by " << SB_NAMEOF(sb::TextSerializer) << std::endl;
-	os << sb::TextSerializer::toString(myReflectable);
+	os << sb::TextSerializer::serialize(myReflectable);
 	auto result = os.str();
 	std::cout << result;
 }
