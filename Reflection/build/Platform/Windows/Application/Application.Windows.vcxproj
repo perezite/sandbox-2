@@ -19,6 +19,11 @@
   <ItemGroup>
     <ClInclude Include="Precompiled.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Library\Library.Windows.vcxproj">
+      <Project>{b20437f4-b2e5-487d-a1c6-2477af2bb796}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{0C624D38-FC5F-49A0-846B-EE5B7B1EBAB9}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
