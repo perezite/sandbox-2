@@ -441,10 +441,13 @@ void demo57() {
 	MyReflectable57 myReflectable;
 	myReflectable.myInt = 42;
 	myReflectable.myInnerReflectable.myFloat = 3.1415f;
-	std::cout << "Brought to you by " << SB_NAMEOF(sb::SimpleSerializer) << std::endl;
-	std::cout << sb::SimpleSerializer::toString(myReflectable);
-	std::cout << "Brought to you by " << SB_NAMEOF(sb::TextSerializer) << std::endl;
-	std::cout << sb::TextSerializer::toString(myReflectable);
+	std::ostringstream os;
+	os << "Brought to you by " << SB_NAMEOF(sb::SimpleSerializer) << std::endl;
+	os << sb::SimpleSerializer::toString(myReflectable);
+	os << "Brought to you by " << SB_NAMEOF(sb::TextSerializer) << std::endl;
+	os << sb::TextSerializer::toString(myReflectable);
+	auto result = os.str();
+	std::cout << result;
 }
 
 int main() {
@@ -465,7 +468,6 @@ int main() {
 	return 0;
 }
 
-// split into lib and app
 // serializer setting if error or not on non serializable types
 // deserialize
 // editor

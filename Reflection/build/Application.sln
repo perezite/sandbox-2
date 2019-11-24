@@ -32,6 +32,7 @@ Global
 		projects\Library\Library.vcxitems*{0527dfee-e806-4cdc-b2ea-6809ba2e081e}*SharedItemsImports = 9
 		Projects\Application\Application.vcxitems*{0c624d38-fc5f-49a0-846b-ee5b7b1ebab9}*SharedItemsImports = 4
 		Projects\Application\Application.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		Projects\Application\Application.vcxitems*{71ba3082-afac-433b-b51c-17e3c244fea7}*SharedItemsImports = 4
 		Projects\Application\Application.vcxitems*{a93b1c36-ca9d-4291-aeb9-c06f0d2e996a}*SharedItemsImports = 4
 		projects\Library\Library.vcxitems*{b20437f4-b2e5-487d-a1c6-2477af2bb796}*SharedItemsImports = 4
 	EndGlobalSection
