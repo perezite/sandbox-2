@@ -24,7 +24,7 @@ namespace sb {
 		}
 		template <class T>
 		static void serializePrimitive(T& t, size_t depth) {
-			std::ostringstream os; os << std::string(depth, ' ') << "-" << t << std::endl;
+			std::ostringstream os; os << std::string(depth, ' ') << "*" << t << std::endl;
 			_result += os.str();
 		}
 	public:

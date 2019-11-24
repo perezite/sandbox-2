@@ -141,7 +141,9 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\InheritanceCheck.h">
       <Filter>Headers</Filter>
     </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Macro.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Macro.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp" />

@@ -465,7 +465,6 @@ int main() {
 	return 0;
 }
 
-// make inspector switchable
 // split into lib and app
 // serializer setting if error or not on non serializable types
 // deserialize
