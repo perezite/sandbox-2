@@ -423,7 +423,6 @@ int main() {
 	return 0;
 }
 
-// cleanup
 // simple scene type
 // inheritance
 // deserialize
