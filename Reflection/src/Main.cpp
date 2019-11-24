@@ -468,9 +468,10 @@ int main() {
 	return 0;
 }
 
-// serializer setting if error or not on non serializable types
+// cleanup
+// simple scene type
+// inheritance
 // deserialize
 // editor
 // save / load demo
 // console editor demo
-// item to incorporate into renderer

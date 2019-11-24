@@ -57,10 +57,9 @@ namespace sb {
 
 namespace sb {
 	namespace reflection {
-
 		template <class T>
 		inline std::string serialize(T& t, const std::string& typeName, size_t depth) {
-			// return SB_SERIALIZER::serialize(t, typeName, depth);
+			SB_ERROR("Deprecated");
 			return std::string();
 		}
 
@@ -71,7 +70,10 @@ namespace sb {
 			else if (inspectorTypeName == SB_NAMEOF(sb::TextSerializer))
 				sb::TextSerializer::inspect(t, depth);
 			else
-				SB_ERROR("Inspector not supported");
+				SB_ERROR("Inspector '" << inspectorTypeName << "'not supported. Make sure you specified the full inspector namespace."
+					<< " Also make sure the inspector is called in serialize::inspect()");
+
+			std::ostringstream os;
 		}
 
 		inline static void setInspector(const std::string& inspectorTypeName_) {
