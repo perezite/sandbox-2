@@ -7,7 +7,7 @@
 #include <vector>
 #include <map>
 
-namespace demo1 {
+namespace reflectionDemo1 {
 
 	class BaseStaticCallback0 {
 	public:

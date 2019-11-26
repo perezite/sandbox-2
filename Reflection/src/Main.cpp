@@ -15,15 +15,19 @@ void version() {
 int main() 
 {
 	version();
-	demo2::run();
-	//demo1::run();
+	reflectionDemo2::run();
+	//reflectionDemo1::run();
 	std::cin.get();
 	return 0;
 }
 
-// simple scene type
+// primitive (write, read, edit)
+// reflectable (write, read, edit)
+// link pointers (write, raed, edit)
+// content pointer (write, read, edit)
+// stream (write, read)
 // inheritance
-// deserialize
-// editor
-// save / load demo
-// console editor demo
+// simplified scene
+// write scene
+// read scene
+// edit scene

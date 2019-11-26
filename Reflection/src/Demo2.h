@@ -1,3 +1,3 @@
-namespace demo2 {
+namespace reflectionDemo2 {
 	void run();
 }
