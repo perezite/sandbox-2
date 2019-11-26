@@ -85,10 +85,10 @@ namespace reflectionDemo2 {
 	}
 
 	void run() {
+		//demo1000();
 		demo200();
 		//demo150();
 		//demo100();
-		//void demo1000();
 	}
 	
 	// primitive edit
