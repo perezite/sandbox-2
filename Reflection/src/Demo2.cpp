@@ -102,9 +102,32 @@ namespace reflectionDemo2 {
 		std::cout << result;
 	}
 
+	template <class T>
+	class MyTest {
+	public:
+		void print() {
+			std::cout << "standard template class" << std::endl;
+		}
+	};
+
+	template <class T>
+	class MyTest<T*> {
+	public:
+		void print() {
+			std::cout << "pointer template class" << std::endl;
+		}
+	};
+
+
+	void demo400() {
+		MyTest<int>().print();
+		MyTest<int*>().print();
+	}
+
 	void run() {
 		//demo1000();
-		demo300();
+		demo400();
+		//demo300();
 		//demo200();
 		//demo150();
 		//demo100();
