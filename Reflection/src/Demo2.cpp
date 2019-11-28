@@ -1,11 +1,13 @@
 #include "Demo2.h"
 #include "Logger.h"
+#include "Reflectable.h"
+#include "TextSerializer.h"
 #include <iostream>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace reflectionDemo2 {
-	#define SB_NAMEOF(name) #name
 
 	void demo1000() {
 		/* 
@@ -49,7 +51,6 @@ namespace reflectionDemo2 {
 				start = pos + delimiterLen;
 			}
 			else {
-				auto strLen = s.length();
 				size_t len = s.length() - start;
 				if (len > 0)
 					result.emplace_back(s.substr(start, len));
@@ -84,9 +85,27 @@ namespace reflectionDemo2 {
 		std::cout << result;
 	}
 
+	class MyReflectable : public sb::Reflectable<MyReflectable> {
+		SB_CLASS(MyReflectable)
+		SB_PROPERTY(int, _myInt)
+		SB_PROPERTY(float, _myFloat)
+	public:
+		void setMyInt(int myInt) { _myInt = myInt; }
+		void setMyFloat(float myFloat) { _myFloat = myFloat; }
+	};
+
+	void demo300() {
+		MyReflectable reflectable;
+		reflectable.setMyInt(9876);
+		reflectable.setMyFloat(1.2345f);
+		auto result = sb::TextSerializer::serialize(reflectable);
+		std::cout << result;
+	}
+
 	void run() {
 		//demo1000();
-		demo200();
+		demo300();
+		//demo200();
 		//demo150();
 		//demo100();
 	}

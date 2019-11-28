@@ -3,7 +3,7 @@
 #include "Logger.h"
 #include <string>
 
-void version() {
+static void version() {
 	#ifdef _DEBUG
 		std::string configuration = "Debug";
 	#else
@@ -22,6 +22,7 @@ int main()
 }
 
 // primitive (write, read, edit)
+// properties (https://stackoverflow.com/questions/4225087/c-like-properties-in-native-c)
 // reflectable (write, read, edit)
 // link pointers (write, raed, edit)
 // content pointer (write, read, edit)
