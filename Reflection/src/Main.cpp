@@ -21,14 +21,11 @@ int main()
 	return 0;
 }
 
-// primitive (write, read, edit)
-// properties (https://stackoverflow.com/questions/4225087/c-like-properties-in-native-c)
-// reflectable (write, read, edit)
-// link pointers (write, raed, edit)
-// content pointer (write, read, edit)
-// stream (write, read)
-// inheritance
-// simplified scene
-// write scene
-// read scene
-// edit scene
+// demo2: primitive (write, read, edit)
+// demo3: primtive content pointer (write, read, edit)
+// demo4: reflectable (write, read, edit)
+// demo5: reflectable content pointer (write, read, edit)
+// demo6: inheritance (write, read, edit)
+// demo7: stream (write, read)
+// demo8: link pointers (write, raed, edit)
+// demo9: simplified scene (write, read, edit)
