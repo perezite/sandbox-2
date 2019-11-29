@@ -36,7 +36,7 @@ namespace reflectionDemo3 {
 	template <class T>
 	T fromString(const std::string& str) {
 		static std::istringstream is;
-		is.str(""); is.clear();
+		is.str(str);
 		T t;
 		is >> t;
 		return t;
@@ -148,8 +148,11 @@ namespace reflectionDemo3 {
 	void popLine(std::string& input, std::string& output) {		
 		auto pos = input.find('\n');
 		
-		if (pos == std::string::npos) 
+		if (pos == std::string::npos) {
 			output = input;
+			input = "";
+			return;
+		}
 
 		output = input.substr(0, pos);
 		input = input.substr(pos + 2);
@@ -162,6 +165,9 @@ namespace reflectionDemo3 {
 		static void readPointer(std::string& line) {
 			std::vector<std::string> parts; split(line, " ", parts);
 			SB_ERROR_IF(parts.size() != 2, "bad format");
+			auto index = fromString<size_t>(parts[0]);
+			auto reflectablePointer = _reflectablePointers[fromString<size_t>(parts[0])];
+			reflectablePointer->inspect(parts[1]);
 		}
 		static void readPointers(std::string& input) {
 			if (input.length() == 0)
@@ -171,20 +177,21 @@ namespace reflectionDemo3 {
 			do {
 				popLine(input, line);
 				readPointer(line);
-			} while (line.length() > 0);
+			} while (input.length() > 0);
 		}
 	public:
 		template <class T> static void read(const std::string& input, T& result) {
 			std::istringstream is(input);
 			is >> result;
 		}
-		template <class T> static void read(std::string& input, T* result) {
+		template <class T> static void read(std::string& input, T*& result) {
 			InspectorName = SB_NAMEOF(TextReader200);
 			std::string line; popLine(input, line);
 			std::vector<std::string> parts; split(line, " ", parts);
 			SB_ERROR_IF(result != NULL, "target to write to must be null");
 			SB_ERROR_IF(parts.size() != 2, "bad format");
-			auto reflectablePointer = new ReflectablePointer100<T>(fromString<int>(parts[0]), new T());
+			result = new T();
+			auto reflectablePointer = new ReflectablePointer100<T>(fromString<int>(parts[0]), result);
 			_reflectablePointers[_currentId] = reflectablePointer;
 			readPointers(input);
 			_currentId += 1;
@@ -209,12 +216,17 @@ namespace reflectionDemo3 {
 		std::string testString = "myInt 0 \n 0 42";
 		int* result = NULL;
 		TextReader200::read(testString, result);
-		// std::cout << result << std::endl;*/
+		std::cout << *result << std::endl;
+
+		//std::string testString2 = "myInt 42";
+		//int result2;
+		//TextReader200::read(testString, result2);
+		//std::cout << *result << std::endl;
 	}
 
 	void run() {
 		demo200();
-		demo100();
+		// demo100();
 	}
 
 	// demo3: primtive content pointer read
