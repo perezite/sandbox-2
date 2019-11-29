@@ -9,18 +9,6 @@
 
 namespace reflectionDemo2 {
 
-	void demo1000() {
-		/* 
-		int test = 42;
-		std::string testString;
-		TextWriter1000::write(test, nameof(test), testString);
-		int result;
-		TextReader1000::read(result, testString);
-		int test2 = 43;
-		TextEditor::edit(test2);
-		*/
-	}
-
 	class TextWriter100 {
 	public:
 		template <class T> static void write(const T& value, const std::string& name, std::string& result) {
@@ -73,13 +61,13 @@ namespace reflectionDemo2 {
 			std::vector<std::string> splitInput;
 			split(input, " ", splitInput);
 			SB_ERROR_IF(splitInput.size() != 2, "Bad format");
-			std::istringstream(splitInput[0]) >> result;
+			std::istringstream(splitInput[1]) >> result;
 		}
 	};
 
 	void demo200() {
 		// primitive read
-		auto testString = "42 myInt";
+		auto testString = "myInt 42";
 		int result;
 		TextReader200::read(testString, result);
 		std::cout << result;
@@ -118,20 +106,72 @@ namespace reflectionDemo2 {
 		}
 	};
 
-
 	void demo400() {
 		MyTest<int>().print();
 		MyTest<int*>().print();
 	}
 
+	class ConsoleEditor500 {
+		static bool _done;
+
+	protected:
+		static bool isDone(const std::string& input) {
+			_done = input == "exit";
+			return _done;			
+		}
+
+		template <class T> static void doEdit(T& value) {
+			std::cout << "current: " << value << std::endl;
+			std::cout << "new: "; 
+
+			std::string input;
+			std::cin >> input;
+			if (isDone(input)) 
+				return;
+
+			std::istringstream is(input);
+			is >> value;
+		}
+
+	public:
+		template <class T> static void edit(T& value) {
+			_done = false;
+			while (!_done) 
+				doEdit(value);
+		}
+	};
+
+	bool ConsoleEditor500::_done = false;
+
+	void demo500() {
+		// primitive edit
+		int val = 42;
+		float val2 = 3.1415f;
+		ConsoleEditor500::edit(val);
+		ConsoleEditor500::edit(val2);
+	}
+
+	void demo1000() {
+		// primitive write, read and edit
+		int test = 42;
+		std::string testString;
+		TextWriter100::write(test, SB_NAMEOF(test), testString);
+		std::cout << testString << std::endl;
+
+		int result;
+		TextReader200::read(testString, result);
+		std::cout << result << std::endl;
+
+		int test2 = 43;
+		ConsoleEditor500::edit(test2);
+	}
 	void run() {
-		//demo1000();
-		demo400();
+		demo1000();
+		//demo500();
+		//demo400();
 		//demo300();
 		//demo200();
 		//demo150();
 		//demo100();
 	}
-	
-	// primitive edit
 }
