@@ -167,7 +167,7 @@ namespace reflectionDemo3 {
 			SB_ERROR_IF(parts.size() != 2, "bad format");
 			auto index = fromString<size_t>(parts[0]);
 			auto reflectablePointer = _reflectablePointers[fromString<size_t>(parts[0])];
-			reflectablePointer->inspect(parts[1]);
+			reflectablePointer->inspect(line);
 		}
 		static void readPointers(std::string& input) {
 			if (input.length() == 0)
@@ -181,14 +181,16 @@ namespace reflectionDemo3 {
 		}
 	public:
 		template <class T> static void read(const std::string& input, T& result) {
-			std::istringstream is(input);
+			std::vector<std::string> parts; split(input, " ", parts);
+			SB_ERROR_IF(parts.size() != 2, "bad format");
+			std::istringstream is(parts[1]);
 			is >> result;
 		}
 		template <class T> static void read(std::string& input, T*& result) {
 			InspectorName = SB_NAMEOF(TextReader200);
 			std::string line; popLine(input, line);
 			std::vector<std::string> parts; split(line, " ", parts);
-			SB_ERROR_IF(result != NULL, "target to write to must be null");
+			SB_ERROR_IF(result != NULL, "target to write must be null");
 			SB_ERROR_IF(parts.size() != 2, "bad format");
 			result = new T();
 			auto reflectablePointer = new ReflectablePointer100<T>(fromString<int>(parts[0]), result);
@@ -218,10 +220,10 @@ namespace reflectionDemo3 {
 		TextReader200::read(testString, result);
 		std::cout << *result << std::endl;
 
-		//std::string testString2 = "myInt 42";
-		//int result2;
-		//TextReader200::read(testString, result2);
-		//std::cout << *result << std::endl;
+		std::string testString2 = "myInt 43";
+		int result2;
+		TextReader200::read(testString2, result2);
+		std::cout << result2 << std::endl;
 	}
 
 	void run() {
