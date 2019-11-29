@@ -1,9 +1,12 @@
 #include "Demo3.h"
 #include "Macro.h"
+#include "Logger.h"
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <map>
+#include <stdlib.h>
 
 namespace reflectionDemo3 {
 
@@ -31,19 +34,30 @@ namespace reflectionDemo3 {
 	}
 
 	template <class T>
+	T fromString(const std::string& str) {
+		static std::istringstream is;
+		is.str(""); is.clear();
+		T t;
+		is >> t;
+		return t;
+	}
+
+	template <class T>
 	void release(std::vector<T*>& v) {
 		for (size_t i = 0; i < v.size(); i++)
 			delete v[i];
 	}
 
+	static std::string InspectorName = "Undefined";
+
 	template <class T>
-	void inspect100(const std::string& name, const T& t, std::string& result);
+	void inspect100(const std::string& name, T& t, std::string& str);
 
 	struct BaseReflectablePointer100 {
 		size_t id;
 		BaseReflectablePointer100(size_t id_) : id(id_)
 		{ }
-		virtual void write(std::string& result) = 0;
+		virtual void inspect(std::string& str) = 0;
 	};
 
 	template <class T>
@@ -51,8 +65,8 @@ namespace reflectionDemo3 {
 		T* pointer;
 		ReflectablePointer100(size_t id_, T* pointer_) : BaseReflectablePointer100(id_), pointer(pointer_)
 		{ }
-		virtual void write(std::string& result) {
-			inspect100(toString(id), *pointer, result);
+		virtual void inspect(std::string& str) {
+			inspect100(toString(id), *pointer, str);
 		}
 	};
 
@@ -62,8 +76,7 @@ namespace reflectionDemo3 {
 	protected:
 		static void writePointers(std::string& result) {
 			for (size_t i = 0; i < _reflectablePointers.size(); i++)
-				_reflectablePointers[i]->write(result);
- 			
+				_reflectablePointers[i]->inspect(result);
 		}
 		template <class T>
 		static void writeValue(const std::string& name, const T& value, std::string& result) {
@@ -77,6 +90,7 @@ namespace reflectionDemo3 {
 			writeValue(name, value, result);
 		}
 		template <class T> static void write(const std::string& name, T* pointer, std::string& result) {
+			InspectorName = SB_NAMEOF(TextWriter100);
 			BaseReflectablePointer100* reflectablePointer = new ReflectablePointer100<T>(_currentId, pointer);
 			_reflectablePointers.push_back(reflectablePointer);
 			writeValue(name, _currentId, result);
@@ -88,13 +102,8 @@ namespace reflectionDemo3 {
 	std::vector<BaseReflectablePointer100*> TextWriter100::_reflectablePointers;
 	size_t TextWriter100::_currentId = 0;
 
-	template <class T>
-	void inspect100(const std::string& name, const T& t, std::string& result) {
-		TextWriter100::write(name, t, result);
-	}
-
 	void demo100() {
-		// primitive content pointer read
+		// primitive content pointer write
 		int* test = new int;
 		*test = 42;
 		std::string result;
@@ -107,11 +116,107 @@ namespace reflectionDemo3 {
 		std::cout << result;
 	}
 
+	void split(const std::string& s, const std::string& delimiter, std::vector<std::string>& result) {
+		size_t start = 0;
+		size_t pos = 0;
+		size_t delimiterLen = delimiter.length();
+		while (true) {
+			pos = s.find(delimiter, start);
+			if (pos != std::string::npos) {
+				size_t len = pos - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				start = pos + delimiterLen;
+			}
+			else {
+				size_t len = s.length() - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				break;
+			}
+		}
+	}
+
+	void myAssert(bool expression, const std::string& message) {
+		if (expression) {
+			std::cout << message << std::endl;
+			std::cin.get();
+			exit(0);
+		}
+	}
+
+	void popLine(std::string& input, std::string& output) {		
+		auto pos = input.find('\n');
+		
+		if (pos == std::string::npos) 
+			output = input;
+
+		output = input.substr(0, pos);
+		input = input.substr(pos + 2);
+	}
+
+	class TextReader200 {	
+		static size_t _currentId;
+		static std::map<size_t, BaseReflectablePointer100*> _reflectablePointers;
+	protected:
+		static void readPointer(std::string& line) {
+			std::vector<std::string> parts; split(line, " ", parts);
+			SB_ERROR_IF(parts.size() != 2, "bad format");
+		}
+		static void readPointers(std::string& input) {
+			if (input.length() == 0)
+				return;
+
+			std::string line;
+			do {
+				popLine(input, line);
+				readPointer(line);
+			} while (line.length() > 0);
+		}
+	public:
+		template <class T> static void read(const std::string& input, T& result) {
+			std::istringstream is(input);
+			is >> result;
+		}
+		template <class T> static void read(std::string& input, T* result) {
+			InspectorName = SB_NAMEOF(TextReader200);
+			std::string line; popLine(input, line);
+			std::vector<std::string> parts; split(line, " ", parts);
+			SB_ERROR_IF(result != NULL, "target to write to must be null");
+			SB_ERROR_IF(parts.size() != 2, "bad format");
+			auto reflectablePointer = new ReflectablePointer100<T>(fromString<int>(parts[0]), new T());
+			_reflectablePointers[_currentId] = reflectablePointer;
+			readPointers(input);
+			_currentId += 1;
+		}
+	};
+
+	size_t TextReader200::_currentId = 0;
+	std::map<size_t, BaseReflectablePointer100*> TextReader200::_reflectablePointers;
+
+	template <class T>
+	void inspect100(const std::string& name, T& t, std::string& str) {
+		if (InspectorName == SB_NAMEOF(TextWriter100))
+			TextWriter100::write(name, t, str);
+		else if (InspectorName == SB_NAMEOF(TextReader200))
+			TextReader200::read(str, t);
+		else
+			SB_ERROR(InspectorName << " is not a valid inspector");
+	}
+
+	void demo200() {
+		// primitive content pointer read
+		std::string testString = "myInt 0 \n 0 42";
+		int* result = NULL;
+		TextReader200::read(testString, result);
+		// std::cout << result << std::endl;*/
+	}
+
 	void run() {
+		demo200();
 		demo100();
 	}
 
 	// demo3: primtive content pointer read
-	// demo3: primtive content pointer write
 	// demo3: primtive content pointer edit
 }
