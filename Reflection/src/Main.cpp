@@ -1,6 +1,7 @@
 #include "Demo1.h"
 #include "Demo2.h"
 #include "Demo3.h"
+#include "Demo4.h"
 #include "Logger.h"
 #include <string>
 
@@ -16,17 +17,16 @@ static void version() {
 int main() 
 {
 	version();
-	reflectionDemo3::run();
+	reflectionDemo4::run();
+	//reflectionDemo3::run();
 	//reflectionDemo2::run();
 	//reflectionDemo1::run();
 	std::cin.get();
 	return 0;
 }
 
-// demo3: primitive content pointer (write, read, edit)
-// demo4: switchable inspector
 // demo5: reflectable (write, read, edit)
-// demo6: reflectable content pointer (write, read, edit)
+// demo6: content pointers to reflectable (write, read, edit)
 // demo7: inheritance (write, read, edit)
 // demo8: stream (write, read)
 // demo9: link pointers (write, raed, edit)
