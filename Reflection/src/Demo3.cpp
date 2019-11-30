@@ -10,21 +10,6 @@
 
 namespace reflectionDemo3 {
 
-	void demo1000() {
-		// primitive write, read and edit
-		/*int* test = new int();
-		std::string testString;
-		TextWriter100::write(test, SB_NAMEOF(test), testString);
-		std::cout << testString << std::endl;
-
-		int* result = NULL;
-		TextReader200::read(testString, result);
-		std::cout << result << std::endl;
-
-		int test2 = 43;
-		ConsoleEditor500::edit(test2);*/
-	}
-
 	template <class T>
 	std::string toString(const T& t) {
 		static std::ostringstream os;
@@ -48,6 +33,20 @@ namespace reflectionDemo3 {
 			delete v[i];
 	}
 
+	bool endsWith(std::string& input, const std::string& token) {
+		if (input.empty())
+			return false;
+
+		return input.substr(input.length() - token.length(), token.length()) == token;
+	}
+
+	void trimEnd(std::string& input, const std::string& token) {
+		if (endsWith(input, token)) {
+			input.erase(input.length() - token.length());
+			trimEnd(input, token);
+		}
+	}
+
 	static std::string InspectorName = "Undefined";
 
 	template <class T>
@@ -55,6 +54,7 @@ namespace reflectionDemo3 {
 
 	struct BaseReflectablePointer100 {
 		size_t id;
+		virtual ~BaseReflectablePointer100() { }
 		BaseReflectablePointer100(size_t id_) : id(id_)
 		{ }
 		virtual void inspect(std::string& str) = 0;
@@ -146,6 +146,7 @@ namespace reflectionDemo3 {
 	}
 
 	void popLine(std::string& input, std::string& output) {		
+		trimEnd(input, "\n"); trimEnd(input, " ");
 		auto pos = input.find('\n');
 		
 		if (pos == std::string::npos) {
@@ -155,7 +156,7 @@ namespace reflectionDemo3 {
 		}
 
 		output = input.substr(0, pos);
-		input = input.substr(pos + 2);
+		input = input.substr(pos + 1);
 	}
 
 	class TextReader200 {	
@@ -165,7 +166,6 @@ namespace reflectionDemo3 {
 		static void readPointer(std::string& line) {
 			std::vector<std::string> parts; split(line, " ", parts);
 			SB_ERROR_IF(parts.size() != 2, "bad format");
-			auto index = fromString<size_t>(parts[0]);
 			auto reflectablePointer = _reflectablePointers[fromString<size_t>(parts[0])];
 			reflectablePointer->inspect(line);
 		}
@@ -226,11 +226,64 @@ namespace reflectionDemo3 {
 		std::cout << result2 << std::endl;
 	}
 
-	void run() {
-		demo200();
-		// demo100();
+	class ConsoleEditor300 {
+		static bool _done;
+	protected:
+		static bool isDone(const std::string& input) {
+			_done = input == "exit";
+			return _done;
+		}
+		template <class T> static void doEdit(T& value) {
+			std::cout << "current: " << value << std::endl;
+			std::cout << "new: ";
+
+			std::string input;
+			std::cin >> input;
+			if (isDone(input))
+				return;
+
+			std::istringstream is(input);
+			is >> value;
+		}
+		template <class T> static void doEdit(T* value) {
+			doEdit(*value);
+		}
+	public:
+		template <class T> static void edit(T& value) {
+			_done = false;
+			while (!_done)
+				doEdit(value);
+		}
+	};
+
+	bool ConsoleEditor300::_done = false;
+
+	void demo300() {
+		// demo3: primitive content pointer edit
+		int* test2 = new int;
+		*test2 = 42;
+		ConsoleEditor300::edit(test2); 
 	}
 
-	// demo3: primtive content pointer read
-	// demo3: primtive content pointer edit
+	void demo1000() {
+		// primitive write, read and edit
+		int* test = new int();
+		*test = 42;
+		std::string testString;
+		TextWriter100::write(SB_NAMEOF(test), test, testString);
+		std::cout << testString << std::endl;
+
+		int* result = NULL;
+		TextReader200::read(testString, result);
+		std::cout << *result << std::endl;
+
+		ConsoleEditor300::edit(result);
+	}
+
+	void run() {
+		demo1000();
+		//demo300();
+		// demo200();
+		// demo100();
+	}
 }
