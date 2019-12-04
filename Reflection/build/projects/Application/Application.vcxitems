@@ -19,6 +19,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo2.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo3.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo5.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -26,5 +27,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo2.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo3.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo4.h" />
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo5.h" />
   </ItemGroup>
 </Project>

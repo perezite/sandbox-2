@@ -5,17 +5,6 @@
 
 namespace reflectionDemo4 {
 
-	void demo1000() {
-		/*
-		reflection::setCurrentInspector(SB_NAMEOF(TextReader))
-		std::cout << reflection::getCurrentInspector() << std::endl;
-		reflection::setCurrentInspector(SB_NAMEOF(TextWriter))
-		std::cout << reflection::getCurrentInspector() << std::endl;
-		reflection::setCurrentInspector(SB_NAMEOF(ConsoleEditor))
-		std::cout << reflection::getCurrentInspector() << std::endl;
-		*/
-	}
-	
 	class Reflection100 {
 		static std::string CurrentInspectorName;
 	public:
