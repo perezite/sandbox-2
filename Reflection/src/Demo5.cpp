@@ -1,5 +1,6 @@
 #include "Demo5.h"
 #include "Macro.h"
+#include "Logger.h"
 #include <string>
 #include <vector>
 
@@ -18,7 +19,12 @@ namespace reflectionDemo5 {
 		*/
 	}
 	
-	class BaseProperty100 { };
+	class BaseProperty100 { 
+	public:
+		void inspect() {
+
+		}
+	};
 
 	template <class T>
 	class Property100 : public BaseProperty100 {
@@ -81,12 +87,27 @@ namespace reflectionDemo5 {
 	class TextWriter100 {
 	public:
 		static void write(BaseReflectable100& reflectable, std::string& result) {
-			
+			auto properties = reflectable.getProperties();
+			for (size_t i = 0; i < properties.size(); i++)
+				;
 		}
 	};
 
-	void test() { }
-	
+	class Reflection {
+		static std::string CurrentInspectorName;
+	public:
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		static std::string& getInspector() { return CurrentInspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, std::string& result) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
+				TextWriter100::write(t, name, result);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	};
+
+	std::string Reflection::CurrentInspectorName;
+
 	void demo100() {
 		// Write reflectable
 		// output:
