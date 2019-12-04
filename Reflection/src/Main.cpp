@@ -26,8 +26,10 @@ int main()
 }
 
 // demo5: reflectable (write, read, edit)
-// demo6: content pointers to reflectable (write, read, edit)
-// demo7: inheritance (write, read, edit)
-// demo8: stream (write, read)
-// demo9: link pointers (write, raed, edit)
-// demo10: simplified scene (write, read, edit)
+// demo6: combine
+// demo7: content pointers to reflectable (write, read, edit)
+// demo8: inheritance (write, read, edit)
+// demo9: stream (write, read)
+// demo10: link pointers (write, raed, edit)
+// demo11: combine
+// demo12: simplified scene (write, read, edit)
