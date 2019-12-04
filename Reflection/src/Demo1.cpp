@@ -382,8 +382,8 @@ namespace reflectionDemo1 {
 	class MyReflectable57 : public sb::Reflectable<MyReflectable57> {
 	public:
 		SB_CLASS(MyReflectable57)
-			SB_PROPERTY(int, myInt)
-			SB_PROPERTY(MyInnerReflectable57, myInnerReflectable)
+		SB_PROPERTY(int, myInt)
+		SB_PROPERTY(MyInnerReflectable57, myInnerReflectable)
 	};
 
 	void demo57() {

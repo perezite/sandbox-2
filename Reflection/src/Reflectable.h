@@ -85,7 +85,7 @@ namespace sb {
 		static void add_property_creator_##name() {									\
 			addPropertyCreator(&CurrentClass::create_property_##name, #name);		\
 		}																			\
-		sb::Invocation100<add_property_creator_##name> invocation_##name;						
+		sb::Invocation<add_property_creator_##name> invocation_##name;						
 #else
 	#define SB_PROPERTY(type, name) type name;
 #endif

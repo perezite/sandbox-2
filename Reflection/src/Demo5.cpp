@@ -19,11 +19,15 @@ namespace reflectionDemo5 {
 		*/
 	}
 	
+	namespace reflection {
+		static void setInspector(const std::string& inspectorName);
+		//static std::string& getInspector();
+		template <class T> static void inspect(T& t, const std::string& name, std::string& result);
+	}
+
 	class BaseProperty100 { 
 	public:
-		void inspect() {
-
-		}
+		virtual void inspect(std::string& result) = 0;
 	};
 
 	template <class T>
@@ -34,32 +38,48 @@ namespace reflectionDemo5 {
 		Property100(T& reference, const std::string& name)
 			: _reference(reference), _name(name)
 		{ }
+		virtual void inspect(std::string& result) {
+			reflection::inspect(_reference, _name, result);
+		}
 	};
 
 	class BaseReflectable100 { 
-		std::vector<BaseProperty100*> _properties;
-
 	public:
-		std::vector<BaseProperty100*>& getProperties() { 
-			//if (!_propertiesInit)
-			//	initProperties();
-			//return _properties;
-		}
-		template <class T> void addProperty(T& value, const std::string& name) { _properties.push_back(new Property100<T>(value, name)); }
+		virtual std::vector<BaseProperty100*>& getProperties() = 0;
 	};
 
 	template <class T>
 	class Reflectable100 : public BaseReflectable100 {
 		typedef void(T::*Registration)();
-		static std::vector<Registration> _registrations;
-	public:
-		static void addRegistration(Registration registration) {
-			_registrations.push_back(registration);
+		static std::vector<Registration> PropertyRegistrations;
+		std::vector<BaseProperty100*> _properties;
+		bool _propertiesRegistered;
+	protected:
+		virtual void initProperties() {
+			T* instance = (T*)this;
+			for (size_t i = 0; i < PropertyRegistrations.size(); i++)
+				(instance->*PropertyRegistrations[i])();
+			_propertiesRegistered = true;
 		}
+	public:
+		Reflectable100() : _propertiesRegistered(false)
+		{ }
+		static void addRegistration(Registration registration) {
+			PropertyRegistrations.push_back(registration);
+		}
+		virtual std::vector<BaseProperty100*>& getProperties() {
+			if (!_propertiesRegistered) {
+				initProperties();
+				_propertiesRegistered = true;
+			}
+			return _properties;
+		}
+		template <class U> 
+		void addProperty(U& value, const std::string& name) { _properties.push_back(new Property100<U>(value, name)); }
 	};
 
 	template <class T>
-	std::vector<void(T::*)()> Reflectable100<T>::_registrations;
+	std::vector<void(T::*)()> Reflectable100<T>::PropertyRegistrations;
 
 	template <void(*Action)()>
 	class Invocation100 {
@@ -86,27 +106,31 @@ namespace reflectionDemo5 {
 
 	class TextWriter100 {
 	public:
-		static void write(BaseReflectable100& reflectable, std::string& result) {
+		static void write(BaseReflectable100& reflectable, const std::string& name, std::string& result) {
 			auto properties = reflectable.getProperties();
 			for (size_t i = 0; i < properties.size(); i++)
-				;
+				properties[i]->inspect(result);
 		}
+		template <class T> static void write(T& t, const std::string& name, std::string& result) {
+
+		}
+		static void write(BaseReflectable100& reflectable, std::string& result) {
+			reflection::setInspector(SB_NAMEOF(TextWriter100));
+			write(reflectable, "root", result);
+		}
+
 	};
 
-	class Reflection {
+	namespace reflection {
 		static std::string CurrentInspectorName;
-	public:
 		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		static std::string& getInspector() { return CurrentInspectorName; }
 		template <class T> static void inspect(T& t, const std::string& name, std::string& result) {
 			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
 				TextWriter100::write(t, name, result);
 			else
 				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
 		}
-	};
-
-	std::string Reflection::CurrentInspectorName;
+	}
 
 	void demo100() {
 		// Write reflectable
