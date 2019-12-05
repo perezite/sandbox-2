@@ -22,12 +22,12 @@ namespace reflectionDemo5 {
 	namespace reflection {
 		static void setInspector(const std::string& inspectorName);
 		//static std::string& getInspector();
-		template <class T> static void inspect(T& t, const std::string& name, std::string& result);
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& result);
 	}
 
 	class BaseProperty100 { 
 	public:
-		virtual void inspect(std::string& result) = 0;
+		virtual void inspect(std::string& result, size_t depth) = 0;
 	};
 
 	template <class T>
@@ -38,8 +38,8 @@ namespace reflectionDemo5 {
 		Property100(T& reference, const std::string& name)
 			: _reference(reference), _name(name)
 		{ }
-		virtual void inspect(std::string& result) {
-			reflection::inspect(_reference, _name, result);
+		virtual void inspect(std::string& result, size_t depth) {
+			reflection::inspect(_reference, _name, depth, result);
 		}
 	};
 
@@ -104,29 +104,41 @@ namespace reflectionDemo5 {
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
 	};
 
+	template <class T>
+	std::string stringify(T& t) {
+		static std::ostringstream os; os << t;
+		return os.str();
+	}
+
 	class TextWriter100 {
+		static void print(const std::string& name, const std::string& value, size_t depth, std::string& result) {
+			result += std::string(depth, ' ') + name + ' ' + value + '\n';
+		}
 	public:
-		static void write(BaseReflectable100& reflectable, const std::string& name, std::string& result) {
+		static void writeProperty(BaseReflectable100& reflectable, const std::string& name, size_t depth, std::string& result) {
+			result += std::string(depth, ' ') + name + '\n';
 			auto properties = reflectable.getProperties();
 			for (size_t i = 0; i < properties.size(); i++)
-				properties[i]->inspect(result);
+				properties[i]->inspect(result, depth + 1);
 		}
-		template <class T> static void write(T& t, const std::string& name, std::string& result) {
-
+		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
 		}
 		static void write(BaseReflectable100& reflectable, std::string& result) {
 			reflection::setInspector(SB_NAMEOF(TextWriter100));
-			write(reflectable, "root", result);
+			writeProperty(reflectable, "root", 0, result);
 		}
-
 	};
+
+	template <> void TextWriter100::writeProperty<int>(const int& t, const std::string& name, size_t depth, std::string& result) {
+		print(name, stringify(t), depth, result);
+	}
 
 	namespace reflection {
 		static std::string CurrentInspectorName;
 		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, std::string& result) {
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& result) {
 			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
-				TextWriter100::write(t, name, result);
+				TextWriter100::writeProperty(t, name, depth, result);
 			else
 				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
 		}
@@ -143,6 +155,7 @@ namespace reflectionDemo5 {
 		myReflectable.setMyFloat(3.1415f);
 		std::string result;
 		TextWriter100::write(myReflectable, result);
+		std::cout << result << std::endl;
 	}
 
 	void run() {
