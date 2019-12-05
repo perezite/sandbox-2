@@ -99,6 +99,13 @@ namespace reflectionDemo5 {
 		}
 		Invocation100<register_myInt> invoke_register_myInt;
 		float _myFloat;
+		void addPropert_myFloat() {
+			addProperty(_myFloat, SB_NAMEOF(_myFloat));
+		}
+		static void register_myFloat() {
+			addRegistration(&MyReflectable100::addPropert_myFloat);
+		}
+		Invocation100<register_myFloat> invoke_register_myFloat;
 	public:
 		void setMyInt(int myInt) { _myInt = myInt; }
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
@@ -122,6 +129,7 @@ namespace reflectionDemo5 {
 				properties[i]->inspect(result, depth + 1);
 		}
 		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
+			SB_ERROR("the type of " << name << " is not supported by TextWriter");
 		}
 		static void write(BaseReflectable100& reflectable, std::string& result) {
 			reflection::setInspector(SB_NAMEOF(TextWriter100));
@@ -130,6 +138,10 @@ namespace reflectionDemo5 {
 	};
 
 	template <> void TextWriter100::writeProperty<int>(const int& t, const std::string& name, size_t depth, std::string& result) {
+		print(name, stringify(t), depth, result);
+	}
+
+	template <> void TextWriter100::writeProperty<float>(const float& t, const std::string& name, size_t depth, std::string& result) {
 		print(name, stringify(t), depth, result);
 	}
 
