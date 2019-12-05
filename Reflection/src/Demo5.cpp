@@ -18,14 +18,14 @@ namespace reflectionDemo5 {
 		ConsoleEditor::edit(myReflectable);
 		*/
 	}
-	
+
 	namespace reflection {
 		static void setInspector(const std::string& inspectorName);
 		//static std::string& getInspector();
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& result);
 	}
 
-	class BaseProperty100 { 
+	class BaseProperty100 {
 	public:
 		virtual void inspect(std::string& result, size_t depth) = 0;
 	};
@@ -43,7 +43,7 @@ namespace reflectionDemo5 {
 		}
 	};
 
-	class BaseReflectable100 { 
+	class BaseReflectable100 {
 	public:
 		virtual std::vector<BaseProperty100*>& getProperties() = 0;
 	};
@@ -74,7 +74,7 @@ namespace reflectionDemo5 {
 			}
 			return _properties;
 		}
-		template <class U> 
+		template <class U>
 		void addProperty(U& value, const std::string& name) { _properties.push_back(new Property100<U>(value, name)); }
 	};
 
@@ -87,6 +87,34 @@ namespace reflectionDemo5 {
 		Invocation100() {
 			Action();
 		}
+	};
+
+	// https://stackoverflow.com/questions/37031844/logic-of-stdis-base-of-in-c-11
+	template<typename D, typename B>
+	class IsDerivedFrom100
+	{
+		class No { };
+		class Yes { No no[2]; };
+
+		static Yes Test(B*) {};
+		static No Test(...) {};
+	public:
+		static bool value() {
+			return sizeof(Test(static_cast<D*>(0))) == sizeof(Yes);
+		}
+	};
+
+	class MyInnerReflectable100 : public Reflectable100<MyInnerReflectable100> {
+		double _myDouble;
+		void addProperty_myDouble() {
+			addProperty(_myDouble, SB_NAMEOF(_myDouble));
+		}
+		static void register_myDouble() {
+			addRegistration(&MyInnerReflectable100::addProperty_myDouble);
+		}
+		Invocation100<register_myDouble> invoke_register_myInt;
+	public:
+		void setMyDouble(double myDouble) { _myDouble = myDouble; }
 	};
 
 	class MyReflectable100 : public Reflectable100<MyReflectable100> {
@@ -106,9 +134,18 @@ namespace reflectionDemo5 {
 			addRegistration(&MyReflectable100::addPropert_myFloat);
 		}
 		Invocation100<register_myFloat> invoke_register_myFloat;
+		MyInnerReflectable100 _myInnerReflectable;
+		void addPropert_myInnerReflectable() {
+			addProperty(_myInnerReflectable, SB_NAMEOF(_myInnerReflectable));
+		}
+		static void register_myInnerReflectable() {
+			addRegistration(&MyReflectable100::addPropert_myInnerReflectable);
+		}
+		Invocation100<register_myInnerReflectable> invoke_register_myInnerReflectable;
 	public:
 		void setMyInt(int myInt) { _myInt = myInt; }
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
+		MyInnerReflectable100& getMyInnerReflectable() { return _myInnerReflectable; }
 	};
 
 	template <class T>
@@ -129,7 +166,10 @@ namespace reflectionDemo5 {
 				properties[i]->inspect(result, depth + 1);
 		}
 		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
-			SB_ERROR("the type of " << name << " is not supported by TextWriter");
+			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
+				SB_ERROR("the type of " << name << " is not supported by TextWriter");
+			
+			writeProperty((BaseReflectable100&)t, name, depth, result);
 		}
 		static void write(BaseReflectable100& reflectable, std::string& result) {
 			reflection::setInspector(SB_NAMEOF(TextWriter100));
@@ -142,6 +182,10 @@ namespace reflectionDemo5 {
 	}
 
 	template <> void TextWriter100::writeProperty<float>(const float& t, const std::string& name, size_t depth, std::string& result) {
+		print(name, stringify(t), depth, result);
+	}
+
+	template <> void TextWriter100::writeProperty<double>(const double& t, const std::string& name, size_t depth, std::string& result) {
 		print(name, stringify(t), depth, result);
 	}
 
@@ -158,13 +202,16 @@ namespace reflectionDemo5 {
 
 	void demo100() {
 		// Write reflectable
-		// output:
-		// _
+		// expected output:
+		// root
 		// __myInt 42
-		// __myFloat 3.1415f
+		// __myFloat 3.1415
+		// __myInnerReflectable
+		// ___myDouble 1.2345 
 		MyReflectable100 myReflectable;
 		myReflectable.setMyInt(42);
 		myReflectable.setMyFloat(3.1415f);
+		myReflectable.getMyInnerReflectable().setMyDouble(1.2345);
 		std::string result;
 		TextWriter100::write(myReflectable, result);
 		std::cout << result << std::endl;
