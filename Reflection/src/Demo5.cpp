@@ -22,24 +22,27 @@ namespace reflectionDemo5 {
 	namespace reflection {
 		static void setInspector(const std::string& inspectorName);
 		//static std::string& getInspector();
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& result);
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& buffer);
 	}
 
 	class BaseProperty100 {
+		std::string _name;
 	public:
-		virtual void inspect(std::string& result, size_t depth) = 0;
+		BaseProperty100(const std::string name) : _name(name)
+		{ }
+		const std::string& getName() { return _name; }
+		virtual void inspect(std::string& str, size_t depth) = 0;
 	};
 
 	template <class T>
 	class Property100 : public BaseProperty100 {
 		T& _reference;
-		std::string _name;
 	public:
 		Property100(T& reference, const std::string& name)
-			: _reference(reference), _name(name)
+			: BaseProperty100(name), _reference(reference)
 		{ }
-		virtual void inspect(std::string& result, size_t depth) {
-			reflection::inspect(_reference, _name, depth, result);
+		virtual void inspect(std::string& str, size_t depth) {
+			reflection::inspect(_reference, getName(), depth, str);
 		}
 	};
 
@@ -158,12 +161,14 @@ namespace reflectionDemo5 {
 		static void print(const std::string& name, const std::string& value, size_t depth, std::string& result) {
 			result += std::string(depth, ' ') + name + ' ' + value + '\n';
 		}
+		static void writeProperties(const std::vector<BaseProperty100*>& properties, size_t depth, std::string& result) {
+			for (size_t i = 0; i < properties.size(); i++)
+				properties[i]->inspect(result, depth);
+		}
 	public:
 		static void writeProperty(BaseReflectable100& reflectable, const std::string& name, size_t depth, std::string& result) {
 			result += std::string(depth, ' ') + name + '\n';
-			auto properties = reflectable.getProperties();
-			for (size_t i = 0; i < properties.size(); i++)
-				properties[i]->inspect(result, depth + 1);
+			writeProperties(reflectable.getProperties(), depth, result);
 		}
 		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
 			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
@@ -173,7 +178,7 @@ namespace reflectionDemo5 {
 		}
 		static void write(BaseReflectable100& reflectable, std::string& result) {
 			reflection::setInspector(SB_NAMEOF(TextWriter100));
-			writeProperty(reflectable, "root", 0, result);
+			writeProperties(reflectable.getProperties(), -1, result);
 		}
 	};
 
@@ -189,25 +194,13 @@ namespace reflectionDemo5 {
 		print(name, stringify(t), depth, result);
 	}
 
-	namespace reflection {
-		static std::string CurrentInspectorName;
-		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& result) {
-			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
-				TextWriter100::writeProperty(t, name, depth, result);
-			else
-				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
-		}
-	}
-
 	void demo100() {
 		// Write reflectable
 		// expected output:
-		// root
-		// __myInt 42
-		// __myFloat 3.1415
-		// __myInnerReflectable
-		// ___myDouble 1.2345 
+		// myInt 42
+		// myFloat 3.1415
+		// myInnerReflectable
+		//  myDouble 1.2345 
 		MyReflectable100 myReflectable;
 		myReflectable.setMyInt(42);
 		myReflectable.setMyFloat(3.1415f);
@@ -217,7 +210,152 @@ namespace reflectionDemo5 {
 		std::cout << result << std::endl;
 	}
 
+	int countStart(const std::string& str, char token) {
+		size_t counter = 0;
+		for (size_t i = 0; i < str.length(); i++) {
+			if (str[i] == token)
+				counter++;
+			else
+				break;
+		}
+
+		return counter;
+	}
+
+	void readUntil(const std::string& input, char delimiter, std::string& result) {
+		size_t pos = input.find(delimiter);
+		result = input.substr(0, pos);
+	}
+
+	void split(const std::string& s, const std::string& delimiter, std::vector<std::string>& result) {
+		size_t start = 0;
+		size_t pos = 0;
+		size_t delimiterLen = delimiter.length();
+		while (true) {
+			pos = s.find(delimiter, start);
+			if (pos != std::string::npos) {
+				size_t len = pos - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				start = pos + delimiterLen;
+			}
+			else {
+				size_t len = s.length() - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				break;
+			}
+		}
+	}
+
+	void readLine(const std::string& input, std::string& line) {
+		return readUntil(input, '\n', line);
+	}
+
+	template <class T>
+	T convert(const std::string& input) {
+		std::istringstream is(input);
+		T result; is >> result;
+		return result;
+	}
+
+	void stripLeft(std::string& input, char token) {
+		auto count = countStart(input, token);
+		input = input.substr(count, std::string::npos);
+	}
+
+	BaseProperty100* findPropertyByName(BaseReflectable100& reflectable, const std::string& propertyName) {	
+		BaseProperty100* result = NULL;
+		auto properties = reflectable.getProperties();
+		for (size_t i = 0; i < properties.size(); i++) {
+			if (properties[i]->getName() == propertyName)
+				result = properties[i];
+		}
+		return result;
+	}
+
+	class TextReader200 {
+	protected:
+		static bool extractLine(std::string& buffer, std::string& name, std::string& value, int& depth) {
+			if (buffer.empty())
+				return false;
+			std::string line; readLine(buffer, line);
+			depth = countStart(line, ' ');
+			std::vector<std::string> result;
+			split(line, " ", result);
+			SB_ERROR_IF(result.size() < 1 || result.size() > 2, "Bad format");
+			name = result[0];
+			value = result.size() == 2 ? result[1] : "";
+			buffer = buffer.substr(line.length(), std::string::npos);
+			stripLeft(buffer, '\n');
+			return true;
+		}
+	public:
+		static void readProperty(std::string& buffer, BaseReflectable100& reflectable, size_t depth) {
+			std::string name; std::string value; int currentDepth;
+			while (extractLine(buffer, name, value, currentDepth)) {
+				SB_ERROR_IF(currentDepth < (int)depth, "Bad format");
+				BaseProperty100* property = findPropertyByName(reflectable, name);
+				SB_ERROR_IF(property == NULL, "No property with name " << name << " found");
+				if (!value.empty())
+					property->inspect(value, currentDepth);
+				else
+					property->inspect(value, currentDepth + 1);
+			}
+		}
+		template <class T>
+		static void readProperty(std::string& str, T& t, const std::string& name, size_t depth) {
+			//if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
+			SB_ERROR("the type of " << name << " is not supported by TextWriter");
+
+			//readProperty(str, (BaseReflectable100&)t, name, depth);
+		}
+		static void read(const std::string& input, BaseReflectable100& reflectable) {
+			reflection::setInspector(SB_NAMEOF(TextReader200));
+			std::string buffer = input;
+			readProperty(buffer, reflectable, 0);
+		}
+	};
+
+	template<> void TextReader200::readProperty<int>(std::string& str, int& t, const std::string& name, size_t depth) {
+		t = convert<int>(str);
+	}
+
+	template<> void TextReader200::readProperty<float>(std::string& str, float& t, const std::string& name, size_t depth) {
+		t = convert<float>(str);
+	}
+
+	template<> void TextReader200::readProperty<double>(std::string& str, double& t, const std::string& name, size_t depth) {
+		t = convert<double>(str);
+	}
+
+	namespace reflection {
+		static std::string CurrentInspectorName;
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& str) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
+				TextWriter100::writeProperty(t, name, depth, str);
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader200))
+				TextReader200::readProperty(str, t, name, depth);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	}
+
+	void demo200() {
+		// read reflectable
+		std::ostringstream os;
+		os << "_myInt 42" << std::endl;
+		os << "_myFloat 3.1415" << std::endl;
+		os << "_myInnerReflectable" << std::endl;
+		os << " _myDouble 1.2345" << std::endl;
+
+		MyReflectable100 myReflectable;
+		TextReader200::read(os.str(), myReflectable);
+	}
+	
 	void run() {
+		//demo200();
 		demo100();
 		// demo1000();
 	}
