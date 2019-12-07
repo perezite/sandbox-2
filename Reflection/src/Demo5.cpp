@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include <string>
 #include <vector>
+#include <map>
 
 namespace reflectionDemo5 {
 
@@ -337,19 +338,6 @@ namespace reflectionDemo5 {
 		t = convert<double>(str);
 	}
 
-	namespace reflection {
-		static std::string CurrentInspectorName;
-		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& str) {
-			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
-				TextWriter100::writeProperty(t, name, depth, str);
-			else if (CurrentInspectorName == SB_NAMEOF(TextReader200))
-				TextReader200::readProperty(str, t, name, depth);
-			else
-				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
-		}
-	}
-
 	void demo200() {
 		// read reflectable
 		std::ostringstream os;
@@ -366,8 +354,91 @@ namespace reflectionDemo5 {
 		std::cout << myReflectable.getMyInnerReflectable().getMyDouble() << std::endl;
 	}
 	
+	class ConsoleEditor300 {
+		static size_t Counter;
+		static BaseProperty100* CurrentProperty;
+		static std::map<size_t, BaseProperty100*> Properties;
+	protected:
+		static void displayProperties(BaseReflectable100& reflectable, size_t depth) {
+			auto properties = reflectable.getProperties();
+			for (size_t i = 0; i < properties.size(); i++) {
+				std::string dummy = "";
+				CurrentProperty = properties[i];
+				properties[i]->inspect(dummy, depth);
+			}
+		}
+		template <class T> static void displayPrimitive(T& t, const std::string& name, size_t depth) {
+			std::cout << std::string(depth, ' ') << name << " " << t << " (" << Counter << ")" << std::endl;
+			Properties[++Counter] = CurrentProperty;
+		}
+	public:
+		template <class T> static void inspectProperty(T& t, const std::string& name, size_t depth) {
+			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
+				SB_ERROR("the type of " << name << " is not supported by TextWriter");
+			std::cout << std::string(depth, ' ') << name << std::endl;
+			displayProperties((BaseReflectable100&)t, depth + 1);
+		}
+		static void init() {
+			reflection::setInspector(SB_NAMEOF(ConsoleEditor300));
+			Counter = 0;
+			Properties.clear();
+		}
+		static void edit(BaseReflectable100& reflectable) {
+			init();
+			std::string input;
+			displayProperties(reflectable, 0);
+			while (std::getline(std::cin, input)) {
+				if (input == "exit")
+					break;
+				std::cout << "Which property do you want to edit?" << std::endl;
+				size_t number;
+				std::cin >> number;
+				//editProperty(reflectable, number);
+				displayProperties(reflectable, 0);
+			}
+		}
+	};
+
+	size_t ConsoleEditor300::Counter = 0;
+	BaseProperty100* ConsoleEditor300::CurrentProperty;
+	std::map<size_t, BaseProperty100*> ConsoleEditor300::Properties;
+
+	template <> void ConsoleEditor300::inspectProperty<int>(int& t, const std::string& name, size_t depth) {
+		displayPrimitive(t, name, depth);
+	}
+
+	template <> void ConsoleEditor300::inspectProperty<float>(float& t, const std::string& name, size_t depth) {
+		displayPrimitive(t, name, depth);
+	}
+
+	template <> void ConsoleEditor300::inspectProperty<double>(double& t, const std::string& name, size_t depth) {
+		displayPrimitive(t, name, depth);
+	}
+
+	namespace reflection {
+		static std::string CurrentInspectorName;
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& str) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
+				TextWriter100::writeProperty(t, name, depth, str);
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader200))
+				TextReader200::readProperty(str, t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(ConsoleEditor300))
+				ConsoleEditor300::inspectProperty(t, name, depth);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	}
+
+	void demo300() {
+		// edit reflectable
+		MyReflectable100 myReflectable;
+		ConsoleEditor300::edit(myReflectable);
+	}
+
 	void run() {
-		demo200();
+		demo300();
+		//demo200();
 		//demo100();
 		// demo1000();
 	}
