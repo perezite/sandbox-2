@@ -168,7 +168,7 @@ namespace reflectionDemo5 {
 	public:
 		static void writeProperty(BaseReflectable100& reflectable, const std::string& name, size_t depth, std::string& result) {
 			result += std::string(depth, ' ') + name + '\n';
-			writeProperties(reflectable.getProperties(), depth, result);
+			writeProperties(reflectable.getProperties(), depth + 1, result);
 		}
 		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
 			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
@@ -178,7 +178,7 @@ namespace reflectionDemo5 {
 		}
 		static void write(BaseReflectable100& reflectable, std::string& result) {
 			reflection::setInspector(SB_NAMEOF(TextWriter100));
-			writeProperties(reflectable.getProperties(), -1, result);
+			writeProperties(reflectable.getProperties(), 0, result);
 		}
 	};
 
@@ -197,10 +197,10 @@ namespace reflectionDemo5 {
 	void demo100() {
 		// Write reflectable
 		// expected output:
-		// myInt 42
-		// myFloat 3.1415
-		// myInnerReflectable
-		//  myDouble 1.2345 
+		// _myInt 42
+		// _myFloat 3.1415
+		// _myInnerReflectable
+		//  _myDouble 1.2345 
 		MyReflectable100 myReflectable;
 		myReflectable.setMyInt(42);
 		myReflectable.setMyFloat(3.1415f);
@@ -355,8 +355,8 @@ namespace reflectionDemo5 {
 	}
 	
 	void run() {
-		//demo200();
-		demo100();
+		demo200();
+		//demo100();
 		// demo1000();
 	}
 
