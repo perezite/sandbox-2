@@ -118,6 +118,7 @@ namespace reflectionDemo5 {
 		Invocation100<register_myDouble> invoke_register_myInt;
 	public:
 		void setMyDouble(double myDouble) { _myDouble = myDouble; }
+		double getMyDouble() const { return _myDouble; }
 	};
 
 	class MyReflectable100 : public Reflectable100<MyReflectable100> {
@@ -146,6 +147,9 @@ namespace reflectionDemo5 {
 		}
 		Invocation100<register_myInnerReflectable> invoke_register_myInnerReflectable;
 	public:
+		int getMyInt() const { return _myInt; }
+		float getMyFloat() const { return _myFloat; }
+		const MyInnerReflectable100& getMyInnerRefletable() const { return _myInnerReflectable; }
 		void setMyInt(int myInt) { _myInt = myInt; }
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
 		MyInnerReflectable100& getMyInnerReflectable() { return _myInnerReflectable; }
@@ -172,7 +176,8 @@ namespace reflectionDemo5 {
 		}
 		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
 			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
-				SB_ERROR("the type of " << name << " is not supported by TextWriter");			
+				SB_ERROR("the type of " << name << " is not supported by TextWriter");
+			
 			writeProperty((BaseReflectable100&)t, name, depth, result);
 		}
 		static void write(BaseReflectable100& reflectable, std::string& result) {
@@ -263,7 +268,7 @@ namespace reflectionDemo5 {
 		input = input.substr(count, std::string::npos);
 	}
 
-	BaseProperty100* findPropertyByName(BaseReflectable100& reflectable, const std::string& propertyName) {	
+	BaseProperty100* findProperty(BaseReflectable100& reflectable, const std::string& propertyName) {	
 		BaseProperty100* result = NULL;
 		auto properties = reflectable.getProperties();
 		for (size_t i = 0; i < properties.size(); i++) {
@@ -275,34 +280,48 @@ namespace reflectionDemo5 {
 
 	class TextReader200 {
 	protected:
-		static std::istringstream& extractLine(std::istringstream& is, std::string& name, std::string& value, int& depth) {
-			std::string line; 
-			std::getline(is, line);
-			depth = countStart(line, ' ');
-			std::vector<std::string> result;
-			split(line, " ", result);
-			name = result[0];
-			value = result.size() == 2 ? result[1] : "";
-			return is;
+		static bool extractLine(std::string& buffer, std::string& name, std::string& value, int depth) {
+			std::istringstream is(buffer);
+			std::string line;
+			if (std::getline(is, line)) {
+				size_t currentDepth = countStart(line, ' ');
+				if (depth == currentDepth) {
+					std::vector<std::string> result;
+					split(line, " ", result);
+					name = result[0];
+					value = result.size() == 2 ? result[1] : "";					
+					buffer = buffer.substr(line.length(), std::string::npos);
+					stripLeft(buffer, '\n');
+					return true;
+				}
+			}
+			return false;
 		}
-	public:
-		static void readProperties(std::istringstream& is, BaseReflectable100& reflectable, size_t depth) {
-			std::string name; std::string valueStr; int currentDepth;
-			while (extractLine(is, name, valueStr, currentDepth)) {
-				BaseProperty100* property = findPropertyByName(reflectable, name);
-				property->inspect(valueStr, currentDepth);
+		static void readProperties(std::string& buffer, BaseReflectable100& reflectable, size_t depth) {
+			std::string name; std::string value;
+			while (extractLine(buffer, name, value, depth)) {
+				BaseProperty100* property = findProperty(reflectable, name);
+				bool isPrimitiveProperty = !value.empty();
+				if (isPrimitiveProperty)
+					property->inspect(value, depth);
+				else
+					property->inspect(buffer, depth);
 			}
 		}
+	public:
+		static void readProperty(std::string& buffer, BaseReflectable100& reflectable, const std::string& name, size_t depth) {
+			readProperties(buffer, reflectable, depth + 1);
+		}
 		template <class T>
-		static void readProperty(std::istringstream& is, T& t, const std::string& name, size_t depth) {
+		static void readProperty(std::string& str, T& t, const std::string& name, size_t depth) {
 			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
 				SB_ERROR("the type of " << name << " is not supported by TextWriter");
-			readProperties((BaseReflectable100&)t, name, depth, result);
+			readProperty(str, (BaseReflectable100&)t, name, depth);
 		}
 		static void read(const std::string& input, BaseReflectable100& reflectable) {
 			reflection::setInspector(SB_NAMEOF(TextReader200));
-			std::istringstream is(input);
-			readProperties(is, reflectable, 0);
+			std::string buffer = input;
+			readProperties(buffer, reflectable, 0);
 		}
 	};
 
@@ -341,6 +360,10 @@ namespace reflectionDemo5 {
 
 		MyReflectable100 myReflectable;
 		TextReader200::read(os.str(), myReflectable);
+
+		std::cout << myReflectable.getMyInt() << std::endl;
+		std::cout << myReflectable.getMyFloat() << std::endl;
+		std::cout << myReflectable.getMyInnerReflectable().getMyDouble() << std::endl;
 	}
 	
 	void run() {
