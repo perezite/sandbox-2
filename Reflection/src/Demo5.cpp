@@ -172,8 +172,7 @@ namespace reflectionDemo5 {
 		}
 		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
 			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
-				SB_ERROR("the type of " << name << " is not supported by TextWriter");
-			
+				SB_ERROR("the type of " << name << " is not supported by TextWriter");			
 			writeProperty((BaseReflectable100&)t, name, depth, result);
 		}
 		static void write(BaseReflectable100& reflectable, std::string& result) {
@@ -276,44 +275,34 @@ namespace reflectionDemo5 {
 
 	class TextReader200 {
 	protected:
-		static bool extractLine(std::string& buffer, std::string& name, std::string& value, int& depth) {
-			if (buffer.empty())
-				return false;
-			std::string line; readLine(buffer, line);
+		static std::istringstream& extractLine(std::istringstream& is, std::string& name, std::string& value, int& depth) {
+			std::string line; 
+			std::getline(is, line);
 			depth = countStart(line, ' ');
 			std::vector<std::string> result;
 			split(line, " ", result);
-			SB_ERROR_IF(result.size() < 1 || result.size() > 2, "Bad format");
 			name = result[0];
 			value = result.size() == 2 ? result[1] : "";
-			buffer = buffer.substr(line.length(), std::string::npos);
-			stripLeft(buffer, '\n');
-			return true;
+			return is;
 		}
 	public:
-		static void readProperty(std::string& buffer, BaseReflectable100& reflectable, size_t depth) {
-			std::string name; std::string value; int currentDepth;
-			while (extractLine(buffer, name, value, currentDepth)) {
-				SB_ERROR_IF(currentDepth < (int)depth, "Bad format");
+		static void readProperties(std::istringstream& is, BaseReflectable100& reflectable, size_t depth) {
+			std::string name; std::string valueStr; int currentDepth;
+			while (extractLine(is, name, valueStr, currentDepth)) {
 				BaseProperty100* property = findPropertyByName(reflectable, name);
-				SB_ERROR_IF(property == NULL, "No property with name " << name << " found");
-				if (!value.empty())
-					property->inspect(value, currentDepth);
-				else
-					property->inspect(value, currentDepth + 1);
+				property->inspect(valueStr, currentDepth);
 			}
 		}
 		template <class T>
-		static void readProperty(std::string& str, T& t, const std::string& name, size_t depth) {
-			//if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
-			SB_ERROR("the type of " << name << " is not supported by TextWriter");
-
-			//readProperty(str, (BaseReflectable100&)t, name, depth);
+		static void readProperty(std::istringstream& is, T& t, const std::string& name, size_t depth) {
+			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
+				SB_ERROR("the type of " << name << " is not supported by TextWriter");
+			readProperties((BaseReflectable100&)t, name, depth, result);
 		}
 		static void read(const std::string& input, BaseReflectable100& reflectable) {
 			reflection::setInspector(SB_NAMEOF(TextReader200));
-			std::string buffer = input;
-			readProperty(buffer, reflectable, 0);
+			std::istringstream is(input);
+			readProperties(is, reflectable, 0);
 		}
 	};
 
