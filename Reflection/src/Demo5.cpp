@@ -355,9 +355,12 @@ namespace reflectionDemo5 {
 	}
 	
 	class ConsoleEditor300 {
+		enum class Mode { Display, Edit };
+		static Mode CurrentMode;
 		static size_t Counter;
 		static BaseProperty100* CurrentProperty;
 		static std::map<size_t, BaseProperty100*> Properties;
+	
 	protected:
 		static void displayProperties(BaseReflectable100& reflectable, size_t depth) {
 			auto properties = reflectable.getProperties();
@@ -369,50 +372,79 @@ namespace reflectionDemo5 {
 		}
 		template <class T> static void displayPrimitive(T& t, const std::string& name, size_t depth) {
 			std::cout << std::string(depth, ' ') << name << " " << t << " (" << Counter << ")" << std::endl;
-			Properties[++Counter] = CurrentProperty;
+			Properties[Counter++] = CurrentProperty;
+		}
+		template <class T> static void editPrimitive(T& t, const std::string& name, size_t depth) {
+			std::cout << "Please enter value: "; 
+			std::cin >> t;
+			std::cout << std::endl;
+		}
+		template <class T> static void inspectPrimitive(T& t, const std::string& name, size_t depth) {
+			if (CurrentMode == Mode::Display)
+				displayPrimitive(t, name, depth);
+			else
+				editPrimitive(t, name, depth);
+		}
+		static void displayReflectable(BaseReflectable100& t, const std::string& name, size_t depth) {
+			std::cout << std::string(depth, ' ') << name << std::endl;
+			displayProperties((BaseReflectable100&)t, depth + 1);
+		}
+		static void editProperty(size_t index) {
+			std::string dummy;
+			Properties[index]->inspect(dummy, -1);
 		}
 	public:
 		template <class T> static void inspectProperty(T& t, const std::string& name, size_t depth) {
 			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
-				SB_ERROR("the type of " << name << " is not supported by TextWriter");
-			std::cout << std::string(depth, ' ') << name << std::endl;
-			displayProperties((BaseReflectable100&)t, depth + 1);
+				SB_ERROR("Displaying the type of " << name << " is not supported by TextWriter");
+			if (CurrentMode == Mode::Edit)
+				SB_ERROR("Editing the type of " << name << " is not supported by TextWriter");
+			displayReflectable(t, name, depth);
 		}
-		static void init() {
-			reflection::setInspector(SB_NAMEOF(ConsoleEditor300));
-			Counter = 0;
-			Properties.clear();
+		static bool prompt() {
+			std::string input;
+			size_t index;
+
+			std::cout << "Which property do you want to edit?" << std::endl;
+			std::cin >> input;
+			if (input == "exit")
+				return false;
+
+			std::istringstream is(input); is >> index;
+			if (!is.fail()) {
+				CurrentMode = Mode::Edit;
+				editProperty(index);
+			}
+			return true;
 		}
 		static void edit(BaseReflectable100& reflectable) {
-			init();
+			reflection::setInspector(SB_NAMEOF(ConsoleEditor300));
 			std::string input;
-			displayProperties(reflectable, 0);
-			while (std::getline(std::cin, input)) {
-				if (input == "exit")
-					break;
-				std::cout << "Which property do you want to edit?" << std::endl;
-				size_t number;
-				std::cin >> number;
-				//editProperty(reflectable, number);
+
+			do {
+				Counter = 0;
+				Properties.clear();
+				CurrentMode = Mode::Display;
 				displayProperties(reflectable, 0);
-			}
+			} while (prompt());
 		}
 	};
 
+	ConsoleEditor300::Mode ConsoleEditor300::CurrentMode = ConsoleEditor300::Mode::Display;
 	size_t ConsoleEditor300::Counter = 0;
 	BaseProperty100* ConsoleEditor300::CurrentProperty;
 	std::map<size_t, BaseProperty100*> ConsoleEditor300::Properties;
 
 	template <> void ConsoleEditor300::inspectProperty<int>(int& t, const std::string& name, size_t depth) {
-		displayPrimitive(t, name, depth);
+		inspectPrimitive(t, name, depth);
 	}
 
 	template <> void ConsoleEditor300::inspectProperty<float>(float& t, const std::string& name, size_t depth) {
-		displayPrimitive(t, name, depth);
+		inspectPrimitive(t, name, depth);
 	}
 
 	template <> void ConsoleEditor300::inspectProperty<double>(double& t, const std::string& name, size_t depth) {
-		displayPrimitive(t, name, depth);
+		inspectPrimitive(t, name, depth);
 	}
 
 	namespace reflection {
