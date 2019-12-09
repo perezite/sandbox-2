@@ -31,9 +31,9 @@ int main()
 // demo6: stream (write, read)
 // demo7: combine
 // demo8: abstracting reader/writer/editor
-// demo8: content pointers to reflectable (write, read, edit)
-// demo9: inheritance (write, read, edit)
-// demo10: link pointers (write, raed, edit)
-// demo11: combine
-// demo12: macros
-// demo13: simplified scene (write, read, edit)
+// demo9: content pointers to reflectable (write, read, edit)
+// demo10: inheritance (write, read, edit)
+// demo11: link pointers (write, raed, edit)
+// demo12: combine
+// demo13: macros
+// demo14: simplified scene (write, read, edit)

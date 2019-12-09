@@ -5,10 +5,24 @@
 #include <vector>
 #include <map>
 
-namespace reflectionDemo5 {
+namespace reflectionDemo6 {
+
+	void demo1000() {
+		/*
+		MyReflectable myReflectable;
+		myReflectable.setMyInt(42);
+		myReflectable.setMyFloat(3.1415f);
+		std::string result;
+		TextWriter::write(myReflectable, result);
+		MyReflectable myReflectable2;
+		TextReader::read(myReflectable2, result);
+		ConsoleEditor::edit(myReflectable);
+		*/
+	}
 
 	namespace reflection {
 		static void setInspector(const std::string& inspectorName);
+		//static std::string& getInspector();
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& buffer);
 	}
 
@@ -42,37 +56,25 @@ namespace reflectionDemo5 {
 	class Reflectable100 : public BaseReflectable100 {
 		typedef void(T::*Registration)();
 		static std::vector<Registration> PropertyRegistrations;
-		static std::vector<std::string> PropertyRegistrationNames;
-		static bool RegistrationsInitialized;
 		std::vector<BaseProperty100*> _properties;
-		bool _propertiesInitialized;
+		bool _propertiesRegistered;
 	protected:
 		virtual void initProperties() {
 			T* instance = (T*)this;
 			for (size_t i = 0; i < PropertyRegistrations.size(); i++)
 				(instance->*PropertyRegistrations[i])();
-			_propertiesInitialized = true;
-		}
-		static bool findRegistrationName(std::string name) {
-			return std::find(PropertyRegistrationNames.begin(), PropertyRegistrationNames.end(), name)
-				!= PropertyRegistrationNames.end();
+			_propertiesRegistered = true;
 		}
 	public:
-		Reflectable100() : _propertiesInitialized(false)
+		Reflectable100() : _propertiesRegistered(false)
 		{ }
-		static void addRegistration(Registration registration, const std::string name) {
-			if (findRegistrationName(name))
-				RegistrationsInitialized = true;
-			else 
-				PropertyRegistrationNames.push_back(name);
-			if (!RegistrationsInitialized) {
-				PropertyRegistrations.push_back(registration);
-			}
+		static void addRegistration(Registration registration) {
+			PropertyRegistrations.push_back(registration);
 		}
 		virtual std::vector<BaseProperty100*>& getProperties() {
-			if (!_propertiesInitialized) {
+			if (!_propertiesRegistered) {
 				initProperties();
-				_propertiesInitialized = true;
+				_propertiesRegistered = true;
 			}
 			return _properties;
 		}
@@ -82,11 +84,6 @@ namespace reflectionDemo5 {
 
 	template <class T>
 	std::vector<void(T::*)()> Reflectable100<T>::PropertyRegistrations;
-
-	template <class T>
-	std::vector<std::string> Reflectable100<T>::PropertyRegistrationNames;
-
-	template <class T> bool Reflectable100<T>::RegistrationsInitialized = false;
 
 	template <void(*Action)()>
 	class Invocation100 {
@@ -117,7 +114,7 @@ namespace reflectionDemo5 {
 			addProperty(_myDouble, SB_NAMEOF(_myDouble));
 		}
 		static void register_myDouble() {
-			addRegistration(&MyInnerReflectable100::addProperty_myDouble, SB_NAMEOF(_myDouble));
+			addRegistration(&MyInnerReflectable100::addProperty_myDouble);
 		}
 		Invocation100<register_myDouble> invoke_register_myInt;
 	public:
@@ -131,7 +128,7 @@ namespace reflectionDemo5 {
 			addProperty(_myInt, SB_NAMEOF(_myInt));
 		}
 		static void register_myInt() {	
-			addRegistration(&MyReflectable100::addProperty_myInt, SB_NAMEOF(_myInt));
+			addRegistration(&MyReflectable100::addProperty_myInt);
 		}
 		Invocation100<register_myInt> invoke_register_myInt;
 		float _myFloat;
@@ -139,7 +136,7 @@ namespace reflectionDemo5 {
 			addProperty(_myFloat, SB_NAMEOF(_myFloat));
 		}
 		static void register_myFloat() {
-			addRegistration(&MyReflectable100::addPropert_myFloat, SB_NAMEOF(_myFloat));
+			addRegistration(&MyReflectable100::addPropert_myFloat);
 		}
 		Invocation100<register_myFloat> invoke_register_myFloat;
 		MyInnerReflectable100 _myInnerReflectable;
@@ -147,7 +144,7 @@ namespace reflectionDemo5 {
 			addProperty(_myInnerReflectable, SB_NAMEOF(_myInnerReflectable));
 		}
 		static void register_myInnerReflectable() {
-			addRegistration(&MyReflectable100::addPropert_myInnerReflectable, SB_NAMEOF(_myInnerReflectable));
+			addRegistration(&MyReflectable100::addPropert_myInnerReflectable);
 		}
 		Invocation100<register_myInnerReflectable> invoke_register_myInnerReflectable;
 	public:
@@ -471,32 +468,8 @@ namespace reflectionDemo5 {
 		ConsoleEditor300::edit(myReflectable);
 	}
 
-	void demo1000() {
-		// reflectable(write, read, edit)
-		std::cout << "write:" << std::endl;
-		MyReflectable100 myReflectable;
-		myReflectable.setMyInt(42);
-		myReflectable.setMyFloat(1.2345f);
-		myReflectable.getMyInnerReflectable().setMyDouble(6.7891f);
-		std::string result;
-		TextWriter100::write(myReflectable, result);
-		std::cout << result;
-
-		std::cout << "read:" << std::endl;
-		MyReflectable100 myReflectable2;
-		TextReader200::read(result, myReflectable2);
-		std::cout << myReflectable2.getMyInt() << " ";
-		std::cout << myReflectable2.getMyFloat() << " ";
-		std::cout << myReflectable2.getMyInnerReflectable().getMyDouble() << std::endl;
-
-		std::cout << "edit" << std::endl;
- 		ConsoleEditor300::edit(myReflectable2);
-	}
-
-
 	void run() {
-		demo1000();
-		//demo300();
+		demo300();
 		//demo200();
 		//demo100();
 		// demo1000();
