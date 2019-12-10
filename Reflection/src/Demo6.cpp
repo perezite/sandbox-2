@@ -6,26 +6,9 @@
 #include <map>
 #include <sstream>
 #include <fstream>
+#include <stdlib.h>
 
 namespace reflectionDemo6 {
-	void demo1000() {
-		//std::cout << "write:" << std::endl;
-		//MyReflectable100 myReflectable;
-		//myReflectable.setMyInt(42);
-		//myReflectable.setMyFloat(1.2345f);
-		//myReflectable.getMyInnerReflectable().setMyDouble(6.7891f);
-		//std::string result;
-		//TextWriter100::write(myReflectable, result);
-		//std::cout << result;
-
-		//std::cout << "read:" << std::endl;
-		//MyReflectable100 myReflectable2;
-		//TextReader200::read(result, myReflectable2);
-		//std::cout << myReflectable2.getMyInt() << " ";
-		//std::cout << myReflectable2.getMyFloat() << " ";
-		//std::cout << myReflectable2.getMyInnerReflectable().getMyDouble() << std::endl;
-	}
-	
 	namespace reflection {
 		static void setInspector(const std::string& inspectorName);
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth);
@@ -240,8 +223,8 @@ namespace reflectionDemo6 {
 		os.str("");
 		TextWriter100::write(myReflectable, os);
 		std::cout << os.str();
-		std::ofstream fs("C:\\Temp\\Test.txt");
-		TextWriter100::write(myReflectable, fs);
+		std::ofstream ofs("C:\\Temp\\Test.txt");
+		TextWriter100::write(myReflectable, ofs);
 	}
 
 	int countStart(const std::string& str, char token) {
@@ -387,9 +370,52 @@ namespace reflectionDemo6 {
 		std::cout << myReflectable.getMyInnerReflectable().getMyDouble() << std::endl;
 	}
 
+	void demo1000() {
+		// stream (write, read)
+		std::cout << "write:" << std::endl;
+		MyReflectable100 myReflectable;
+		myReflectable.setMyInt(42);
+		myReflectable.setMyFloat(1.2345f);
+		myReflectable.getMyInnerReflectable().setMyDouble(6.7891f);
+		std::ostringstream os;
+		TextWriter100::write(myReflectable, os);
+		std::cout << os.str();
+
+		std::cout << "read:" << std::endl;
+		MyReflectable100 myReflectable2;
+		std::istringstream is(os.str());
+		TextReader200::read(is, myReflectable2);
+		std::cout << myReflectable2.getMyInt() << " ";
+		std::cout << myReflectable2.getMyFloat() << " ";
+		std::cout << myReflectable2.getMyInnerReflectable().getMyDouble() << std::endl;
+	}
+
+	void demo1500() {
+		// stream (write, read)
+		std::cout << "write:" << std::endl;
+		MyReflectable100 myReflectable;
+		myReflectable.setMyInt(42);
+		myReflectable.setMyFloat(1.2345f);
+		myReflectable.getMyInnerReflectable().setMyDouble(6.7891f);
+		std::ofstream ofs("C:\\Temp\\Demo1500.txt");
+		TextWriter100::write(myReflectable, ofs);
+		ofs.close();
+		std::ostringstream os; os << "notepad " << "C:\\Temp\\Demo1500.txt";
+		system(os.str().c_str());
+
+		std::cout << "read:" << std::endl;
+		MyReflectable100 myReflectable2;
+		std::ifstream ifs("C:\\Temp\\Demo1500.txt");
+		TextReader200::read(ifs, myReflectable2);
+		std::cout << myReflectable2.getMyInt() << " ";
+		std::cout << myReflectable2.getMyFloat() << " ";
+		std::cout << myReflectable2.getMyInnerReflectable().getMyDouble() << std::endl;
+	}
+
 	void run() {
-		// demo6: stream (write, read)
-		demo200();
+		demo1500();
+		//demo1000();
+		//demo200();
 		//demo100();
 	}
 
