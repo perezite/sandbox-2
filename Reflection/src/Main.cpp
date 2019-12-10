@@ -3,6 +3,7 @@
 #include "Demo3.h"
 #include "Demo4.h"
 #include "Demo5.h"
+#include "Demo6.h"
 #include "Logger.h"
 #include <string>
 
@@ -18,7 +19,8 @@ static void version() {
 int main() 
 {
 	version();
-	reflectionDemo5::run();
+	reflectionDemo6::run();
+	//reflectionDemo5::run();
 	//reflectionDemo4::run();
 	//reflectionDemo3::run();
 	//reflectionDemo2::run();
@@ -28,7 +30,6 @@ int main()
 	return 0;
 }
 
-// demo6: stream (write, read)
 // demo7: combine
 // demo8: abstracting reader/writer/editor
 // demo9: content pointers to reflectable (write, read, edit)
