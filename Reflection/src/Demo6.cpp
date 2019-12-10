@@ -4,9 +4,10 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <sstream>
+#include <fstream>
 
 namespace reflectionDemo6 {
-
 	void demo1000() {
 		//std::cout << "write:" << std::endl;
 		//MyReflectable100 myReflectable;
@@ -27,7 +28,7 @@ namespace reflectionDemo6 {
 	
 	namespace reflection {
 		static void setInspector(const std::string& inspectorName);
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& buffer);
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth);
 	}
 
 	class BaseProperty100 {
@@ -36,7 +37,7 @@ namespace reflectionDemo6 {
 		BaseProperty100(const std::string name) : _name(name)
 		{ }
 		const std::string& getName() { return _name; }
-		virtual void inspect(std::string& str, size_t depth) = 0;
+		virtual void inspect(size_t depth) = 0;
 	};
 
 	template <class T>
@@ -46,8 +47,8 @@ namespace reflectionDemo6 {
 		Property100(T& reference, const std::string& name)
 			: BaseProperty100(name), _reference(reference)
 		{ }
-		virtual void inspect(std::string& str, size_t depth) {
-			reflection::inspect(_reference, getName(), depth, str);
+		virtual void inspect(size_t depth) {
+			reflection::inspect(_reference, getName(), depth);
 		}
 	};
 
@@ -180,53 +181,58 @@ namespace reflectionDemo6 {
 
 	template <class T>
 	std::string stringify(T& t) {
-		static std::ostringstream os; os << t;
+		static std::ostringstream os; os.str(""); os << t;
 		return os.str();
 	}
 
 	class TextWriter100 {
-		static void print(const std::string& name, const std::string& value, size_t depth, std::string& result) {
-			result += std::string(depth, ' ') + name + ' ' + value + '\n';
+		static std::ostream* Stream;
+	protected:
+		static std::ostream& getStream() { return *Stream; }
+		static void print(const std::string& name, const std::string& value, size_t depth) {
+			getStream() << std::string(depth, ' ') + name + ' ' + value + '\n';
 		}
-		static void writeProperties(const std::vector<BaseProperty100*>& properties, size_t depth, std::string& result) {
+		static void writeProperties(const std::vector<BaseProperty100*>& properties, size_t depth) {
 			for (size_t i = 0; i < properties.size(); i++)
-				properties[i]->inspect(result, depth);
+				properties[i]->inspect(depth);
 		}
 	public:
-		static void writeProperty(BaseReflectable100& reflectable, const std::string& name, size_t depth, std::string& result) {
-			result += std::string(depth, ' ') + name + '\n';
-			writeProperties(reflectable.getProperties(), depth + 1, result);
+		static void writeProperty(BaseReflectable100& reflectable, const std::string& name, size_t depth) {
+			getStream() << std::string(depth, ' ') + name + '\n';
+			writeProperties(reflectable.getProperties(), depth + 1);
 		}
-		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth, std::string& result) {
+		template <class T> static void writeProperty(const T& t, const std::string& name, size_t depth) {
 			if (IsDerivedFrom100<T, BaseReflectable100>::value() == false)
 				SB_ERROR("the type of " << name << " is not supported by TextWriter");
-
-			writeProperty((BaseReflectable100&)t, name, depth, result);
+			writeProperty((BaseReflectable100&)t, name, depth);
 		}
-		static void write(BaseReflectable100& reflectable, std::string& result) {
+		static void write(BaseReflectable100& reflectable, std::ostream& os) {
+			Stream = &os;
 			reflection::setInspector(SB_NAMEOF(TextWriter100));
-			writeProperties(reflectable.getProperties(), 0, result);
+			writeProperties(reflectable.getProperties(), 0);
 		}
 	};
 
-	template <> void TextWriter100::writeProperty<int>(const int& t, const std::string& name, size_t depth, std::string& result) {
-		print(name, stringify(t), depth, result);
+	template <> void TextWriter100::writeProperty<int>(const int& t, const std::string& name, size_t depth) {
+		print(name, stringify(t), depth);
 	}
 
-	template <> void TextWriter100::writeProperty<float>(const float& t, const std::string& name, size_t depth, std::string& result) {
-		print(name, stringify(t), depth, result);
+	template <> void TextWriter100::writeProperty<float>(const float& t, const std::string& name, size_t depth) {
+		print(name, stringify(t), depth);
 	}
 
-	template <> void TextWriter100::writeProperty<double>(const double& t, const std::string& name, size_t depth, std::string& result) {
-		print(name, stringify(t), depth, result);
+	template <> void TextWriter100::writeProperty<double>(const double& t, const std::string& name, size_t depth) {
+		print(name, stringify(t), depth);
 	}
+
+	std::ostream* TextWriter100::Stream;
 
 	namespace reflection {
 		static std::string CurrentInspectorName;
 		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth, std::string& str) {
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
 			if (CurrentInspectorName == SB_NAMEOF(TextWriter100))
-				TextWriter100::writeProperty(t, name, depth, str);
+				TextWriter100::writeProperty(t, name, depth);
 			else
 				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
 		}
@@ -238,14 +244,19 @@ namespace reflectionDemo6 {
 		myReflectable.setMyInt(42);
 		myReflectable.setMyFloat(1.2345f);
 		myReflectable.getMyInnerReflectable().setMyDouble(6.7891f);
-		std::string result;
-		TextWriter100::write(myReflectable, result);
-		std::cout << result;
+		std::ostringstream os;
+		TextWriter100::write(myReflectable, os);
+		std::cout << os.str();
+		os.str("");
+		TextWriter100::write(myReflectable, os);
+		std::cout << os.str();
+		std::ofstream fs("C:\\Temp\\Test.txt");
+		TextWriter100::write(myReflectable, fs);
 	}
 
 	void run() {
 		// demo6: stream (write, read)
-		demo1000();
+		demo100();
 	}
 
 }
