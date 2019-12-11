@@ -8,6 +8,7 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo4.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo5.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo6.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo7.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo1.h">
@@ -26,6 +27,9 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo6.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo7.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>
