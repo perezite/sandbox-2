@@ -5,7 +5,6 @@
 using namespace std;
 
 namespace reflectionDemo7 {
-
 	// https://stackoverflow.com/questions/37031844/logic-of-stdis-base-of-in-c-11
 	template<typename D, typename B>
 	class IsDerivedFrom100
@@ -24,7 +23,7 @@ namespace reflectionDemo7 {
 	class BaseReflectable100 {
 
 	};
-	
+
 	class DerivedReflectable100 : public BaseReflectable100 {
 
 	};
@@ -46,18 +45,23 @@ namespace reflectionDemo7 {
 			cout << "BaseReflectable100" << endl;
 		}
 
-		template <class T> static void inspect() { 
+		template <class T> static void inspect() {
 			cout << "type not supported" << endl;
 		}
 	};
 
-	template <> void MyDerived::inspect<int>() {
-		cout << "int" << endl;
-	}
+	template <> void MyDerived::inspect<BaseReflectable100>() { cout << "must not be called!!" << endl; }
+
+	template <> void MyDerived::inspect<int>() { cout << "int" << endl; }
+
+	template <> void MyDerived::inspect<float>() { cout << "float" << endl; }
+
+	class RandomType { };
 
 	void demo10() {
 		MyDerived::baseInspect<int>();
 		MyDerived::baseInspect<float>();
+		MyDerived::baseInspect<RandomType>();
 		MyDerived::baseInspect<DerivedReflectable100>();
 
 	}
