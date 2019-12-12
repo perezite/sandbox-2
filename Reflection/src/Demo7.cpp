@@ -1,13 +1,14 @@
 #include "Demo5.h"
 #include "Macro.h"
 #include "Logger.h"
+#include <vector>
 
 using namespace std;
 
 namespace reflectionDemo7 {
 	// https://stackoverflow.com/questions/37031844/logic-of-stdis-base-of-in-c-11
 	template<typename D, typename B>
-	class IsDerivedFrom100
+	class IsDerivedFrom10
 	{
 		class No { };
 		class Yes { No no[2]; };
@@ -20,26 +21,26 @@ namespace reflectionDemo7 {
 		}
 	};
 
-	class BaseReflectable100 {
+	class BaseReflectable10 {
 
 	};
 
-	class DerivedReflectable100 : public BaseReflectable100 {
+	class DerivedReflectable10 : public BaseReflectable10 {
 
 	};
 
 	template <class TDerived>
-	class MyBase {
+	class MyBase10 {
 	public:
 		template <class T> static void baseInspect() {
-			if (IsDerivedFrom100<T, BaseReflectable100>::value())
+			if (IsDerivedFrom10<T, BaseReflectable10>::value())
 				TDerived::inspectReflectable();
 			else
 				TDerived::template inspect<T>();
 		}
 	};
 
-	class MyDerived : public MyBase<MyDerived> {
+	class MyDerived10 : public MyBase10<MyDerived10> {
 	public:
 		static void inspectReflectable() {
 			cout << "BaseReflectable100" << endl;
@@ -50,24 +51,49 @@ namespace reflectionDemo7 {
 		}
 	};
 
-	template <> void MyDerived::inspect<BaseReflectable100>() { cout << "must not be called!!" << endl; }
+	template <> void MyDerived10::inspect<BaseReflectable10>() { cout << "must not be called!!" << endl; }
 
-	template <> void MyDerived::inspect<int>() { cout << "int" << endl; }
+	template <> void MyDerived10::inspect<int>() { cout << "int" << endl; }
 
-	template <> void MyDerived::inspect<float>() { cout << "float" << endl; }
+	template <> void MyDerived10::inspect<float>() { cout << "float" << endl; }
 
-	class RandomType { };
+	class RandomType10 { };
 
 	void demo10() {
-		MyDerived::baseInspect<int>();
-		MyDerived::baseInspect<float>();
-		MyDerived::baseInspect<RandomType>();
-		MyDerived::baseInspect<DerivedReflectable100>();
+		MyDerived10::baseInspect<int>();
+		MyDerived10::baseInspect<float>();
+		MyDerived10::baseInspect<RandomType10>();
+		MyDerived10::baseInspect<DerivedReflectable10>();
+	}
 
+	class MySprite100 {
+	};
+
+	template <class T>
+	class MyNode100 {
+		T* _reference;
+	};
+
+	template <class T>
+	class MyNestedClass100 {
+
+	};
+
+	template <class T, template <class Inner> class V>
+	void myMethod100(V<T> &con)
+	{
+	}
+
+	void demo100() {
+		MyNestedClass100<int> myNestedClass;
+		myMethod100(myNestedClass);
+		MyNode100<MySprite100> mySpriteNode;
+		myMethod100(mySpriteNode);
 	}
 
 	void run() {
-		demo10();
+		demo100();
+		//demo10();
 	}
 
 }
