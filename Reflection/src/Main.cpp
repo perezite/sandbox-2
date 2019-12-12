@@ -32,7 +32,6 @@ int main()
 	return 0;
 }
 
-// demo7: abstracting reader/writer/editor
 // demo8: content pointers to reflectable (write, read, edit)
 // demo9: inheritance (write, read, edit)
 // demo10: combine
