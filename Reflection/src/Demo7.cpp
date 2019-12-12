@@ -70,29 +70,54 @@ namespace reflectionDemo7 {
 	};
 
 	template <class T>
-	class MyNode100 {
+	class MyReflectable100 {
 		T* _reference;
 	};
 
 	template <class T>
 	class MyNestedClass100 {
-
 	};
 
 	template <class T, template <class Inner> class V>
-	void myMethod100(V<T> &con)
-	{
+	void myMethod100(V<T> &con) {
+	}
+
+	template <class T>
+	void myMethod100(MyReflectable100<T> &con) {
+	}
+
+	template <class T>
+	void myMethod100(T &con) {
 	}
 
 	void demo100() {
 		MyNestedClass100<int> myNestedClass;
 		myMethod100(myNestedClass);
-		MyNode100<MySprite100> mySpriteNode;
+		MyReflectable100<MySprite100> mySpriteNode;
 		myMethod100(mySpriteNode);
+		int myInt;
+		myMethod100(myInt);
+	}
+
+	class MyReflectable200 {
+	};
+
+	void myMethod200(MyReflectable200& reflectable) {
+	}
+
+	template <class T> void myMethod200(T& t) {
+	}
+
+	void demo200() {
+		int myInt;
+		MyReflectable200 myReflectable;
+		myMethod200(myInt);
+		myMethod200(myReflectable);
 	}
 
 	void run() {
-		demo100();
+		demo200();
+		//demo100();
 		//demo10();
 	}
 
