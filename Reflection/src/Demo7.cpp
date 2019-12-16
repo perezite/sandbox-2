@@ -454,7 +454,7 @@ namespace reflectionDemo7 {
 	std::ostream* TextWriter1000::Stream;
 
 	void demo1000() {
-		// abstract write
+		// simplified write
 		MyReflectable1000 myReflectable;
 		myReflectable.setMyInt(42);
 		myReflectable.setMyFloat(3.1415f);
@@ -527,6 +527,13 @@ namespace reflectionDemo7 {
 		}
 	};
 
+	template <class T>
+	T convert(const std::string& input) {
+		std::istringstream is(input);
+		T result; is >> result;
+		return result;
+	}
+
 	class TextReader2000 : public Reader2000 {
 		static std::istream* Stream;
 		static std::string CurrentValue;
@@ -540,20 +547,18 @@ namespace reflectionDemo7 {
 			}
 		}
 	public:
-		static void readProperty(BaseReflectable1000& reflectable, const std::string& name, size_t depth) {
+		static void read(BaseReflectable1000& reflectable, const std::string& name, size_t depth) {
 			readProperties(reflectable, depth + 1);
 		}
 		template <class T>
-		static void readProperty(T& t, const std::string& name, size_t depth) {
-			if (IsDerivedFrom10<T, BaseReflectable1000>::value() == false)
-				SB_ERROR("the type of " << name << " is not supported by TextWriter");
-			readProperty((BaseReflectable1000&)t, name, depth);
+		static void read(T& t, const std::string& name, size_t depth) {
+			t = convert<T>(CurrentValue);
 		}
-		static void read(std::istream& is, BaseReflectable1000& reflectable) {
-			reflection::setInspector(SB_NAMEOF(TextReader20000));
+		static void read(BaseReflectable1000& reflectable, std::istream& is) {
+			reflection::setInspector(SB_NAMEOF(TextReader2000));
 			Stream = &is;
 			skipLine(getStream());
-			//read(reflectable, 0);
+			read(reflectable, "root", 0);
 		}
 	};
 
@@ -570,31 +575,35 @@ namespace reflectionDemo7 {
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
 			if (CurrentInspectorName == SB_NAMEOF(TextWriter1000))
 				TextWriter1000::write(t, name, depth);
+			if (CurrentInspectorName == SB_NAMEOF(TextReader2000))
+				TextReader2000::read(t, name, depth);
 			else
 				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
 		}
 	}
 
 	void demo2000() {
-		// abstract read
+		// simplified read
 		std::ostringstream os;
-		os << "root";
-		os << " _myInt 42";
-		os << " _myFloat 3.1415";
-		os << " _myInnerReflectable";
-		os << "  _myDouble 9.876";
+		os << "root" << endl;
+		os << " _myInt 42" << endl;
+		os << " _myFloat 3.1415" << endl;
+		os << " _myInnerReflectable" << endl;
+		os << "  _myDouble 9.876" << endl;
 		std::istringstream is(os.str());
 
 		MyReflectable1000 myReflectable;
-		// TextReader1000::read(myReflectable, is);
+		TextReader2000::read(myReflectable, is);
+
+		cout << myReflectable.getMyInt() << endl;
+		cout << myReflectable.getMyFloat() << endl;
+		cout << myReflectable.getMyInnerReflectable().getMyDouble() << endl;
 	}
 
 	void run() {
-		// next: insert the stuff from demo800 into the reflectables (no more SB_COMPLEX_PROPERTY anymore!)
-
-		// demo7: abstract reader/writer/editor
-		//demo2000();
-		demo1000();
+		// demo7: simplify reader/writer/editor
+		demo2000();
+		//demo1000();
 		//demo800();
 		//demo700();
 		//demo600();
