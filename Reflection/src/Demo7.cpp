@@ -4,6 +4,7 @@
 #include <vector>
 #include <istream>
 #include <ostream>
+#include <list>
 
 using namespace std;
 
@@ -18,9 +19,24 @@ namespace reflectionDemo7 {
 		static Yes Test(B*) {};
 		static No Test(...) {};
 	public:
-		static bool value() {
+		static const bool value() {
 			return sizeof(Test(static_cast<D*>(0))) == sizeof(Yes);
 		}
+	};
+
+	// https://stackoverflow.com/questions/2631585/c-how-to-require-that-one-template-type-is-derived-from-the-other
+	template <typename B, typename D>
+	struct is_base_of // check if B is a base of D
+	{
+		typedef char yes[1];
+		typedef char no[2];
+
+		static yes& test(B*) {};
+		static no& test(...) {};
+
+		static D* get(void) {};
+
+		static const bool value = (sizeof(test(get())) == sizeof(yes));
 	};
 
 	class BaseReflectable10 {
@@ -144,6 +160,138 @@ namespace reflectionDemo7 {
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth);
 	}
 
+	class BaseReflectable600 {
+	public:
+		string getString() { return "BaseReflectable600::getString()"; }
+	};
+
+	template <class T>
+	class Reflectable600 : public BaseReflectable600 {
+
+	};
+
+	class MyReflectable600 : public Reflectable600<MyReflectable600> {
+
+	};
+
+	void myFunc600(BaseReflectable600& t) {
+		cout << "myFunc<BaseReflectable600>" << endl;
+	}
+
+	template <class T>
+	void myFunc600(T& t) {
+		cout << "myFunc<T>" << endl;
+	}
+
+	void demo600() {
+		MyReflectable600 myReflectable;
+		myFunc600(myReflectable);
+	}
+
+	template <bool isList>
+	struct A;
+
+	template<>
+	struct A<true>
+	{
+		static void result() {
+			cout << "true" << endl;
+		}
+	};
+
+	template<>
+	struct A<false>
+	{
+		static void result() {
+			cout << "false" << endl;
+		}
+	};
+
+	template <class T>
+	T* convert600(T* t){
+		// static_cast<BaseReflectable600*>(t);
+	}
+
+	template <class T>
+	T* convert600(...) {
+		return NULL;
+		// return reflectable;
+	}
+
+	template <>
+	BaseReflectable600* convert600<BaseReflectable600>(BaseReflectable600* reflectable) {
+		return NULL;
+	}
+
+	const bool myResult() {
+		return false;
+	}
+
+	void demo700() {
+		//A<IsDerivedFrom10<int, float>::value()>::result();
+		// const bool bla = true;
+		// const bool bla = IsDerivedFrom10<int, float>::value();
+		// A<bla>::result();
+		//A<myResult()>::result();
+		//MyReflectable600 myReflectable;
+		//int myInt;
+		//auto result = convert600(&myReflectable);
+		//auto result2 = convert600(&myInt);
+
+		// myRefelectable600;
+		// auto result = tryConvertToBaseClass<BaseReflectable600, >()
+	}
+
+	// really basic
+	template <bool>
+	struct my_static_assert800;
+
+	template <>
+	struct my_static_assert800<true> {}; // only true is defined
+
+	#define MY_STATIC_ASSERT(x) my_static_assert800<(x)>()
+
+	template <class T> void myFunc800(T& t) {
+		//auto result = is_base_of<BaseReflectable600, T>::value;
+		my_static_assert800<is_base_of<BaseReflectable600, T>::value>();
+		//MY_STATIC_ASSERT(!is_base_of<BaseReflectable1000, T>::value);
+		cout << "basic" << endl;
+	}
+
+	void myFunc800(BaseReflectable600& reflectable) {
+		cout << "specialized" << endl;
+	}
+
+	template <bool, class TBase, class TCurrent> 
+	struct returnBaseIf800;
+
+	template < class TBase, class TCurrent>
+	struct returnBaseIf800<false, TBase, TCurrent> {
+		static TCurrent& value(TCurrent& t) {
+			return t;
+		}
+	};
+ 
+	template <class TBase, class TCurrent>
+	struct returnBaseIf800<true, TBase, TCurrent> {
+		static TBase& value(TCurrent& t) {
+			return (TBase&)t;
+		}
+	};	
+
+	// converts the object to the base type and returns it, if possible. Otherwise, just returns the input object unchanged
+	#define TRY_CONVERT_TO_BASE800(potentialBaseType, currentType, object) \
+		returnBaseIf800<is_base_of<potentialBaseType, currentType>::value, potentialBaseType, currentType>::value(object)
+
+	void demo800() {
+		MyReflectable600 myReflectable;
+		int myInt = 42;
+		auto result = TRY_CONVERT_TO_BASE800(BaseReflectable600, MyReflectable600, myReflectable);
+		auto result2 = TRY_CONVERT_TO_BASE800(BaseReflectable600, int, myInt);
+		cout << result.getString() << endl;
+		cout << result2 << endl;
+	}
+
 	class BaseProperty1000 {
 		std::string _name;
 	public:
@@ -164,14 +312,6 @@ namespace reflectionDemo7 {
 			reflection::inspect(_reference, getName(), depth);
 		}
 	};
-
-	//class BaseReflectable1000;
-	//class InnerProperty1000 : public Property1000<BaseReflectable1000> {
-	//public:
-	//	InnerProperty1000(BaseReflectable1000& reference, const std::string& name)
-	//		: Property1000<BaseReflectable1000>(reference, name)
-	//	{ }
-	//};
 
 	class BaseReflectable1000 {
 	public:
@@ -197,6 +337,9 @@ namespace reflectionDemo7 {
 			return std::find(PropertyRegistrationNames.begin(), PropertyRegistrationNames.end(), name)
 				!= PropertyRegistrationNames.end();
 		}
+		template <class TConverted> void addConvertedProperty(TConverted& value, const std::string& name) {
+			_properties.push_back(new Property1000<TConverted>(value, name));
+		}
 	public:
 		Reflectable1000() : _propertiesInitialized(false)
 		{ }
@@ -217,12 +360,8 @@ namespace reflectionDemo7 {
 			return _properties;
 		}
 
-		template <class U> void addInnerProperty(U& value, const std::string& name) {
-			_properties.push_back(new Property1000<BaseReflectable1000>((BaseReflectable1000&)value, name));
-		}
-
-		template <class U> void addProperty(U& value, const std::string& name) { 
-			_properties.push_back(new Property1000<U>(value, name)); 
+		template <class U> void addProperty(U& value, const std::string& name) {
+			addConvertedProperty(TRY_CONVERT_TO_BASE800(BaseReflectable1000, U, value), name);
 		}
 	};
 
@@ -266,16 +405,16 @@ namespace reflectionDemo7 {
 		}
 		Invocation1000<register_myInt> invoke_register_myInt;
 		float _myFloat;
-		void addPropert_myFloat() {
+		void addProperty_myFloat() {
 			addProperty(_myFloat, SB_NAMEOF(_myFloat));
 		}
 		static void register_myFloat() {
-			addRegistration(&MyReflectable1000::addPropert_myFloat, SB_NAMEOF(_myFloat));
+			addRegistration(&MyReflectable1000::addProperty_myFloat, SB_NAMEOF(_myFloat));
 		}
 		Invocation1000<register_myFloat> invoke_register_myFloat;
 		MyInnerReflectable1000 _myInnerReflectable;
 		void addProperty_myInnerReflectable() {
-			addInnerProperty(_myInnerReflectable, SB_NAMEOF(_myInnerReflectable));
+			addProperty((BaseReflectable1000&)_myInnerReflectable, SB_NAMEOF(_myInnerReflectable));
 		}
 		static void register_myInnerReflectable() {
 			addRegistration(&MyReflectable1000::addProperty_myInnerReflectable, SB_NAMEOF(_myInnerReflectable));
@@ -295,7 +434,7 @@ namespace reflectionDemo7 {
 	public:
 		static std::ostream& getStream() { return *Stream; }
 		template <class T> static void write(T& t, const string& name, size_t depth) {
-			getStream() << std::string(depth, ' ') << t << endl;
+			getStream() << std::string(depth, ' ') << name << " " << t << endl;
 		}
 
 		static void write(BaseReflectable1000& myReflectable, const std::string& name, size_t depth) {
@@ -312,6 +451,119 @@ namespace reflectionDemo7 {
 		}
 	};
 
+	std::ostream* TextWriter1000::Stream;
+
+	void demo1000() {
+		// abstract write
+		MyReflectable1000 myReflectable;
+		myReflectable.setMyInt(42);
+		myReflectable.setMyFloat(3.1415f);
+		myReflectable.getMyInnerReflectable().setMyDouble(9.876);
+		std::ostringstream os;
+		TextWriter1000::write(myReflectable, cout);
+	}
+
+	int countStart(const std::string& str, char token) {
+		size_t counter = 0;
+		for (size_t i = 0; i < str.length(); i++) {
+			if (str[i] == token)
+				counter++;
+			else
+				break;
+		}
+
+		return counter;
+	}
+
+	void split(const std::string& s, const std::string& delimiter, std::vector<std::string>& result) {
+		size_t start = 0;
+		size_t pos = 0;
+		size_t delimiterLen = delimiter.length();
+		while (true) {
+			pos = s.find(delimiter, start);
+			if (pos != std::string::npos) {
+				size_t len = pos - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				start = pos + delimiterLen;
+			}
+			else {
+				size_t len = s.length() - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				break;
+			}
+		}
+	}
+
+	BaseProperty1000* findProperty(BaseReflectable1000& reflectable, const std::string& propertyName) {
+		BaseProperty1000* result = NULL;
+		auto properties = reflectable.getProperties();
+		for (size_t i = 0; i < properties.size(); i++) {
+			if (properties[i]->getName() == propertyName)
+				result = properties[i];
+		}
+		return result;
+	}
+
+	class Reader2000 {
+	public:
+		static void skipLine(std::istream& is) {
+			std::string line; std::getline(is, line);
+		}
+		static bool extractLine(std::string& name, std::string& value, int depth, std::istream& is) {
+			std::string line;
+			if (std::getline(is, line)) {
+				size_t currentDepth = countStart(line, ' ');
+				if (depth == currentDepth) {
+					std::vector<std::string> result;
+					split(line, " ", result);
+					name = result[0];
+					value = result.size() == 2 ? result[1] : "";
+					return true;
+				}
+			}
+			return false;
+		}
+	};
+
+	class TextReader2000 : public Reader2000 {
+		static std::istream* Stream;
+		static std::string CurrentValue;
+	protected:
+		static std::istream& getStream() { return *Stream; }
+		static void readProperties(BaseReflectable1000& reflectable, size_t depth) {
+			std::string name;
+			while (extractLine(name, CurrentValue, depth, getStream())) {
+				BaseProperty1000* property = findProperty(reflectable, name);
+				property->inspect(depth);
+			}
+		}
+	public:
+		static void readProperty(BaseReflectable1000& reflectable, const std::string& name, size_t depth) {
+			readProperties(reflectable, depth + 1);
+		}
+		template <class T>
+		static void readProperty(T& t, const std::string& name, size_t depth) {
+			if (IsDerivedFrom10<T, BaseReflectable1000>::value() == false)
+				SB_ERROR("the type of " << name << " is not supported by TextWriter");
+			readProperty((BaseReflectable1000&)t, name, depth);
+		}
+		static void read(std::istream& is, BaseReflectable1000& reflectable) {
+			reflection::setInspector(SB_NAMEOF(TextReader20000));
+			Stream = &is;
+			skipLine(getStream());
+			//read(reflectable, 0);
+		}
+	};
+
+	std::istream* TextReader2000::Stream;
+	std::string TextReader2000::CurrentValue;
+
+	#define SB_REGISTER_INSPECTOR(str, inspectorMethod) \
+		if (CurrentInspectorName == str) \
+			inspectorMethod(t, name, depth);
+
 	namespace reflection {
 		static std::string CurrentInspectorName;
 		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
@@ -323,21 +575,29 @@ namespace reflectionDemo7 {
 		}
 	}
 
-	std::ostream* TextWriter1000::Stream;
-
-	void demo1000() {
-		// simplify/abstract reader
-		MyReflectable1000 myReflectable;
-		myReflectable.setMyInt(42);
-		myReflectable.setMyFloat(3.1415f);
-		myReflectable.getMyInnerReflectable().setMyDouble(9.876);
+	void demo2000() {
+		// abstract read
 		std::ostringstream os;
-		TextWriter1000::write(myReflectable, cout);
+		os << "root";
+		os << " _myInt 42";
+		os << " _myFloat 3.1415";
+		os << " _myInnerReflectable";
+		os << "  _myDouble 9.876";
+		std::istringstream is(os.str());
+
+		MyReflectable1000 myReflectable;
+		// TextReader1000::read(myReflectable, is);
 	}
 
 	void run() {
-		// demo7: abstracting reader/writer/editor
+		// next: insert the stuff from demo800 into the reflectables (no more SB_COMPLEX_PROPERTY anymore!)
+
+		// demo7: abstract reader/writer/editor
+		//demo2000();
 		demo1000();
+		//demo800();
+		//demo700();
+		//demo600();
 		//demo300();
 		//demo200();
 		//demo100();
