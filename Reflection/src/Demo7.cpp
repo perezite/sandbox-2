@@ -5,6 +5,7 @@
 #include <istream>
 #include <ostream>
 #include <list>
+#include <map>
 
 using namespace std;
 
@@ -583,19 +584,6 @@ namespace reflectionDemo7 {
 		if (CurrentInspectorName == str) \
 			inspectorMethod(t, name, depth);
 
-	namespace reflection {
-		static std::string CurrentInspectorName;
-		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
-			if (CurrentInspectorName == SB_NAMEOF(TextWriter1000))
-				TextWriter1000::write(t, name, depth);
-			else if (CurrentInspectorName == SB_NAMEOF(TextReader2000))
-				TextReader2000::read(t, name, depth);
-			else
-				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
-		}
-	}
-
 	void demo2000() {
 		// simplified read
 		std::ostringstream os;
@@ -614,6 +602,73 @@ namespace reflectionDemo7 {
 		cout << myReflectable.getMyInnerReflectable().getMyDouble() << endl;
 	}
 
+	class ConsoleEditor3000 {
+		enum class Phase { Init, Edit };
+		static Phase CurrentPhase;
+		static vector<BaseProperty1000*> Properties;
+		static size_t Counter;
+		static BaseProperty1000* CurrentProperty;
+		static string NewValue;
+	public:
+		template <class T> static void inspect(T& t, const string& name, size_t depth) {
+			if (CurrentPhase == Phase::Init)
+				init(t, name, depth);
+			else
+				edit(t, name, depth);
+		}
+		template <class T> static void init(T& t, const string& name, size_t depth) {
+			Properties.push_back(CurrentProperty);
+		}
+		static void init(BaseReflectable1000& reflectable, const string& name, size_t depth) {
+			auto properties = reflectable.getProperties();
+			for (size_t i = 0; i < properties.size(); i++) {
+				CurrentProperty = properties[i];
+				properties[i]->inspect(depth + 1);
+			}
+		}
+		static void edit(BaseReflectable1000& reflectable, const string& name, size_t depth) {
+			SB_ERROR("Should never be called");
+		}
+		template <class T> static void edit(T& t, const string& name, size_t depth) {
+			t = convert<T>(NewValue);
+		}
+		static void init(BaseReflectable1000& reflectable) {
+			reflection::setInspector(SB_NAMEOF(ConsoleEditor3000));
+			CurrentPhase = Phase::Init;
+			Properties.clear();
+			Counter = 0;
+			CurrentProperty = NULL;
+			init(reflectable, "root", 0);
+		}
+		static void edit(size_t index, string newValue) {
+			reflection::setInspector(SB_NAMEOF(ConsoleEditor3000));
+			CurrentPhase = Phase::Edit;
+			NewValue = newValue;
+			Properties[index]->inspect(-1);
+		}
+	};
+
+	ConsoleEditor3000::Phase ConsoleEditor3000::CurrentPhase;
+	size_t ConsoleEditor3000::Counter;
+	BaseProperty1000* ConsoleEditor3000::CurrentProperty;
+	vector<BaseProperty1000*> ConsoleEditor3000::Properties;
+	string ConsoleEditor3000::NewValue;
+
+	namespace reflection {
+		static std::string CurrentInspectorName;
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter1000))
+				TextWriter1000::write(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader2000))
+				TextReader2000::read(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(ConsoleEditor3000))
+				ConsoleEditor3000::inspect(t, name, depth);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	}
+
 	void demo3000() {
 		// simplified edit
 		MyReflectable1000 myReflectable;
@@ -621,6 +676,17 @@ namespace reflectionDemo7 {
 		myReflectable.setMyFloat(3.1415f);
 		myReflectable.getMyInnerReflectable().setMyDouble(9.876);
 		
+		ConsoleEditor3000::init(myReflectable);
+
+		string index; string value;
+		while (value != "exit") {
+			TextWriter1000::write(myReflectable, cout, true);
+			cout << "Enter the index of the property to edit: ";
+			getline(cin, index);
+			cout << "Enter the new value for the property (or exit to leave): ";
+			getline(cin, value);
+			ConsoleEditor3000::edit(convert<int>(index), value);
+		}
 	}
 
 	void run() {

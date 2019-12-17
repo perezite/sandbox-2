@@ -32,7 +32,7 @@ int main()
 	return 0;
 }
 
-// demo8: content pointers to reflectable (write, read, edit)
+// demo8: content pointers (to reflectable and primitives) (write, read, edit)
 // demo9: inheritance (write, read, edit)
 // demo10: combine
 // demo11: link pointers (write, raed, edit)
