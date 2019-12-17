@@ -429,12 +429,22 @@ namespace reflectionDemo7 {
 		MyInnerReflectable1000& getMyInnerReflectable() { return _myInnerReflectable; }
 	};
 
+	template <class T>
+	std::string stringify(const T& t) {
+		static std::ostringstream os; os.str(""); os << t;
+		return os.str();
+	}
+
 	class TextWriter1000 {
 		static std::ostream* Stream;
+		static bool CountProperties;
+		static size_t Counter;
 	public:
 		static std::ostream& getStream() { return *Stream; }
+
 		template <class T> static void write(T& t, const string& name, size_t depth) {
-			getStream() << std::string(depth, ' ') << name << " " << t << endl;
+			string counterDescription = CountProperties ? " (" + stringify(Counter++) + ")" : "";
+			getStream() << std::string(depth, ' ') << name << " " << t << counterDescription << endl;
 		}
 
 		static void write(BaseReflectable1000& myReflectable, const std::string& name, size_t depth) {
@@ -444,14 +454,18 @@ namespace reflectionDemo7 {
 				properties[i]->inspect(depth + 1);
 		}
 
-		static void write(BaseReflectable1000& t, std::ostream& os) {
+		static void write(BaseReflectable1000& t, std::ostream& os, bool countProperties = false) {
 			reflection::setInspector(SB_NAMEOF(TextWriter1000));
 			Stream = &os;
+			CountProperties = countProperties;
+			Counter = 0;
 			write(t, "root", 0);
 		}
 	};
 
 	std::ostream* TextWriter1000::Stream;
+	bool TextWriter1000::CountProperties = false;
+	size_t TextWriter1000::Counter = 0;
 
 	void demo1000() {
 		// simplified write
@@ -460,7 +474,7 @@ namespace reflectionDemo7 {
 		myReflectable.setMyFloat(3.1415f);
 		myReflectable.getMyInnerReflectable().setMyDouble(9.876);
 		std::ostringstream os;
-		TextWriter1000::write(myReflectable, cout);
+		TextWriter1000::write(myReflectable, cout, true);
 	}
 
 	int countStart(const std::string& str, char token) {
@@ -575,7 +589,7 @@ namespace reflectionDemo7 {
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
 			if (CurrentInspectorName == SB_NAMEOF(TextWriter1000))
 				TextWriter1000::write(t, name, depth);
-			if (CurrentInspectorName == SB_NAMEOF(TextReader2000))
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader2000))
 				TextReader2000::read(t, name, depth);
 			else
 				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
@@ -600,9 +614,19 @@ namespace reflectionDemo7 {
 		cout << myReflectable.getMyInnerReflectable().getMyDouble() << endl;
 	}
 
+	void demo3000() {
+		// simplified edit
+		MyReflectable1000 myReflectable;
+		myReflectable.setMyInt(42);
+		myReflectable.setMyFloat(3.1415f);
+		myReflectable.getMyInnerReflectable().setMyDouble(9.876);
+		
+	}
+
 	void run() {
 		// demo7: simplify reader/writer/editor
-		demo2000();
+		demo3000();
+		//demo2000();
 		//demo1000();
 		//demo800();
 		//demo700();
