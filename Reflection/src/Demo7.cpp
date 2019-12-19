@@ -469,18 +469,21 @@ namespace reflectionDemo7 {
 			string counterDescription = CountProperties ? " (" + stringify(Counter++) + ")" : "";
 			getStream() << std::string(depth, ' ') << name << " " << t << counterDescription << endl;
 		}
-		static void write(BaseReflectable1000& myReflectable, const std::string& name, size_t depth) {
+		static void write(vector<BaseProperty1000*> properties, const std::string& name, size_t depth) {
 			getStream() << std::string(depth, ' ') << name << endl;
-			auto properties = myReflectable.getProperties();
-			for (size_t i = 0; i < properties.size(); i++)
-				properties[i]->inspect(depth + 1);
+			for (size_t i = 0; i < properties.size(); i++) {
+				if (properties[i]->isReflectable())
+					write(properties[i]->getChildProperties(), properties[i]->getName(), depth + 1);
+				else 
+					properties[i]->inspect(depth + 1);
+			}
 		}
-		static void write(BaseReflectable1000& t, std::ostream& os, bool countProperties = false) {
+		static void write(BaseReflectable1000& reflectable, std::ostream& os, bool countProperties = false) {
 			reflection::setInspector(SB_NAMEOF(TextWriter1000));
 			Stream = &os;
 			CountProperties = countProperties;
 			Counter = 0;
-			write(t, "root", 0);
+			write(reflectable.getProperties(), "root", 0);
 		}
 	};
 
@@ -563,7 +566,7 @@ namespace reflectionDemo7 {
 	};
 
 	template <class T>
-	T convert(const std::string& input) {
+	T parse(const std::string& input) {
 		std::istringstream is(input);
 		T result; is >> result;
 		return result;
@@ -587,7 +590,7 @@ namespace reflectionDemo7 {
 		}
 		template <class T>
 		static void read(T& t, const std::string& name, size_t depth) {
-			t = convert<T>(CurrentValue);
+			t = parse<T>(CurrentValue);
 		}
 		static void read(BaseReflectable1000& reflectable, std::istream& is) {
 			reflection::setInspector(SB_NAMEOF(TextReader2000));
@@ -811,8 +814,7 @@ namespace reflectionDemo7 {
 		}
 	public:
 		template <class T> static void edit(T& t, const string& name, size_t depth) {
-			std::istringstream is(NewValue);
-			is >> t;
+			t = parse<T>(NewValue);
 		}
 		static void init(BaseReflectable1000& reflectable) {
 			Properties.clear();
@@ -860,7 +862,7 @@ namespace reflectionDemo7 {
 			getline(cin, index);
 			cout << "Enter the new value for the property (or exit to leave): ";
 			getline(cin, value);
-			ConsoleEditor3000::edit(convert<int>(index), value);
+			ConsoleEditor3000::edit(parse<int>(index), value);
 		}
 	}
 
