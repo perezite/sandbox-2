@@ -498,7 +498,7 @@ namespace reflectionDemo7 {
 		myReflectable.setMyFloat(3.1415f);
 		myReflectable.getMyInnerReflectable().setMyDouble(9.876);
 		std::ostringstream os;
-		TextWriter1000::write(myReflectable, cout, true);
+		TextWriter1000::write(myReflectable, cout, false);
 	}
 
 	int countStart(const std::string& str, char token) {
@@ -534,9 +534,8 @@ namespace reflectionDemo7 {
 		}
 	}
 
-	BaseProperty1000* findProperty(BaseReflectable1000& reflectable, const std::string& propertyName) {
+	BaseProperty1000* findProperty(const vector<BaseProperty1000*>& properties, const std::string& propertyName) {
 		BaseProperty1000* result = NULL;
-		auto properties = reflectable.getProperties();
 		for (size_t i = 0; i < properties.size(); i++) {
 			if (properties[i]->getName() == propertyName)
 				result = properties[i];
@@ -577,26 +576,27 @@ namespace reflectionDemo7 {
 		static std::string CurrentValue;
 	protected:
 		static std::istream& getStream() { return *Stream; }
-		static void readProperties(BaseReflectable1000& reflectable, size_t depth) {
+		static void read(const vector<BaseProperty1000*>& properties, size_t depth) {
 			std::string name;
+			//istringstream* iss = (istringstream*)Stream;
+			//string test = iss->str();
 			while (extractLine(name, CurrentValue, depth, getStream())) {
-				BaseProperty1000* property = findProperty(reflectable, name);
-				property->inspect(depth);
+				BaseProperty1000* property = findProperty(properties, name);
+				if (property->isReflectable())
+					read(property->getChildProperties(), depth + 1);
+				else 
+					property->inspect(depth);
 			}
 		}
 	public:
-		static void read(BaseReflectable1000& reflectable, const std::string& name, size_t depth) {
-			readProperties(reflectable, depth + 1);
-		}
-		template <class T>
-		static void read(T& t, const std::string& name, size_t depth) {
+		template <class T> static void read(T& t, const std::string& name, size_t depth) {
 			t = parse<T>(CurrentValue);
 		}
 		static void read(BaseReflectable1000& reflectable, std::istream& is) {
 			reflection::setInspector(SB_NAMEOF(TextReader2000));
 			Stream = &is;
 			skipLine(getStream());
-			read(reflectable, "root", 0);
+			read(reflectable.getProperties(), 1);
 		}
 	};
 
@@ -873,8 +873,8 @@ namespace reflectionDemo7 {
 		//demo3600();
 		//demo3500();
 		//demo3000();
-		//demo2000();
-		//demo1000();
+		demo2000();
+		demo1000();
 		//demo800();
 		//demo700();
 		//demo600();
@@ -883,6 +883,4 @@ namespace reflectionDemo7 {
 		//demo100();
 		//demo10();
 	}
-
 }
-
