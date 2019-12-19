@@ -6,6 +6,7 @@
 #include <ostream>
 #include <list>
 #include <map>
+#include <memory>
 
 using namespace std;
 
@@ -299,25 +300,18 @@ namespace reflectionDemo7 {
 		BaseProperty1000(const std::string name) : _name(name)
 		{ }
 		const std::string& getName() { return _name; }
+		virtual const bool isReflectable() const = 0;
 		virtual void inspect(size_t depth) = 0;
-	};
-
-	template <class T>
-	class Property1000 : public BaseProperty1000 {
-		T& _reference;
-	public:
-		Property1000(T& reference, const std::string& name)
-			: BaseProperty1000(name), _reference(reference)
-		{ }
-		virtual void inspect(size_t depth) {
-			reflection::inspect(_reference, getName(), depth);
-		}
+		virtual vector<BaseProperty1000*> getChildProperties() = 0;
 	};
 
 	class BaseReflectable1000 {
 	public:
 		virtual std::vector<BaseProperty1000*>& getProperties() = 0;
 	};
+
+	class BaseProperty1000;
+	template <class T> class Property1000;
 
 	template <class T>
 	class Reflectable1000 : public BaseReflectable1000 {
@@ -360,19 +354,48 @@ namespace reflectionDemo7 {
 			}
 			return _properties;
 		}
-
 		template <class U> void addProperty(U& value, const std::string& name) {
 			addConvertedProperty(TRY_CONVERT_TO_BASE800(BaseReflectable1000, U, value), name);
 		}
 	};
 
-	template <class T>
-	std::vector<void(T::*)()> Reflectable1000<T>::PropertyRegistrations;
-
-	template <class T>
-	std::vector<std::string> Reflectable1000<T>::PropertyRegistrationNames;
-
+	template <class T> std::vector<void(T::*)()> Reflectable1000<T>::PropertyRegistrations;
+	template <class T> std::vector<std::string> Reflectable1000<T>::PropertyRegistrationNames;
 	template <class T> bool Reflectable1000<T>::RegistrationsInitialized = false;
+
+	template <bool IsReflectable, class T> struct Inspection1000 { };
+	template <class T> struct Inspection1000<true, T> {
+		static void inspect(T& t, const std::string& name, size_t depth) {
+			SB_ERROR("Do not call inspect on properties which derived from a reflectable");
+		}
+	};
+	template <class T> struct Inspection1000<false, T> {
+		static void inspect(T& t, const std::string& name, size_t depth) {
+			reflection::inspect(t, name, depth);
+		}
+	};
+
+	template <class T>
+	class Property1000 : public BaseProperty1000 {
+		T& _reference;
+	public:
+		Property1000(T& reference, const std::string& name)
+			: BaseProperty1000(name), _reference(reference) { }
+		const bool isReflectable() const {
+			return is_base_of<BaseReflectable1000, T>::value;
+		}
+		void inspect(size_t depth) {
+			const bool derivesFromReflectable = is_base_of<BaseReflectable1000, T>::value;
+			Inspection1000<derivesFromReflectable, T>::inspect(_reference, getName(), depth);
+		}
+		vector<BaseProperty1000*> getChildProperties() {
+			if (isReflectable()) {
+				auto reflectable = (BaseReflectable1000*)(&_reference);				
+				return reflectable->getProperties();
+			}
+			return vector<BaseProperty1000*>();
+		}
+	};
 
 	template <void(*Action)()>
 	class Invocation1000 {
@@ -442,19 +465,16 @@ namespace reflectionDemo7 {
 		static size_t Counter;
 	public:
 		static std::ostream& getStream() { return *Stream; }
-
 		template <class T> static void write(T& t, const string& name, size_t depth) {
 			string counterDescription = CountProperties ? " (" + stringify(Counter++) + ")" : "";
 			getStream() << std::string(depth, ' ') << name << " " << t << counterDescription << endl;
 		}
-
 		static void write(BaseReflectable1000& myReflectable, const std::string& name, size_t depth) {
 			getStream() << std::string(depth, ' ') << name << endl;
 			auto properties = myReflectable.getProperties();
 			for (size_t i = 0; i < properties.size(); i++)
 				properties[i]->inspect(depth + 1);
 		}
-
 		static void write(BaseReflectable1000& t, std::ostream& os, bool countProperties = false) {
 			reflection::setInspector(SB_NAMEOF(TextWriter1000));
 			Stream = &os;
@@ -601,55 +621,210 @@ namespace reflectionDemo7 {
 		cout << myReflectable.getMyFloat() << endl;
 		cout << myReflectable.getMyInnerReflectable().getMyDouble() << endl;
 	}
+	
+	void demo3500() {
+		int i = 42;
+		void* intPointer = &i;
+		int& reference = *static_cast<int*>(intPointer);
+		cout << reference << endl;
+	}
+
+	struct AbstractType3600 {
+		template <class TBase> bool isDerivedFrom() {
+
+		}
+	};
+
+	template <class T>
+	struct Type : public AbstractType3600 {
+		template <class TDerived> static const bool isBaseOf(TDerived& derived) {
+			return is_base_of<T, TDerived>::value;
+		}
+	};
+
+	class BaseProperty3600 {
+	protected:
+		virtual AbstractType3600 getType() = 0;
+	public:
+		template <class TBase> bool isDerivedFrom() {
+			return false;
+			// return getType()::isderivedFrom<TBase>();
+		}
+
+	};
+
+	template <class T> class Property3600 : public BaseProperty3600 {
+		T& _reference;
+	protected:
+		virtual AbstractType3600 getType() {
+			return Type<T>();
+		}
+	public:
+		Property3600(T& t) : _reference(t)
+		{ }
+	};
+
+	template <class T> class MyVector3600 : vector<T> {
+
+	};
+
+	//template <class T> class MyType3600 : public AbstractMyType3600 {
+
+	//};
+
+	class AbstractTypeSafer3600 {
+	};
+
+	template <class T> class TypeSafer3600 : public AbstractTypeSafer3600 {
+	};
+
+	namespace check {
+	}
+
+	template <class T>
+	class Checker3600 {
+
+	};
+
+	template <class T>
+	class MyCall3600 {
+
+	};
+
+	class Base3600 {
+		AbstractType3600 potentialBaseType;
+	protected:
+		AbstractType3600& getPotentialBaseType() { return potentialBaseType; }
+		virtual bool isDerivedFromBaseType() = 0;
+		virtual void down() = 0;
+		template <class T> void up(T& derived) {
+
+		}
+	public:
+		template <class TBase> bool isDerivedFrom() {
+			potentialBaseType = Type<TBase>();
+			down();		
+			return false;
+		}
+	};
+
+	template <class T> class Derived3600 : public Base3600 {
+		T _reference;
+	protected:
+		template <class TBase> bool isDerivedFrom() { }
+		virtual bool isDerivedFromBaseType() {
+			// getPotentialBaseType().isBaseOf(t) ;
+			return false;
+		}
+		virtual void down() {
+			up(*this);
+		}
+	};
+
+	void demo3600() {
+		MyVector3600<int> myVec;
+		Derived3600<MyVector3600<int>> myProperty;
+		Base3600* myBaseProperty = &myProperty;
+		bool isDerived1 = myBaseProperty->isDerivedFrom<int>();
+		cout << isDerived1;
+		// bool isDerived2 = baseProperty->isDerivedFrom<vector<int>>();
+	}
+
+	// https://www.heise.de/developer/artikel/C-Core-Guidelines-Type-Erasure-mit-Templates-4164863.html
+	class Object3700 {                                              
+	public:
+		template <typename T>                                   
+		Object3700(const T& obj) : object(std::make_shared<Model<T>>(std::move(obj))) {}
+
+		std::string getName() const {                           
+			return object->getName();
+		}
+
+		struct Concept {                   
+			virtual ~Concept() {}
+			virtual std::string getName() const = 0;
+		};
+
+		template< typename T >                                   
+		struct Model : Concept {
+			Model(const T& t) : object(t) {}
+			std::string getName() const override {
+				return object.getName();
+			}
+		private:
+			T object;
+		};
+
+		std::shared_ptr<const Concept> object;
+	};
+
+	void printName3700(std::vector<Object3700> vec) {                    
+		for (auto v : vec) std::cout << v.getName() << std::endl;
+	}
+
+	struct Bar3700 {
+		std::string getName() const {
+			return "Bar";
+		}
+	};
+
+	struct Foo3700 {
+		std::string getName() const {                           
+			return "Foo";
+		}
+	};
+
+	void demo3700() {
+		std::cout << std::endl;
+		std::vector<Object3700> vec{ Object3700(Foo3700()), Object3700(Bar3700()) };
+		printName3700(vec);
+		std::cout << std::endl;
+	}
+	
+
+
+	class InheritanceCheck3800 {
+	public:
+		template <class TBase> InheritanceCheck3800() {
+		}
+
+		template <class T>
+		class InheritanceChecker3800 {
+
+		};
+	};
 
 	class ConsoleEditor3000 {
-		enum class Phase { Init, Edit };
-		static Phase CurrentPhase;
 		static vector<BaseProperty1000*> Properties;
-		static size_t Counter;
 		static BaseProperty1000* CurrentProperty;
 		static string NewValue;
-	public:
-		template <class T> static void inspect(T& t, const string& name, size_t depth) {
-			if (CurrentPhase == Phase::Init)
-				init(t, name, depth);
+	protected:
+		static void init(BaseProperty1000& property) {
+			if (property.isReflectable())
+				init(property.getChildProperties());
 			else
-				edit(t, name, depth);
+				Properties.push_back(&property);
 		}
-		template <class T> static void init(T& t, const string& name, size_t depth) {
-			Properties.push_back(CurrentProperty);
+		static void init(vector<BaseProperty1000*> properties) {
+			for (size_t i = 0; i < properties.size(); i++)
+				init(*properties[i]);
 		}
-		static void init(BaseReflectable1000& reflectable, const string& name, size_t depth) {
-			auto properties = reflectable.getProperties();
-			for (size_t i = 0; i < properties.size(); i++) {
-				CurrentProperty = properties[i];
-				properties[i]->inspect(depth + 1);
-			}
-		}
-		static void edit(BaseReflectable1000& reflectable, const string& name, size_t depth) {
-			SB_ERROR("Should never be called");
-		}
+	public:
 		template <class T> static void edit(T& t, const string& name, size_t depth) {
-			t = convert<T>(NewValue);
+			std::istringstream is(NewValue);
+			is >> t;
 		}
 		static void init(BaseReflectable1000& reflectable) {
-			reflection::setInspector(SB_NAMEOF(ConsoleEditor3000));
-			CurrentPhase = Phase::Init;
 			Properties.clear();
-			Counter = 0;
-			CurrentProperty = NULL;
-			init(reflectable, "root", 0);
+			init(reflectable.getProperties());
 		}
 		static void edit(size_t index, string newValue) {
 			reflection::setInspector(SB_NAMEOF(ConsoleEditor3000));
-			CurrentPhase = Phase::Edit;
 			NewValue = newValue;
 			Properties[index]->inspect(-1);
 		}
 	};
 
-	ConsoleEditor3000::Phase ConsoleEditor3000::CurrentPhase;
-	size_t ConsoleEditor3000::Counter;
 	BaseProperty1000* ConsoleEditor3000::CurrentProperty;
 	vector<BaseProperty1000*> ConsoleEditor3000::Properties;
 	string ConsoleEditor3000::NewValue;
@@ -663,19 +838,19 @@ namespace reflectionDemo7 {
 			else if (CurrentInspectorName == SB_NAMEOF(TextReader2000))
 				TextReader2000::read(t, name, depth);
 			else if (CurrentInspectorName == SB_NAMEOF(ConsoleEditor3000))
-				ConsoleEditor3000::inspect(t, name, depth);
+				ConsoleEditor3000::edit(t, name, depth);
 			else
 				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
 		}
 	}
 
-	void demo3000() {
+	void demo4000() {
 		// simplified edit
 		MyReflectable1000 myReflectable;
 		myReflectable.setMyInt(42);
 		myReflectable.setMyFloat(3.1415f);
 		myReflectable.getMyInnerReflectable().setMyDouble(9.876);
-		
+
 		ConsoleEditor3000::init(myReflectable);
 
 		string index; string value;
@@ -691,7 +866,11 @@ namespace reflectionDemo7 {
 
 	void run() {
 		// demo7: simplify reader/writer/editor
-		demo3000();
+		demo4000();
+		//demo3700();
+		//demo3600();
+		//demo3500();
+		//demo3000();
 		//demo2000();
 		//demo1000();
 		//demo800();
@@ -704,3 +883,4 @@ namespace reflectionDemo7 {
 	}
 
 }
+
