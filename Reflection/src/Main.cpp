@@ -36,9 +36,10 @@ int main()
 }
 
 // demo8: link pointers (write, raed, edit)
-// demo9: inheritance (write, read, edit)
-// demo10: combine
-// demo11: macros
-// demo12: init method
-// demo13: combine
-// demo14: simplified scene (write, read, edit)
+// demo9: vectors (write, read, edit)
+// demo10: inheritance (write, read, edit)
+// demo11: init method
+// demo12: Combine everyhting in one demo file
+// demo13: macros
+// demo14: header files
+// demo15: simplified scene (write, read, edit)
