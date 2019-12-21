@@ -5,6 +5,7 @@
 #include "Demo5.h"
 #include "Demo6.h"
 #include "Demo7.h"
+#include "Demo8.h"
 #include "Logger.h"
 #include <string>
 
@@ -20,7 +21,9 @@ static void version() {
 int main() 
 {
 	version();
-	reflectionDemo7::run();
+
+	reflectionDemo8::run();
+	//reflectionDemo7::run();
 	//reflectionDemo6::run();
 	//reflectionDemo5::run();
 	//reflectionDemo4::run();
@@ -32,10 +35,10 @@ int main()
 	return 0;
 }
 
-// demo8: content pointers (to reflectables and primitives) (write, read, edit)
+// demo8: link pointers (write, raed, edit)
 // demo9: inheritance (write, read, edit)
 // demo10: combine
-// demo11: link pointers (write, raed, edit)
-// demo12: macros
+// demo11: macros
+// demo12: init method
 // demo13: combine
 // demo14: simplified scene (write, read, edit)
