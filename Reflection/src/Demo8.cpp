@@ -1,6 +1,9 @@
 #include "Demo8.h"
 #include "Logger.h"
 #include "Macro.h"
+#include <vector>
+#include <map>
+#include <algorithm>
 
 namespace reflectionDemo8 {
 	using namespace std;
@@ -78,6 +81,7 @@ namespace reflectionDemo8 {
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth);
 	}
 
+	class BaseReflectable0;
 	class BaseProperty0 {
 		std::string _name;
 	public:
@@ -87,6 +91,7 @@ namespace reflectionDemo8 {
 		virtual const bool isReflectable() const = 0;
 		virtual void inspect(size_t depth) = 0;
 		virtual vector<BaseProperty0*> getChildProperties() = 0;
+		virtual BaseReflectable0& getValueAsReflectable() = 0;
 	};
 
 	class BaseReflectable0 {
@@ -200,6 +205,10 @@ namespace reflectionDemo8 {
 			}
 			return vector<BaseProperty0*>();
 		}
+		BaseReflectable0& getValueAsReflectable() { 
+			SB_ERROR_IF(!isReflectable(), "Trying to get property value as reflectable from a primitive (i.e. non-reflectable) property");
+			return (BaseReflectable0&)_reference;
+		}
 	};
 
 	template <void(*Action)()>
@@ -275,36 +284,28 @@ namespace reflectionDemo8 {
 	};
 
 	class Inspector0 {
+		struct Pointer { size_t sourceId; void* target; };
 		static vector<void*> Properties;
-		static vector<void*> Pointers;
-	protected:
+		static vector<Pointer> Pointers;
+	public:
+		static vector<Pointer>& getPointers() { return Pointers; }
 		static size_t findPropertyId(void* myProperty) {
 			auto it = find(Properties.begin(), Properties.end(), myProperty);
 			SB_ERROR_IF(it == Properties.end(), "Property could not be found");
 			return distance(Properties.begin(), it);
 		}
-	public:
-		static vector<void*> getPointers() { return Pointers; }
-		static size_t getPointerSourceId(void* pointer) {
-			return findPropertyId(pointer);
-		}
-		static size_t getPointerTargetId(void* pointer) {
-			//return findPropertyId(temp2);
-		}
 		template <class T> static size_t storePropertyAndGetId(T& myProperty) {
 			auto it = find(Properties.begin(), Properties.end(), &myProperty);
 			if (it != Properties.end())
 				return distance(Properties.begin(), it);
-			auto temp = &myProperty;
-			Properties.push_back(temp);
+			Properties.push_back(&myProperty);
 			return Properties.size() - 1;
 		}	
-		template <class T> static void storePointer(T& pointer) {
-			auto temp = &pointer;
-			Pointers.push_back(temp);
-
-			auto test = (void**)Pointers[0];
-			auto test2 = *test;
+		template <class T> static size_t storePointerAndGetId(T& t) {
+			auto id = storePropertyAndGetId(t);
+			Pointer pointer; pointer.sourceId = id; pointer.target = t;
+			Pointers.push_back(pointer);
+			return id;
 		}
 		static void clearPropertiesAndPointers() {
 			Properties.clear();
@@ -313,7 +314,7 @@ namespace reflectionDemo8 {
 	};
 
 	vector<void*> Inspector0::Properties;
-	vector<void*> Inspector0::Pointers;
+	vector<Inspector0::Pointer> Inspector0::Pointers;
 
 	class TextWriter0 : public Inspector0 {
 		static std::ostream* Stream;
@@ -322,17 +323,16 @@ namespace reflectionDemo8 {
 		static void write(vector<BaseProperty0*> properties, const std::string& name, size_t depth) {
 			for (size_t i = 0; i < properties.size(); i++) {
 				if (properties[i]->isReflectable())
-					write(properties[i]->getChildProperties(), properties[i]->getName(), depth + 1);
+					writeReflectableProperty(*properties[i], properties[i]->getName(), depth + 1);
 				else
 					properties[i]->inspect(depth + 1);
 			}
 		}
 		static void writePointers() {
+			getStream() << "pointers" << endl;
 			auto pointers = getPointers();
 			for (size_t i = 0; i < pointers.size(); i++) {
-				//auto bla = getPointerSourceId(pointers[i]);
-				auto bla2 = getPointerTargetId(pointers[i]);
-				//cout << " " << getPointerSourceId(pointers[i]) << " " << getPointerTargetId(pointers[i]) << endl;
+				cout << " " << pointers[i].sourceId << " " << findPropertyId(pointers[i].target) << endl;
 			}
 		}
 	public:
@@ -340,24 +340,17 @@ namespace reflectionDemo8 {
 			getStream() << std::string(depth, ' ') << name << " " << t << " " << storePropertyAndGetId(t) << endl;
 		}
 		template <class T> static void write(T* t, const string& name, size_t depth) {
-			//T** test0 = &t;
-			//void** test = (void**)(&t);
-			//void* test2 = *test;
-			getStream() << std::string(depth, ' ') << name << " pointer " << storePropertyAndGetId(t) << endl;
-			storePointer(t);
-			auto test1 = getPointers()[0];
-			auto bla2 = getPointerTargetId(&t);
-
+			getStream() << std::string(depth, ' ') << name << " pointer " << storePointerAndGetId(t) << endl;
 		}
-		static void write(BaseReflectable0& reflectable, const string& name, size_t depth) {
-			getStream() << std::string(depth, ' ') << name << " " << storePropertyAndGetId(reflectable) << " " << endl;
-			write(reflectable.getProperties(), name, depth);
+		static void writeReflectableProperty(BaseProperty0& theProperty, const string& name, size_t depth) {
+			getStream() << std::string(depth, ' ') << name << " " << storePropertyAndGetId(theProperty.getValueAsReflectable()) << " " << endl;
+			write(theProperty.getChildProperties(), name, depth);
 		}
 		static void write(BaseReflectable0& reflectable, std::ostream& os) {
 			reflection::setInspector(SB_NAMEOF(TextWriter0));
 			Stream = &os;
 			clearPropertiesAndPointers();
-			write(reflectable, "root", 0);
+			write(reflectable.getProperties(), "root", 0);
 			writePointers();
 		}
 	};
@@ -370,10 +363,6 @@ namespace reflectionDemo8 {
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
 			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
 				TextWriter0::write(t, name, depth);
-			/*else if (CurrentInspectorName == SB_NAMEOF(TextReader2000))
-			TextReader2000::read(t, name, depth);
-			else if (CurrentInspectorName == SB_NAMEOF(ConsoleEditor3000))
-			ConsoleEditor3000::edit(t, name, depth);*/
 			else
 				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
 		}
@@ -382,12 +371,11 @@ namespace reflectionDemo8 {
 	void demo0() {
 		// pointer write
 		// expected output:
-		// root
-		//  _myInt 42 0
-		//  _myIntPointer pointer 1
-		//  _myFloat 1.234 2
-		//  _myInnerReflectable 3
-		//   _myDouble 9.876 4
+		// _myInt 42 0
+		// _myIntPointer pointer 1
+		// _myFloat 1.234 2
+		// _myInnerReflectable 3
+		//  _myDouble 9.876 4
 		// pointers
 		//  1 0
 		MyReflectable0 myReflectable;
