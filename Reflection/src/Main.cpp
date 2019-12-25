@@ -38,8 +38,9 @@ int main()
 // demo9: inheritance (write, read, edit)
 // demo10: vectors (write, read, edit)
 // demo11: init method
-// demo12: Combine everyhting in one demo file
-// demo13: macros
+// demo12: combine everything
+// demo13: macros (see Concept2.cpp)
 // demo14: header files
-// demo15: simplified scene (write, read, edit)
-// demo16: library and release on github
+// demo15: test battery
+// demo16: simplified scene (write, read, edit)
+// demo17: repo and release on github

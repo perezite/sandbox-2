@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <fstream>
 
 namespace reflectionDemo8 {
 	using namespace std;
@@ -422,7 +423,7 @@ namespace reflectionDemo8 {
 	std::ostream* TextWriter0::Stream;
 
 	void demo0() {
-		// pointer write
+		// write pointers
 		// expected output:
 		// _myInt 42 0
 		// _myIntPointer pointer 1
@@ -598,6 +599,7 @@ namespace reflectionDemo8 {
 	}
 
 	void demo1000() {
+		// read pointers
 		ostringstream os;
 		os << "_myInt 42 0" << endl;
 		os << "_myIntPointer pointer 1" << endl;
@@ -624,3 +626,4 @@ namespace reflectionDemo8 {
 		//demo1000();
 	}
 }
+
