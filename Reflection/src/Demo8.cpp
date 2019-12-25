@@ -75,7 +75,6 @@ namespace reflectionDemo8 {
 		static const bool value = (sizeof(test(get())) == sizeof(yes));
 	};
 
-
 	namespace reflection {
 		static void setInspector(const std::string& inspectorName);
 		template <class T> static void inspect(T& t, const std::string& name, size_t depth);
@@ -223,6 +222,55 @@ namespace reflectionDemo8 {
 	std::string stringify(const T& t) {
 		static std::ostringstream os; os.str(""); os << t;
 		return os.str();
+	}
+
+	template <class T>
+	T parse(const std::string& input) {
+		std::istringstream is(input);
+		T result; is >> result;
+		return result;
+	}
+
+	int countStart(const std::string& str, char token) {
+		size_t counter = 0;
+		for (size_t i = 0; i < str.length(); i++) {
+			if (str[i] == token)
+				counter++;
+			else
+				break;
+		}
+
+		return counter;
+	}
+
+	void split(const std::string& s, const std::string& delimiter, std::vector<std::string>& result) {
+		size_t start = 0;
+		size_t pos = 0;
+		size_t delimiterLen = delimiter.length();
+		while (true) {
+			pos = s.find(delimiter, start);
+			if (pos != std::string::npos) {
+				size_t len = pos - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				start = pos + delimiterLen;
+			}
+			else {
+				size_t len = s.length() - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				break;
+			}
+		}
+	}
+
+	BaseProperty0* findProperty(const vector<BaseProperty0*>& properties, const std::string& propertyName) {
+		BaseProperty0* result = NULL;
+		for (size_t i = 0; i < properties.size(); i++) {
+			if (properties[i]->getName() == propertyName)
+				result = properties[i];
+		}
+		return result;
 	}
 
 	class MyInnerReflectable0 : public Reflectable0<MyInnerReflectable0> {
@@ -376,57 +424,42 @@ namespace reflectionDemo8 {
 		TextWriter0::write(myReflectable, cout);
 	}
 
-	template <class T>
-	T parse(const std::string& input) {
-		std::istringstream is(input);
-		T result; is >> result;
-		return result;
-	}
-
-	int countStart(const std::string& str, char token) {
-		size_t counter = 0;
-		for (size_t i = 0; i < str.length(); i++) {
-			if (str[i] == token)
-				counter++;
-			else
-				break;
+	template <class T> class Reference500 {
+		T& _reference;
+	protected:
+		template<typename U>
+		void setAddressFromVoidPointer(U& t, void* address) {
+			SB_ERROR("cannot set address because the type is not a pointer");
 		}
-
-		return counter;
-	}
-
-	void split(const std::string& s, const std::string& delimiter, std::vector<std::string>& result) {
-		size_t start = 0;
-		size_t pos = 0;
-		size_t delimiterLen = delimiter.length();
-		while (true) {
-			pos = s.find(delimiter, start);
-			if (pos != std::string::npos) {
-				size_t len = pos - start;
-				if (len > 0)
-					result.emplace_back(s.substr(start, len));
-				start = pos + delimiterLen;
-			}
-			else {
-				size_t len = s.length() - start;
-				if (len > 0)
-					result.emplace_back(s.substr(start, len));
-				break;
-			}
+		template<typename U>
+		void setAddressFromVoidPointer(U*& t, void* address) {
+			t = (U*)address;
+		};
+	public:
+		Reference500(T& t) : _reference(t) { }
+		void setAddress(void* address) {
+			setAddressFromVoidPointer(_reference, address);
 		}
+		T& getValue() { return _reference; }
+	};
+
+	void demo500() {
+		int myInt = 42;
+		Reference500<int> reference1(myInt);
+		int* myIntPointer;
+		Reference500<int*> reference2(myIntPointer);
+		int myInt2 = 43;
+		void* myVoidPointerToInt2 = &myInt2;
+		reference2.setAddress(myVoidPointerToInt2);
+		cout << *reference2.getValue() << endl;
+
+		cout << "Press enter to provoke an error";
+		cin.get();
+		reference1.setAddress(myVoidPointerToInt2);
+
 	}
 
-	BaseProperty0* findProperty(const vector<BaseProperty0*>& properties, const std::string& propertyName) {
-		BaseProperty0* result = NULL;
-		for (size_t i = 0; i < properties.size(); i++) {
-			if (properties[i]->getName() == propertyName)
-				result = properties[i];
-		}
-		return result;
-	}
-
-	class Reader1000 {
-		
+	class Reader1000 {		
 	public:
 		static void skipLine(std::istream& is) {
 			std::string line; std::getline(is, line);
@@ -516,39 +549,6 @@ namespace reflectionDemo8 {
 		cout << myReflectable.getMyInnerRefletable().getMyDouble() << endl;
 	}
 	
-	template<typename T>
-	void setAddressFromVoidPointer(T& t, void* address) {
-		SB_ERROR("cannot set address because the type is not a pointer");
-	}
-
-	template<typename T>
-	void setAddressFromVoidPointer(T*& t, void* address) {
-		t = (T*)address;
-	};
-
-	template <class T> class Reference500 {
-		T& _reference;
-	public:
-		Reference500(T& t) : _reference(t) { }
-		void setAddress(void* address) {
-			setAddressFromVoidPointer(_reference, address);
-		}
-		T& getValue() { return _reference; }
-	};
-
-	void demo500() {
-		int myInt = 42;
-		Reference500<int> reference1(myInt);
-		int* myIntPointer;
-		Reference500<int*> reference2(myIntPointer);
-		int myInt2 = 43;
-		void* myVoidPointerToInt2 = &myInt2;
-		reference1.setAddress(myVoidPointerToInt2);		// would cause error
-		reference2.setAddress(myVoidPointerToInt2);		
-		cout << *reference2.getValue() << endl;
-
-	}
-
 	void run() {
 		// demo8: link pointers (write, raed, edit)
 		//demo1000();
