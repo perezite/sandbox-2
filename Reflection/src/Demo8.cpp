@@ -91,6 +91,8 @@ namespace reflectionDemo8 {
 		virtual void inspect(size_t depth) = 0;
 		virtual vector<BaseProperty0*> getChildProperties() = 0;
 		virtual BaseReflectable0& getValueAsReflectable() = 0;
+		virtual void* getVoidPointerToValue() = 0;
+		virtual void setAddress(void* address) = 0;
 	};
 
 	class BaseReflectable0 {
@@ -184,6 +186,15 @@ namespace reflectionDemo8 {
 		}
 	};
 
+	template <class T> void setAddressFromVoidPointer(T& target, void* address) {
+		SB_ERROR("Target is not a pointer type");
+	}
+
+	template <class T> void setAddressFromVoidPointer(T*& target, void* address) {
+		SB_ERROR_IF(target != NULL, "The target was not NULL before assignment. To prevent memory leaks, set the target to NULL before assigning an address");
+		target = (T*)address;
+	}
+
 	template <class T>
 	class Property0 : public BaseProperty0 {
 		T& _reference;
@@ -207,6 +218,10 @@ namespace reflectionDemo8 {
 		BaseReflectable0& getValueAsReflectable() { 
 			SB_ERROR_IF(!isReflectable(), "Trying to get property value as reflectable from a primitive (i.e. non-reflectable) property");
 			return (BaseReflectable0&)_reference;
+		}
+		void* getVoidPointerToValue() { return (void*)(&_reference); }
+		void setAddress(void* address) {
+			setAddressFromVoidPointer(_reference, address);
 		}
 	};
 
@@ -456,66 +471,118 @@ namespace reflectionDemo8 {
 		cout << "Press enter to provoke an error";
 		cin.get();
 		reference1.setAddress(myVoidPointerToInt2);
-
 	}
 
-	class Reader1000 {		
+	class ReaderStream {
+		istream* _stream;
+		string _buffer;
 	public:
-		static void skipLine(std::istream& is) {
-			std::string line; std::getline(is, line);
+		void setSource(istream& is) { _stream = &is; }
+		bool getLine(string& line) {
+			if (_buffer.size() > 0) {
+				line = _buffer;
+				_buffer = "";
+				return true;
+			}
+			else
+				return bool(getline(*_stream, line));
 		}
-		static bool extractLine(std::string& name, std::string& value, size_t& index, int depth, std::istream& is) {
-			std::string line;
-			if (std::getline(is, line)) {
-				size_t currentDepth = countStart(line, ' ');
-				if (depth == currentDepth) {
-					std::vector<std::string> result;
-					split(line, " ", result);
+		void putBack(const string& line) {
+			SB_ERROR_IF(_buffer.size() > 0, "There was already a line put back into the buffer");
+			_buffer = line;
+		}
+	};
+	
+	bool extractLine(std::string& name, std::string& value, size_t& index, int depth, ReaderStream& stream) {
+		std::string line;
+		if (stream.getLine(line)) {
+			size_t currentDepth = countStart(line, ' ');
+			if (depth == currentDepth) {
+				std::vector<std::string> result;
+				split(line, " ", result);
+				if (result.size() > 1) {
 					name = result[0];
-					value = result.size() == 3 ? result[2] : "";
+					value = result.size() == 3 ? result[1] : "";
 					index = parse<size_t>(result[result.size() - 1]);
 					return true;
 				}
 			}
-			return false;
+		}
+
+		stream.putBack(line);
+		return false;
+	}
+
+	bool extractLine(size_t& pointerSource, size_t& pointerTarget, ReaderStream& stream) {
+		string line;
+		if (stream.getLine(line)) {
+			std::vector<std::string> result;
+			split(line, " ", result);
+			pointerSource = parse<size_t>(result[0]);
+			pointerTarget = parse<size_t>(result[1]);
+			return true;
+		}
+
+		return false;
+	}
+
+	bool skipLine(ReaderStream& stream) {
+		string dummy;
+		return stream.getLine(dummy);
+	}
+
+	class Reader1000 {	
+		static map<size_t, BaseProperty0*> Properties;
+	public:
+		static void storeProperty(size_t index, BaseProperty0& theProperty) { Properties[index] = &theProperty; }
+		static BaseProperty0* getProperty(size_t index) { return Properties[index]; }
+		static void initReader() {
+			Properties.clear();
 		}
 	};
 
+	map<size_t, BaseProperty0*> Reader1000::Properties;
+
 	class TextReader1000 : public Reader1000 {
-		static std::istream* Stream;
+		static ReaderStream Stream;
 		static std::string CurrentValue;
-		static size_t CurrentIndex;
 	protected:
-		static std::istream& getStream() { return *Stream; }
 		static void read(const vector<BaseProperty0*>& properties, size_t depth) {
-			std::string name; 
-			while (extractLine(name, CurrentValue, CurrentIndex, depth, getStream())) {
+			std::string name; size_t index;
+			while (extractLine(name, CurrentValue, index, depth, Stream)) {
 				BaseProperty0* property = findProperty(properties, name);
+				storeProperty(index, *property);
 				if (property->isReflectable())
 					read(property->getChildProperties(), depth + 1);
 				else
 					property->inspect(depth);
 			}
 		}
+		static void readPointers() {
+			size_t sourceIndex; size_t targetIndex;
+			skipLine(Stream);
+			while (extractLine(sourceIndex, targetIndex, Stream)) {
+				BaseProperty0* source = getProperty(sourceIndex);
+				BaseProperty0* target = getProperty(targetIndex);
+				source->setAddress(target->getVoidPointerToValue());
+			}
+		}
 	public:
 		template <class T> static void read(T& t, const std::string& name, size_t depth) {
 			t = parse<T>(CurrentValue);
-
 		}
-		template <class T> static void read(T* t, const std::string& name, size_t depth) {
-			//storePointer()
-		}
+		template <class T> static void read(T* t, const std::string& name, size_t depth) { }
 		static void read(BaseReflectable0& reflectable, std::istream& is) {
 			reflection::setInspector(SB_NAMEOF(TextReader1000));
-			Stream = &is;
+			Stream.setSource(is);
+			initReader();
 			read(reflectable.getProperties(), 0);
+			readPointers();
 		}
 	};
 
-	std::istream* TextReader1000::Stream;
+	ReaderStream TextReader1000::Stream;
 	std::string TextReader1000::CurrentValue;
-	size_t TextReader1000::CurrentIndex;
-
 
 	namespace reflection {
 		static std::string CurrentInspectorName;
@@ -543,16 +610,16 @@ namespace reflectionDemo8 {
 		MyReflectable0 myReflectable;
 		istringstream is(os.str());
 		TextReader1000::read(myReflectable, is);
-		cout << myReflectable.getMyInt() << endl;
-		//cout << *myReflectable.getMyPointer() << endl;
+		cout << myReflectable.getMyInt() << " " << &myReflectable.getMyInt() << endl;
+		cout << *myReflectable.getMyPointer() << " " << myReflectable.getMyPointer() << endl;
 		cout << myReflectable.getMyFloat() << endl;
 		cout << myReflectable.getMyInnerRefletable().getMyDouble() << endl;
 	}
 	
 	void run() {
 		// demo8: link pointers (write, raed, edit)
-		//demo1000();
-		demo500();
+		demo1000();
+		//demo500();
 		// demo0();
 		//demo1000();
 	}
