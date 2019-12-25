@@ -35,12 +35,11 @@ int main()
 	return 0;
 }
 
-// demo8: link pointers (write, raed, edit)
-// demo9: vectors (write, read, edit)
-// demo10: inheritance (write, read, edit)
+// demo9: inheritance (write, read, edit)
+// demo10: vectors (write, read, edit)
 // demo11: init method
 // demo12: Combine everyhting in one demo file
 // demo13: macros
 // demo14: header files
 // demo15: simplified scene (write, read, edit)
-// demo16: library
+// demo16: library and release on github

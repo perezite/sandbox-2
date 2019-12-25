@@ -273,6 +273,7 @@ namespace reflectionDemo8 {
 		}
 		Invocation0<register_myInnerReflectable> invoke_register_myInnerReflectable;
 	public:
+		MyReflectable0() : _myIntPointer(NULL) { }
 		int getMyInt() const { return _myInt; }
 		int& getMyInt() { return _myInt; }
 		int* getMyPointer() { return _myIntPointer; }
@@ -283,7 +284,7 @@ namespace reflectionDemo8 {
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
 	};
 
-	class Inspector0 {
+	class Writer0 {
 		struct Pointer { size_t sourceId; void* target; };
 		static vector<void*> Properties;
 		static vector<Pointer> Pointers;
@@ -307,16 +308,16 @@ namespace reflectionDemo8 {
 			Pointers.push_back(pointer);
 			return id;
 		}
-		static void clearPropertiesAndPointers() {
+		static void initInspector() {
 			Properties.clear();
 			Pointers.clear();
 		}
 	};
 
-	vector<void*> Inspector0::Properties;
-	vector<Inspector0::Pointer> Inspector0::Pointers;
+	vector<void*> Writer0::Properties;
+	vector<Writer0::Pointer> Writer0::Pointers;
 
-	class TextWriter0 : public Inspector0 {
+	class TextWriter0 : public Writer0 {
 		static std::ostream* Stream;
 	protected:
 		static std::ostream& getStream() { return *Stream; }
@@ -349,24 +350,13 @@ namespace reflectionDemo8 {
 		static void write(BaseReflectable0& reflectable, std::ostream& os) {
 			reflection::setInspector(SB_NAMEOF(TextWriter0));
 			Stream = &os;
-			clearPropertiesAndPointers();
-			write(reflectable.getProperties(), "root", 0);
+			initInspector();
+			write(reflectable.getProperties(), "root", -1);
 			writePointers();
 		}
 	};
 
 	std::ostream* TextWriter0::Stream;
-
-	namespace reflection {
-		static std::string CurrentInspectorName;
-		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
-			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
-				TextWriter0::write(t, name, depth);
-			else
-				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
-		}
-	}
 
 	void demo0() {
 		// pointer write
@@ -386,9 +376,184 @@ namespace reflectionDemo8 {
 		TextWriter0::write(myReflectable, cout);
 	}
 
+	template <class T>
+	T parse(const std::string& input) {
+		std::istringstream is(input);
+		T result; is >> result;
+		return result;
+	}
+
+	int countStart(const std::string& str, char token) {
+		size_t counter = 0;
+		for (size_t i = 0; i < str.length(); i++) {
+			if (str[i] == token)
+				counter++;
+			else
+				break;
+		}
+
+		return counter;
+	}
+
+	void split(const std::string& s, const std::string& delimiter, std::vector<std::string>& result) {
+		size_t start = 0;
+		size_t pos = 0;
+		size_t delimiterLen = delimiter.length();
+		while (true) {
+			pos = s.find(delimiter, start);
+			if (pos != std::string::npos) {
+				size_t len = pos - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				start = pos + delimiterLen;
+			}
+			else {
+				size_t len = s.length() - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				break;
+			}
+		}
+	}
+
+	BaseProperty0* findProperty(const vector<BaseProperty0*>& properties, const std::string& propertyName) {
+		BaseProperty0* result = NULL;
+		for (size_t i = 0; i < properties.size(); i++) {
+			if (properties[i]->getName() == propertyName)
+				result = properties[i];
+		}
+		return result;
+	}
+
+	class Reader1000 {
+		
+	public:
+		static void skipLine(std::istream& is) {
+			std::string line; std::getline(is, line);
+		}
+		static bool extractLine(std::string& name, std::string& value, size_t& index, int depth, std::istream& is) {
+			std::string line;
+			if (std::getline(is, line)) {
+				size_t currentDepth = countStart(line, ' ');
+				if (depth == currentDepth) {
+					std::vector<std::string> result;
+					split(line, " ", result);
+					name = result[0];
+					value = result.size() == 3 ? result[2] : "";
+					index = parse<size_t>(result[result.size() - 1]);
+					return true;
+				}
+			}
+			return false;
+		}
+	};
+
+	class TextReader1000 : public Reader1000 {
+		static std::istream* Stream;
+		static std::string CurrentValue;
+		static size_t CurrentIndex;
+	protected:
+		static std::istream& getStream() { return *Stream; }
+		static void read(const vector<BaseProperty0*>& properties, size_t depth) {
+			std::string name; 
+			while (extractLine(name, CurrentValue, CurrentIndex, depth, getStream())) {
+				BaseProperty0* property = findProperty(properties, name);
+				if (property->isReflectable())
+					read(property->getChildProperties(), depth + 1);
+				else
+					property->inspect(depth);
+			}
+		}
+	public:
+		template <class T> static void read(T& t, const std::string& name, size_t depth) {
+			t = parse<T>(CurrentValue);
+
+		}
+		template <class T> static void read(T* t, const std::string& name, size_t depth) {
+			//storePointer()
+		}
+		static void read(BaseReflectable0& reflectable, std::istream& is) {
+			reflection::setInspector(SB_NAMEOF(TextReader1000));
+			Stream = &is;
+			read(reflectable.getProperties(), 0);
+		}
+	};
+
+	std::istream* TextReader1000::Stream;
+	std::string TextReader1000::CurrentValue;
+	size_t TextReader1000::CurrentIndex;
+
+
+	namespace reflection {
+		static std::string CurrentInspectorName;
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
+				TextWriter0::write(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader1000))
+				TextReader1000::read(t, name, depth);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	}
+
+	void demo1000() {
+		ostringstream os;
+		os << "_myInt 42 0" << endl;
+		os << "_myIntPointer pointer 1" << endl;
+		os << "_myFloat 1.234 2" << endl;
+		os << "_myInnerReflectable 3" << endl;
+		os << " _myDouble 9.876 4" << endl;
+		os << "pointers" << endl;
+		os << " 1 0" << endl;
+
+		MyReflectable0 myReflectable;
+		istringstream is(os.str());
+		TextReader1000::read(myReflectable, is);
+		cout << myReflectable.getMyInt() << endl;
+		//cout << *myReflectable.getMyPointer() << endl;
+		cout << myReflectable.getMyFloat() << endl;
+		cout << myReflectable.getMyInnerRefletable().getMyDouble() << endl;
+	}
+	
+	template<typename T>
+	void setAddressFromVoidPointer(T& t, void* address) {
+		SB_ERROR("cannot set address because the type is not a pointer");
+	}
+
+	template<typename T>
+	void setAddressFromVoidPointer(T*& t, void* address) {
+		t = (T*)address;
+	};
+
+	template <class T> class Reference500 {
+		T& _reference;
+	public:
+		Reference500(T& t) : _reference(t) { }
+		void setAddress(void* address) {
+			setAddressFromVoidPointer(_reference, address);
+		}
+		T& getValue() { return _reference; }
+	};
+
+	void demo500() {
+		int myInt = 42;
+		Reference500<int> reference1(myInt);
+		int* myIntPointer;
+		Reference500<int*> reference2(myIntPointer);
+		int myInt2 = 43;
+		void* myVoidPointerToInt2 = &myInt2;
+		reference1.setAddress(myVoidPointerToInt2);		// would cause error
+		reference2.setAddress(myVoidPointerToInt2);		
+		cout << *reference2.getValue() << endl;
+
+	}
+
 	void run() {
 		// demo8: link pointers (write, raed, edit)
-		demo0();
+		//demo1000();
+		demo500();
+		// demo0();
 		//demo1000();
 	}
 }
