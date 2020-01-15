@@ -383,6 +383,8 @@ namespace reflectionDemo8 {
 
 	class TextWriter0 : public Writer0 {
 		static std::ostream* Stream;
+		static bool PrettyPrint;
+		static size_t Counter;
 	protected:
 		static std::ostream& getStream() { return *Stream; }
 		static void write(vector<BaseProperty0*> properties, const std::string& name, size_t depth) {
@@ -400,27 +402,37 @@ namespace reflectionDemo8 {
 				cout << " " << pointers[i].sourceId << " " << findPropertyId(pointers[i].target) << endl;
 			}
 		}
+		static string getCounterDescription(size_t value) {
+			return PrettyPrint ? " (" + stringify(value) + ")" : "";
+		}
 	public:
 		template <class T> static void write(T& t, const string& name, size_t depth) {
-			getStream() << std::string(depth, ' ') << name << " " << t << " " << storePropertyAndGetId(t) << endl;
+			getStream() << std::string(depth, ' ') << name << " " << t << " " << 
+				storePropertyAndGetId(t) << getCounterDescription(Counter++) << endl;
 		}
 		template <class T> static void write(T* t, const string& name, size_t depth) {
-			getStream() << std::string(depth, ' ') << name << " pointer " << storePointerAndGetId(t) << endl;
+			getStream() << std::string(depth, ' ') << name << " pointer " << 
+				storePointerAndGetId(t) << getCounterDescription(Counter++) << endl;
 		}
 		static void writeReflectableProperty(BaseProperty0& theProperty, const string& name, size_t depth) {
 			getStream() << std::string(depth, ' ') << name << " " << storePropertyAndGetId(theProperty.getValueAsReflectable()) << " " << endl;
 			write(theProperty.getChildProperties(), name, depth);
 		}
-		static void write(BaseReflectable0& reflectable, std::ostream& os) {
+		static void write(BaseReflectable0& reflectable, std::ostream& os, bool prettyPrint = false) {
 			reflection::setInspector(SB_NAMEOF(TextWriter0));
 			Stream = &os;
+			Counter = 0;
+			PrettyPrint = prettyPrint;
 			initInspector();
 			write(reflectable.getProperties(), "root", -1);
-			writePointers();
+			if (!PrettyPrint)
+				writePointers();
 		}
 	};
 
 	std::ostream* TextWriter0::Stream;
+	bool TextWriter0::PrettyPrint = false;
+	size_t TextWriter0::Counter = 0;
 
 	void demo0() {
 		// write pointers
@@ -585,19 +597,6 @@ namespace reflectionDemo8 {
 	ReaderStream TextReader1000::Stream;
 	std::string TextReader1000::CurrentValue;
 
-	namespace reflection {
-		static std::string CurrentInspectorName;
-		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
-			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
-				TextWriter0::write(t, name, depth);
-			else if (CurrentInspectorName == SB_NAMEOF(TextReader1000))
-				TextReader1000::read(t, name, depth);
-			else
-				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
-		}
-	}
-
 	void demo1000() {
 		// read pointers
 		ostringstream os;
@@ -617,10 +616,84 @@ namespace reflectionDemo8 {
 		cout << myReflectable.getMyFloat() << endl;
 		cout << myReflectable.getMyInnerRefletable().getMyDouble() << endl;
 	}
-	
+
+	class ConsoleEditor2000 {
+		static vector<BaseProperty0*> Properties;
+		static BaseProperty0* CurrentProperty;
+		static string NewValue;
+	protected:
+		static void init(BaseProperty0& property) {
+			if (property.isReflectable())
+				init(property.getChildProperties());
+			else
+				Properties.push_back(&property);
+		}
+		static void init(vector<BaseProperty0*> properties) {
+			for (size_t i = 0; i < properties.size(); i++)
+				init(*properties[i]);
+		}
+	public:
+		template <class T> static void edit(T& t, const string& name, size_t depth) {
+			t = parse<T>(NewValue);
+		}
+		template <class T> static void edit(T* t, const string& name, size_t depth) {
+			*t = parse<T>(NewValue);
+		}
+		static void init(BaseReflectable0& reflectable) {
+			Properties.clear();
+			init(reflectable.getProperties());
+		}
+		static void edit(size_t index, string newValue) {
+			reflection::setInspector(SB_NAMEOF(ConsoleEditor2000));
+			NewValue = newValue;
+			Properties[index]->inspect(-1);
+		}
+	};
+
+	BaseProperty0* ConsoleEditor2000::CurrentProperty;
+	vector<BaseProperty0*> ConsoleEditor2000::Properties;
+	string ConsoleEditor2000::NewValue;
+
+	namespace reflection {
+		static std::string CurrentInspectorName;
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
+				TextWriter0::write(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader1000))
+				TextReader1000::read(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(ConsoleEditor2000))
+				ConsoleEditor2000::edit(t, name, depth);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	}
+
+	void demo2000() {
+		// edit pointers
+		MyReflectable0 myReflectable;
+		myReflectable.setMyInt(42);
+		myReflectable.setMyFloat(1.2345f);
+		myReflectable.setMyIntPointer(&myReflectable.getMyInt());
+		myReflectable.getMyInnerRefletable().setMyDouble(9.876);
+
+		string index; string value;
+		ConsoleEditor2000::init(myReflectable);
+
+		while (value != "exit") {
+			TextWriter0::write(myReflectable, cout, true);
+			cout << "Enter the index of the property to edit: ";
+			getline(cin, index);
+			cout << "Enter the new value for the property (or exit to leave): ";
+			getline(cin, value);
+			ConsoleEditor2000::edit(parse<int>(index), value);
+		}
+	}
+
 	void run() {
 		// demo8: link pointers (write, raed, edit)
-		demo1000();
+		demo2000();
+		//demo1000();
 		//demo500();
 		// demo0();
 		//demo1000();
