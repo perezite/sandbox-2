@@ -6,6 +6,7 @@
 #include "Demo6.h"
 #include "Demo7.h"
 #include "Demo8.h"
+#include "Demo9.h"
 #include "Logger.h"
 #include <string>
 
@@ -22,7 +23,8 @@ int main()
 {
 	version();
 
-	reflectionDemo8::run();
+	reflectionDemo9::run();
+	//reflectionDemo8::run();
 	//reflectionDemo7::run();
 	//reflectionDemo6::run();
 	//reflectionDemo5::run();
@@ -35,7 +37,6 @@ int main()
 	return 0;
 }
 
-// demo9: inheritance (write, read, edit)
 // demo10: vectors (write, read, edit)
 // demo11: combine everything
 // demo12: macros (see Concept2.cpp)
