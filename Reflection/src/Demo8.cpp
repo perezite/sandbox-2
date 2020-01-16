@@ -399,7 +399,7 @@ namespace reflectionDemo8 {
 			getStream() << "pointers" << endl;
 			auto pointers = getPointers();
 			for (size_t i = 0; i < pointers.size(); i++) {
-				cout << " " << pointers[i].sourceId << " " << findPropertyId(pointers[i].target) << endl;
+				getStream() << " " << pointers[i].sourceId << " " << findPropertyId(pointers[i].target) << endl;
 			}
 		}
 		static string getCounterDescription(size_t value) {
@@ -690,9 +690,52 @@ namespace reflectionDemo8 {
 		}
 	}
 
+	void demo3000() {
+		// write
+		cout << "write" << endl;
+		MyReflectable0 myReflectable;
+		myReflectable.setMyInt(42);
+		myReflectable.setMyIntPointer(&myReflectable.getMyInt());
+		myReflectable.setMyFloat(1.234f);
+		myReflectable.getMyInnerRefletable().setMyDouble(9.876);
+		ostringstream os;
+		TextWriter0::write(myReflectable, os);
+		cout << os.str();
+
+		// read
+		cout << "read" << endl;
+		MyReflectable0 myReflectable2;
+		istringstream is(os.str());
+		TextReader1000::read(myReflectable2, is);
+		cout << myReflectable2.getMyInt() << endl;
+		cout << *myReflectable2.getMyPointer() << endl;
+
+		// edit
+		cout << "edit" << endl;
+		string index; string value;
+		ConsoleEditor2000::init(myReflectable2);
+		while (value != "exit") {
+			TextWriter0::write(myReflectable2, cout, true);
+			cout << "Enter the index of the property to edit: ";
+			getline(cin, index);
+			cout << "Enter the new value for the property (or exit to leave): ";
+			getline(cin, value);
+			ConsoleEditor2000::edit(parse<int>(index), value);
+		}
+
+		// prevent external pointers
+		cout << "Press enter to provoke an error" << endl;
+		string str;  getline(cin, str);
+		MyReflectable0 myReflectable3;
+		int myInt = 512;
+		myReflectable3.setMyIntPointer(&myInt);
+		TextWriter0::write(myReflectable3, cout);
+	}
+
 	void run() {
 		// demo8: link pointers (write, raed, edit)
-		demo2000();
+		demo3000();
+		//demo2000();
 		//demo1000();
 		//demo500();
 		// demo0();
