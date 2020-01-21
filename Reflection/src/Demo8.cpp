@@ -16,7 +16,7 @@ namespace reflectionDemo8 {
 		SB_PROPERTY(int* myIntPointer)
 	public:
 		MyClass() : myIntPointer(&myInt) {
-		
+		cl
 		}
 	}
 
