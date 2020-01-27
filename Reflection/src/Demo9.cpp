@@ -14,7 +14,7 @@ namespace reflectionDemo9 {
 		myDerived.setMyInt(42);
 		myDerived.setMyFloat(1.2345f);
 		ostringstream os;
-		TextWriter::write(myDerived, os);
+		TextWriter::write(myDerived, os);9
 
 		// read
 		MyDerived myDerived2;
@@ -292,10 +292,26 @@ namespace reflectionDemo9 {
 		}
 	};
 
+	template <class T, T*(*Func)()>
+	class FunctionInvocation0 {
+	public:
+		FunctionInvocation0() {
+			Func();
+		}
+	};
+
+	template <class TSource, class TDest> 
+	TDest* cast(TSource& sourceInstance, TDest& destInstance) {
+		return (TDest*)sourceInstance;
+	}
+
 	class MyBase0 : public Reflectable0<MyBase0> {
 		int _myInt;
+		MyBase0* getInstance_myInt() {
+			return this;
+		}
 		static void addProperty_myInt(void* instance) {
-			auto typedInstance = (MyBase0*)instance;
+			MyBase0* typedInstance = (MyBase0*)instance;
 			typedInstance->addProperty(typedInstance->_myInt, SB_NAMEOF(_myInt));
 		}
 		static void register_myInt() {
@@ -309,11 +325,12 @@ namespace reflectionDemo9 {
 
 	class MyDerived0 : public MyBase0 {
 		float _myFloat;
-		void addProperty_myFloat() {
-			addProperty(_myFloat, SB_NAMEOF(_myFloat));
+		static void addProperty_myFloat(void *instance) {
+			MyDerived0* typedInstance = (MyDerived0*)instance;
+			typedInstance->addProperty(typedInstance->_myFloat, SB_NAMEOF(_myFloat));
 		}
 		static void register_myFloat() {
-			// NEXT: Invoke this properly
+			addRegistration(&addProperty_myFloat, SB_NAMEOF(_myFloat));
 		}
 		Invocation0<register_myFloat> invoke_register_myFloat;
 	public:
