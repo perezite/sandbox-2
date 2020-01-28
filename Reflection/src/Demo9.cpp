@@ -509,19 +509,6 @@ namespace reflectionDemo9 {
 	ReaderStream TextReader1000::Stream;
 	std::string TextReader1000::CurrentValue;
 
-	namespace reflection {
-		static std::string CurrentInspectorName;
-		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
-			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
-				TextWriter0::write(t, name, depth);
-			else if (CurrentInspectorName == SB_NAMEOF(TextReader1000))
-				TextReader1000::read(t, name, depth);
-			else
-				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
-		}
-	}
-
 	void demo1000() {
 		// read
 		ostringstream os;
@@ -536,9 +523,81 @@ namespace reflectionDemo9 {
 		cout << myDerived.getMyFloat() << endl;
 	}
 
+
+	class ConsoleEditor2000 {
+		static vector<BaseProperty0*> Properties;
+		static BaseProperty0* CurrentProperty;
+		static string NewValue;
+	protected:
+		static void init(BaseProperty0& property) {
+			if (property.isReflectable())
+				init(property.getChildProperties());
+			else
+				Properties.push_back(&property);
+		}
+		static void init(vector<BaseProperty0*> properties) {
+			for (size_t i = 0; i < properties.size(); i++)
+				init(*properties[i]);
+		}
+	public:
+		template <class T> static void edit(T& t, const string& name, size_t depth) {
+			t = parse<T>(NewValue);
+		}
+		template <class T> static void edit(T* t, const string& name, size_t depth) {
+			*t = parse<T>(NewValue);
+		}
+		static void init(BaseReflectable0& reflectable) {
+			Properties.clear();
+			init(reflectable.getProperties());
+		}
+		static void edit(size_t index, string newValue) {
+			reflection::setInspector(SB_NAMEOF(ConsoleEditor2000));
+			NewValue = newValue;
+			Properties[index]->inspect(-1);
+		}
+	};
+
+	BaseProperty0* ConsoleEditor2000::CurrentProperty;
+	vector<BaseProperty0*> ConsoleEditor2000::Properties;
+	string ConsoleEditor2000::NewValue;
+
+	namespace reflection {
+		static std::string CurrentInspectorName;
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
+				TextWriter0::write(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader1000))
+				TextReader1000::read(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(ConsoleEditor2000))
+				ConsoleEditor2000::edit(t, name, depth);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	}
+
+	void demo2000() {
+		// edit
+		MyDerived0 myDerived;
+		myDerived.setMyFloat(1.2345f);
+		myDerived.setMyInt(42);
+		ConsoleEditor2000::init(myDerived);
+
+		string value; string index;
+		while (value != "exit") {
+			TextWriter0::write(myDerived, cout, true);
+			cout << "Enter the index of the property to edit: ";
+			getline(cin, index);
+			cout << "Enter the new value for the property (or exit to leave): ";
+			getline(cin, value);
+			ConsoleEditor2000::edit(parse<int>(index), value);
+		}
+	}
+
 	void run() {
 		// demo9: inheritance (write, read, edit)
-		demo1000();
+		demo2000();
+		//demo1000();
 		//demo0();
 	}
 }
