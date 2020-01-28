@@ -7,6 +7,7 @@
 #include "Demo7.h"
 #include "Demo8.h"
 #include "Demo9.h"
+#include "Demo10.h"
 #include "Logger.h"
 #include <string>
 
@@ -23,7 +24,8 @@ int main()
 {
 	version();
 
-	reflectionDemo9::run();
+	reflectionDemo10::run();
+	//reflectionDemo9::run();
 	//reflectionDemo8::run();
 	//reflectionDemo7::run();
 	//reflectionDemo6::run();
@@ -37,8 +39,9 @@ int main()
 	return 0;
 }
 
-// demo10: vectors (write, read, edit)
 // demo11: combine everything
 // demo12: macros (see Concept2.cpp)
-// demo13: simplified scene (write, read, edit)
-// demo14: repo and release on github
+// demo13: All-in-one demo
+// demo14: simplified scene (write, read, edit)
+// demo15: single header file
+// demo16: repo and release on github
