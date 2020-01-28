@@ -3,6 +3,7 @@
 #include "Macro.h"
 #include <vector>
 #include <algorithm>
+#include <map>
 using namespace std;
 
 namespace reflectionDemo9 {
@@ -338,16 +339,6 @@ namespace reflectionDemo9 {
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
 	};
 
-	namespace reflection {
-		static std::string CurrentInspectorName;
-		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
-		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
-			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
-				TextWriter0::write(t, name, depth);
-			else
-				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
-		}
-	}
 
 	void demo0() {
 		// write
@@ -357,9 +348,198 @@ namespace reflectionDemo9 {
 		TextWriter0::write(myDerived, cout);
 	}
 
+	class ReaderStream {
+		istream* _stream;
+		string _buffer;
+	public:
+		void setSource(istream& is) { _stream = &is; }
+		bool getLine(string& line) {
+			if (_buffer.size() > 0) {
+				line = _buffer;
+				_buffer = "";
+				return true;
+			}
+			else
+				return bool(getline(*_stream, line));
+		}
+		void putBack(const string& line) {
+			SB_ERROR_IF(_buffer.size() > 0, "There was already a line put back into the buffer");
+			_buffer = line;
+		}
+	};
+
+	template <class T>
+	T parse(const std::string& input) {
+		std::istringstream is(input);
+		T result; is >> result;
+		return result;
+	}
+
+	int countStart(const std::string& str, char token) {
+		size_t counter = 0;
+		for (size_t i = 0; i < str.length(); i++) {
+			if (str[i] == token)
+				counter++;
+			else
+				break;
+		}
+
+		return counter;
+	}
+
+	void split(const std::string& s, const std::string& delimiter, std::vector<std::string>& result) {
+		size_t start = 0;
+		size_t pos = 0;
+		size_t delimiterLen = delimiter.length();
+		while (true) {
+			pos = s.find(delimiter, start);
+			if (pos != std::string::npos) {
+				size_t len = pos - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				start = pos + delimiterLen;
+			}
+			else {
+				size_t len = s.length() - start;
+				if (len > 0)
+					result.emplace_back(s.substr(start, len));
+				break;
+			}
+		}
+	}
+
+	bool extractLine(std::string& name, std::string& value, size_t& index, int depth, ReaderStream& stream) {
+		std::string line;
+		if (stream.getLine(line)) {
+			size_t currentDepth = countStart(line, ' ');
+			if (depth == currentDepth) {
+				std::vector<std::string> result;
+				split(line, " ", result);
+				if (result.size() > 1) {
+					name = result[0];
+					value = result.size() == 3 ? result[1] : "";
+					index = parse<size_t>(result[result.size() - 1]);
+					return true;
+				}
+			}
+		}
+
+		stream.putBack(line);
+		return false;
+	}
+
+	bool extractLine(size_t& pointerSource, size_t& pointerTarget, ReaderStream& stream) {
+		string line;
+		if (stream.getLine(line)) {
+			std::vector<std::string> result;
+			split(line, " ", result);
+			pointerSource = parse<size_t>(result[0]);
+			pointerTarget = parse<size_t>(result[1]);
+			return true;
+		}
+
+		return false;
+	}
+
+	bool skipLine(ReaderStream& stream) {
+		string dummy;
+		return stream.getLine(dummy);
+	}
+
+	BaseProperty0* findProperty(const vector<BaseProperty0*>& properties, const std::string& propertyName) {
+		BaseProperty0* result = NULL;
+		for (size_t i = 0; i < properties.size(); i++) {
+			if (properties[i]->getName() == propertyName)
+				result = properties[i];
+		}
+		return result;
+	}
+
+
+	class Reader1000 {
+		static map<size_t, BaseProperty0*> Properties;
+	public:
+		static void storeProperty(size_t index, BaseProperty0& theProperty) { Properties[index] = &theProperty; }
+		static BaseProperty0* getProperty(size_t index) { return Properties[index]; }
+		static void initReader() {
+			Properties.clear();
+		}
+	};
+
+	map<size_t, BaseProperty0*> Reader1000::Properties;
+
+	class TextReader1000 : public Reader1000 {
+		static ReaderStream Stream;
+		static std::string CurrentValue;
+	protected:
+		static void read(const vector<BaseProperty0*>& properties, size_t depth) {
+			std::string name; size_t index;
+			while (extractLine(name, CurrentValue, index, depth, Stream)) {
+				BaseProperty0* property = findProperty(properties, name);
+				storeProperty(index, *property);
+				if (property->isReflectable())
+					read(property->getChildProperties(), depth + 1);
+				else
+					property->inspect(depth);
+			}
+		}
+		static void readPointers() {
+			size_t sourceIndex; size_t targetIndex;
+			skipLine(Stream);
+			while (extractLine(sourceIndex, targetIndex, Stream)) {
+				BaseProperty0* source = getProperty(sourceIndex);
+				BaseProperty0* target = getProperty(targetIndex);
+				source->setAddress(target->getVoidPointerToValue());
+			}
+		}
+	public:
+		template <class T> static void read(T& t, const std::string& name, size_t depth) {
+			t = parse<T>(CurrentValue);
+		}
+		template <class T> static void read(T* t, const std::string& name, size_t depth) { }
+		static void read(BaseReflectable0& reflectable, std::istream& is) {
+			reflection::setInspector(SB_NAMEOF(TextReader1000));
+			Stream.setSource(is);
+			initReader();
+			read(reflectable.getProperties(), 0);
+			readPointers();
+		}
+	};
+
+	ReaderStream TextReader1000::Stream;
+	std::string TextReader1000::CurrentValue;
+
+	namespace reflection {
+		static std::string CurrentInspectorName;
+		static void setInspector(const std::string& inspectorName) { CurrentInspectorName = inspectorName; }
+		template <class T> static void inspect(T& t, const std::string& name, size_t depth) {
+			if (CurrentInspectorName == SB_NAMEOF(TextWriter0))
+				TextWriter0::write(t, name, depth);
+			else if (CurrentInspectorName == SB_NAMEOF(TextReader1000))
+				TextReader1000::read(t, name, depth);
+			else
+				SB_ERROR("Inspector " << CurrentInspectorName << " not found");
+		}
+	}
+
+	void demo1000() {
+		// read
+		ostringstream os;
+		os << "_myInt 42 0" << endl;
+		os << "_myFloat 1.2345 1" << endl;
+		os << "pointers" << endl;
+
+		MyDerived0 myDerived;
+		istringstream is(os.str());
+		TextReader1000::read(myDerived, is);
+		cout << myDerived.getMyInt() << endl;
+		cout << myDerived.getMyFloat() << endl;
+	}
+
 	void run() {
 		// demo9: inheritance (write, read, edit)
-		demo0();
+		demo1000();
+		//demo0();
 	}
 }
 
