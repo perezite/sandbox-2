@@ -2,5 +2,5 @@
 
 int main() 
 {
-	demo1::run();
+	myDemo1::run();
 }

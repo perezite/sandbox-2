@@ -1,5 +1,5 @@
 #pragma once
 
-namespace demo1 {
+namespace myDemo1 {
 	void run();
 }
