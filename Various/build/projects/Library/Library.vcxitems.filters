@@ -25,7 +25,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Triangle.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Tween.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Window.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflection.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Headers">
@@ -91,9 +90,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflectable.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflection.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Scene.h">

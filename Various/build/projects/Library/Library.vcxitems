@@ -28,7 +28,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\ParticleSystem.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Physics.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Quad.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflection.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Renderer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Shader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Sprite.cpp" />
@@ -67,7 +66,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Property.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Quad.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflectable.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflection.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Renderer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Scene.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\SDL.h" />
