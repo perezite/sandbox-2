@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo1.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo2.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo3.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo4.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo5.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo6.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo7.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo8.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo9.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo10.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo1.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo2.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo3.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo4.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo5.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo6.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo7.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo8.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo9.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo10.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Headers">
+      <UniqueIdentifier>{d8db14b1-7552-4b89-8434-e940bd3699b7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
