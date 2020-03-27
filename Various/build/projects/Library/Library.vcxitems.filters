@@ -25,7 +25,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Triangle.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Tween.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Window.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TextSerializer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Reflection.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -35,12 +34,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Asset.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\BaseProperty.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\BaseReflectable.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Body.h">
@@ -71,9 +64,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Image.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\InheritanceCheck.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Input.h">
@@ -137,9 +127,6 @@
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Stopwatch.h">
-      <Filter>Headers</Filter>
-    </ClInclude>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TextSerializer.h">
       <Filter>Headers</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Texture.h">

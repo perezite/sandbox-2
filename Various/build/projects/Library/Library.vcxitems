@@ -33,7 +33,6 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Shader.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Sprite.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Stopwatch.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TextSerializer.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Texture.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\TextureSheet.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Transform.cpp" />
@@ -44,8 +43,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Asset.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\BaseProperty.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\BaseReflectable.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Body.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Camera.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Color.h" />
@@ -57,7 +54,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Easing.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\GL.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Image.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\InheritanceCheck.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Input.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\IntRect.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Logger.h" />
@@ -79,7 +75,6 @@
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Shape.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Sprite.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Stopwatch.h" />
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TextSerializer.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Texture.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\TextureSheet.h" />
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Transform.h" />
