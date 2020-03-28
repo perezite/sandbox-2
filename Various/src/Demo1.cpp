@@ -37,28 +37,28 @@ namespace myDemo1 {
 		T& _reference;
 
 	protected:
+		template <class U, bool>
+		struct ValueWriter;
 
-		void writeReflectable(ostringstream& os) {
-			Reflectable *reflectable = (Reflectable*)(&_reference);
-			reflectable->write(os);
-		}
+		template <class U> struct ValueWriter<U, false> {
+			static void write(U& value, ostringstream& os) {
+				os << value << endl;
+			}
+		};
 
-		template <bool> void write(ostringstream& os);
-
-		template <> void write<false>(ostringstream& os) {
-			os << _reference;
-		}
-
-		template <> void write<true>(ostringstream& os) {
-			os << "TODO: Write reflectable" << endl;
-		}
+		template <class U> struct ValueWriter<U, true> {
+			static void write(U& value, ostringstream& os) {
+				os << "TODO: Write reflectable" << endl;
+			}
+		};
 
 	public:
 		Writer(T& reference) : _reference(reference)
 		{ }
 
 		void write(ostringstream& os) {
-			write<is_base_of<Reflectable, T>::value>(os);
+			const bool isReflectable = is_base_of<Reflectable, T>::value;
+			ValueWriter<T, isReflectable>::write(_reference, os);
 		}
 	};
 
