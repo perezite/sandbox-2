@@ -71,6 +71,10 @@ namespace myDemo1 {
 		}
 	};
 
+	template <class T> static bool last(size_t index, vector<T> v) {
+		return index == v.size() - 1;
+	}
+
 	template <class T>
 	class Writer<vector<T>> : public BaseWriter {
 		vector<T> _values;
@@ -81,7 +85,7 @@ namespace myDemo1 {
 			os << "[";
 			for (size_t i = 0; i < _values.size(); i++) {
 				stringify(_values[i], os);
-				os << (i < _values.size() - 1 ? ", " : "");
+				os << (last(i, _values) ? "" : ", ");
 			}
 			os << "]" << endl;
 		}
