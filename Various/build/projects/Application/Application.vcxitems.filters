@@ -3,9 +3,13 @@
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp" />
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo1.cpp" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo1.h">
+      <Filter>Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\Demo2.h">
       <Filter>Headers</Filter>
     </ClInclude>
   </ItemGroup>

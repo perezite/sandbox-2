@@ -1,6 +1,8 @@
 #include "Demo1.h"
+#include "Demo2.h"
 
 int main() 
 {
-	myDemo1::run();
+	myDemo2::run();
+	//myDemo1::run();
 }
