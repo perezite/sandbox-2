@@ -15,6 +15,13 @@ namespace myDemo2 {
 			delete v[i];
 	}
 
+	string tabs(size_t num) {
+		ostringstream os;
+		for (size_t i = 0; i < num; i++)
+			os << "  ";
+		return os.str();
+	}
+
 	template <typename TBase, typename TDerived>
 	struct is_base_of // check if TBase is a base of TDerived
 	{
@@ -29,13 +36,22 @@ namespace myDemo2 {
 		static const bool value = (sizeof(test(get())) == sizeof(yes));
 	};
 
+	struct ReflectionState {
+		string reflectorName;
+		ostream& os;
+		size_t depth = 0;
+		ReflectionState(const string& reflectorName_, ostream& os_) :
+			reflectorName(reflectorName_), os(os_)
+		{ }
+	};
+
 	template <class TType>
-	void write(const string& reflectorName, TType& object, ostringstream& os);
+	void write(TType& object, ReflectionState state);
 
 	class BaseField {
 	public:
 		virtual ~BaseField() { }
-		virtual void write(const string& reflectorName, ostringstream& os) = 0;
+		virtual void write(ReflectionState state) = 0;
 	};
 
 	template <class T>
@@ -44,8 +60,8 @@ namespace myDemo2 {
 	public:
 		Field(T& object) : _object(object) { }
 
-		virtual void write(const string& reflectorName, ostringstream& os) {
-			myDemo2::write<T>(reflectorName, _object, os);
+		virtual void write(ReflectionState state) {
+			myDemo2::write<T>(_object, state);
 		}
 	};
 
@@ -66,87 +82,109 @@ namespace myDemo2 {
 		}
 	};
 
+	class MyInnerClass : public Reflectable {
+		double _myInnerDouble;
+	public:
+		void setMyInnerDouble(double myInnerDouble) { _myInnerDouble = myInnerDouble; }
+		MyInnerClass() {
+			registerField(_myInnerDouble);
+		}
+	};
+
 	class MyClass : public Reflectable {
 		int _myInt;
 		float _myFloat;
+		MyInnerClass _myInnerClass;
 	public:
+		MyInnerClass& getMyInnerClass() { return _myInnerClass; }
 		void setMyInt(int myInt) { _myInt = myInt; }
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
 		MyClass() {
 			registerField(_myInt);
 			registerField(_myFloat);
+			registerField(_myInnerClass);
 		}
 	};
 
 	class XmlWriter {
 	public:
-		static void writeReflectable(const string& reflectorName, Reflectable& reflectable, ostringstream& os) {
+		static void writeReflectable( Reflectable& reflectable, ReflectionState state) {
 			auto fields = reflectable.getFields();
+			state.depth += 1;
 			for (size_t i = 0; i < fields.size(); i++) 
-				fields[i]->write(reflectorName, os);
+				fields[i]->write(state);
 		}
 
 		template <class T>
-		static void write(T& object, ostringstream& os) {
-			os << object << endl;
+		static void write(T& object, ReflectionState state) {
+			state.os << tabs(state.depth) << object << endl;
 		}
 	};
 
 	template <>
-	void XmlWriter::write<float>(float& object, ostringstream& os) {
-		os << setprecision(3) << object << endl;
+	void XmlWriter::write<float>(float& object, ReflectionState state) {
+		auto precision = cout.precision();
+		state.os << setprecision(3) << tabs(state.depth) << object << setprecision(precision) << endl;
 	}
+
+
 
 	template <class TReflector, class TType, bool>
 	struct Writer;
 
 	template <class TReflector, class TType>
 	struct Writer<TReflector, TType, false> {
-		static void write(const string& reflectorName, TType& object, ostringstream& os) {
-			TReflector::template write<TType>(object, os);
+		static void write(TType& object, ReflectionState state) {
+			TReflector::template write<TType>(object, state);
 		}
 	};
 
 	template <class TReflector, class TType>
 	struct Writer<TReflector, TType, true> {
-		static void write(const string& reflectorName, TType& reflectable, ostringstream& os) {
-			TReflector::writeReflectable(reflectorName, reflectable, os);
+		static void write(TType& reflectable, ReflectionState state) {
+			TReflector::writeReflectable(reflectable, state);
 		}
 	};
 
 	template <class TReflector, class TType>
-	void writeField(const string& reflectorName, TType& object, ostringstream& os) {
+	void writeField(TType& object, ReflectionState state) {
 		const bool isReflectable = is_base_of<Reflectable, TType>::value;
-		Writer<TReflector, TType, isReflectable>::write(reflectorName, object, os);
+		Writer<TReflector, TType, isReflectable>::write(object, state);
 	}
 
 	template <class TType>
-	void write(const string& reflectorName, TType& object, ostringstream& os) {
-		if (reflectorName == SB_NAMEOF(XmlWriter)) {
-			writeField<XmlWriter, TType>(reflectorName, object, os);
+	void write(TType& object, ReflectionState state) {
+		if (state.reflectorName == SB_NAMEOF(XmlWriter)) {
+			writeField<XmlWriter, TType>(object, state);
 		}
+	}
+
+	template <class TType>
+	void write(TType& object, const string& reflectorName, ostringstream& os) {
+		write(object, ReflectionState(reflectorName, os));
 	}
 
 	void demo3() {
 		MyClass myClass;
 		myClass.setMyInt(42);
 		myClass.setMyFloat(1.2345f);
+		myClass.getMyInnerClass().setMyInnerDouble(9.87654);
 		ostringstream os;
-		write(SB_NAMEOF(XmlWriter), myClass, os);
+		write(myClass, SB_NAMEOF(XmlWriter), os);
 		cout << os.str() << endl;
 	}
 
 	void demo2() {
 		float myFloat = 3.1415f;
 		ostringstream os;
-		write(SB_NAMEOF(XmlWriter), myFloat, os);
+		write(myFloat, SB_NAMEOF(XmlWriter), os);
 		cout << os.str() << endl;
 	}
 
 	void demo1() {
 		int myInt = 42;
 		ostringstream os;
-		write(SB_NAMEOF(XmlWriter), myInt, os);
+		write(myInt, SB_NAMEOF(XmlWriter), os);
 		cout << os.str() << endl;
 	}
 
