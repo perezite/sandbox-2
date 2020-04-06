@@ -3,12 +3,26 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
+#include <map>
 using namespace std;
 
 #define SB_NAMEOF(name) #name
 
-namespace myDemo2 {
+//#ifndef __INTELLISENSE__
+//#define SB_FIELD(type, name)														\
+//		type name;																	\
+//		void create_property_##name() {												\
+//			createProperty<type>(#name, name, #type);								\
+//		}																			\
+//		static void add_property_creator_##name() {									\
+//			addPropertyCreator(&CurrentClass::create_property_##name, #name);		\
+//		}																			\
+//		Invocation<add_property_creator_##name> invocation_##name;						
+//#else
+//	#define SB_PROPERTY(type, name) type name;
+//#endif
 
+namespace myDemo2 {
 	template <class T>
 	void release(vector<T>& v) {
 		for (size_t i = 0; i < v.size(); i++)
@@ -34,6 +48,14 @@ namespace myDemo2 {
 		static TDerived* get(void) {};
 
 		static const bool value = (sizeof(test(get())) == sizeof(yes));
+	};
+
+	template <void(*Action)()> 
+	class Invocation {
+	public:
+		Invocation() {
+			Action();
+		}
 	};
 
 	struct ReflectionState {
@@ -65,24 +87,43 @@ namespace myDemo2 {
 		}
 	};
 
-	class Reflectable { 
-		vector<BaseField*> _fields;
+	class BaseReflectable {
 	public:
-		virtual ~Reflectable() {
-			release(_fields);
-		}
+		virtual vector<BaseField*>& getFields() = 0;
+	};
 
-		template <class T>
-		void registerField(T& object) {
-			_fields.push_back(new Field<T>(object));
+	template <class T>
+	class Reflectable : public BaseReflectable { 
+		typedef void(*FieldRegistration)(void*);
+		vector<BaseField*> _fields;
+		static map<string, FieldRegistration> FieldRegistrations;
+		bool _fieldsInitialized = false;
+	protected:
+		void initializeFields() {
+			auto self = (void*)this;
+			for (auto it = FieldRegistrations.begin(); it != FieldRegistrations.end(); ++it) 
+				it->second(self);
+			_fieldsInitialized = true;
 		}
-
-		vector<BaseField*>& getFields() {
+	public:
+		virtual ~Reflectable() { release(_fields); }
+		static void addRegistration(FieldRegistration registration, const std::string name) { 
+			FieldRegistrations[name] = registration;
+		}
+		template <class U> void registerField(U& object) {
+			_fields.push_back(new Field<U>(object));
+		}
+		virtual vector<BaseField*>& getFields() {
+			if (!_fieldsInitialized)
+				initializeFields();
 			return _fields;
 		}
 	};
 
-	class MyInnerClass : public Reflectable {
+	template <class T> map<string, void(*)(void*)> Reflectable<T>::FieldRegistrations;
+
+
+	class MyInnerClass : public Reflectable<MyInnerClass> {
 		double _myInnerDouble;
 	public:
 		void setMyInnerDouble(double myInnerDouble) { _myInnerDouble = myInnerDouble; }
@@ -91,46 +132,60 @@ namespace myDemo2 {
 		}
 	};
 
-	class MyClass : public Reflectable {
+	class MyClass : public Reflectable<MyClass> {
 		int _myInt;
+		static void addField_myInt(void* instance) {
+			auto parent = (MyClass*)instance;
+			parent->registerField(parent->_myInt);
+		}
+		static void register_myInt() { addRegistration(addField_myInt, SB_NAMEOF(_myInt)); }
+		Invocation<register_myInt> invoke_register_myInt;
+
 		float _myFloat;
 		MyInnerClass _myInnerClass;
 	public:
 		MyInnerClass& getMyInnerClass() { return _myInnerClass; }
 		void setMyInt(int myInt) { _myInt = myInt; }
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
+		
 		MyClass() {
-			registerField(_myInt);
+			//registerField(_myInt);
 			registerField(_myFloat);
 			registerField(_myInnerClass);
 		}
 	};
 
 	class XmlWriter {
+	protected:
+		template <class T> static string element(T& elem) {
+			ostringstream os;
+			os << "<element>" << elem << "</element>";
+			return os.str();
+		}
 	public:
-		static void writeReflectable( Reflectable& reflectable, ReflectionState state) {
+		static void writeReflectable(BaseReflectable& reflectable, ReflectionState state) {
 			auto fields = reflectable.getFields();
+			auto currentDepth = state.depth;
+			state.os << tabs(currentDepth) << "<object>" << endl;
 			state.depth += 1;
 			for (size_t i = 0; i < fields.size(); i++) 
 				fields[i]->write(state);
+			state.os << tabs(currentDepth) << "</object>" << endl;
 		}
 
 		template <class T>
 		static void write(T& object, ReflectionState state) {
-			state.os << tabs(state.depth) << object << endl;
+			state.os << tabs(state.depth) << element(object) << endl;
 		}
 	};
 
 	template <>
 	void XmlWriter::write<float>(float& object, ReflectionState state) {
 		auto precision = cout.precision();
-		state.os << setprecision(3) << tabs(state.depth) << object << setprecision(precision) << endl;
+		state.os << setprecision(3) << tabs(state.depth) << element(object) << setprecision(precision) << endl;
 	}
 
-
-
-	template <class TReflector, class TType, bool>
-	struct Writer;
+	template <class TReflector, class TType, bool> struct Writer;
 
 	template <class TReflector, class TType>
 	struct Writer<TReflector, TType, false> {
@@ -145,10 +200,10 @@ namespace myDemo2 {
 			TReflector::writeReflectable(reflectable, state);
 		}
 	};
-
+	
 	template <class TReflector, class TType>
 	void writeField(TType& object, ReflectionState state) {
-		const bool isReflectable = is_base_of<Reflectable, TType>::value;
+		const bool isReflectable = is_base_of<BaseReflectable, TType>::value;
 		Writer<TReflector, TType, isReflectable>::write(object, state);
 	}
 
@@ -171,7 +226,8 @@ namespace myDemo2 {
 		myClass.getMyInnerClass().setMyInnerDouble(9.87654);
 		ostringstream os;
 		write(myClass, SB_NAMEOF(XmlWriter), os);
-		cout << os.str() << endl;
+		auto test = os.str();
+		cout << test << endl;
 	}
 
 	void demo2() {
