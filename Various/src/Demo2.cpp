@@ -142,10 +142,10 @@ namespace myDemo2 {
 	class MyClass : public Reflectable<MyClass> {
 		SB_CLASS(MyClass)
 		SB_FIELD(int, _myInt)
-		SB_FIELD(MyInnerClass, _myInnerClass)
+		SB_FIELD(MyInnerClass, _myInnerObject)
 		float _myFloat;
 	public:
-		MyInnerClass& getMyInnerClass() { return _myInnerClass; }
+		MyInnerClass& getMyInnerObject() { return _myInnerObject; }
 		void setMyInt(int myInt) { _myInt = myInt; }
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
 		
@@ -164,8 +164,8 @@ namespace myDemo2 {
 			ostringstream os; os << tabs(depth) << "</object>"; 
 			return os.str();
 		}
-		template <class T> static string element(T& elem, const string& name, ReflectionState& state) {
-			ostringstream os; os << tabs(state.depth) << "<element name=\"" << name << "\">" << elem << "</element>"; 
+		template <class T> static string property(T& elem, const string& name, ReflectionState& state) {
+			ostringstream os; os << tabs(state.depth) << "<property name=\"" << name << "\">" << elem << "</property>"; 
 			return os.str();
 		}
 	public:
@@ -181,14 +181,14 @@ namespace myDemo2 {
 
 		template <class T>
 		static void write(T& object, const string& name, ReflectionState state) {
-			state.os << element(object, name, state) << endl;
+			state.os << property(object, name, state) << endl;
 		}
 	};
 
 	template <>
 	void XmlWriter::write<float>(float& object, const string& name, ReflectionState state) {
 		auto precision = cout.precision();
-		state.os << setprecision(3) << element(object, name, state) << setprecision(precision) << endl;
+		state.os << setprecision(3) << property(object, name, state) << setprecision(precision) << endl;
 	}
 
 	template <class TReflector, class TType, bool> struct Writer;
@@ -221,7 +221,7 @@ namespace myDemo2 {
 	}
 
 	template <class TType>
-	void write(TType& object,const string& name, const string& reflectorName, ostringstream& os) {
+	void write(TType& object, const string& name, const string& reflectorName, ostringstream& os) {
 		write(object, name, ReflectionState(reflectorName, os));
 	}
 
@@ -229,12 +229,12 @@ namespace myDemo2 {
 		MyClass myClass;
 		myClass.setMyInt(42);
 		myClass.setMyFloat(1.2345f);
-		myClass.getMyInnerClass().setMyInnerDouble(9.87654);
-		MyInnerClass myInnerClass;
-		myInnerClass.setMyInnerDouble(-1.234567);
+		myClass.getMyInnerObject().setMyInnerDouble(9.87654);
+		MyInnerClass myInnerObject;
+		myInnerObject.setMyInnerDouble(-1.234567);
 		ostringstream os;
 		write(myClass, SB_NAMEOF(myClass), SB_NAMEOF(XmlWriter), os);
-		write(myInnerClass, SB_NAMEOF(myInnerClass), SB_NAMEOF(XmlWriter), os);
+		write(myInnerObject, SB_NAMEOF(myInnerObject), SB_NAMEOF(XmlWriter), os);
 		auto test = os.str();
 		cout << test << endl;
 	}
