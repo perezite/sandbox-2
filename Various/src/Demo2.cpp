@@ -45,6 +45,13 @@ namespace myDemo2 {
 		return os.str();
 	}
 
+	template <class T>
+	string stringify(T& t) {
+		ostringstream os;
+		os << t;
+		return os.str();
+	}
+
 	template <typename TBase, typename TDerived>
 	struct is_base_of // check if TBase is a base of TDerived
 	{
@@ -143,11 +150,13 @@ namespace myDemo2 {
 		SB_CLASS(MyClass)
 		SB_FIELD(int, _myInt)
 		SB_FIELD(MyInnerClass, _myInnerObject)
+		SB_FIELD(vector<char>, _myCharVector)
 		float _myFloat;
 	public:
 		MyInnerClass& getMyInnerObject() { return _myInnerObject; }
 		void setMyInt(int myInt) { _myInt = myInt; }
 		void setMyFloat(float myFloat) { _myFloat = myFloat; }
+		vector<char>& getMyCharVector() { return _myCharVector; }
 		
 		MyClass() {
 			registerField(_myFloat, SB_NAMEOF(_myFloat));
@@ -156,39 +165,49 @@ namespace myDemo2 {
 
 	class XmlWriter {
 	protected:
-		static string objectStart(const string& name, size_t depth) {
-			ostringstream os; os << tabs(depth) << "<object name=\"" << name << "\">"; 
+		static string openTag(const string& tagName, const string& name, size_t depth) {
+			ostringstream os; os << tabs(depth) << "<" << tagName << " name=\"" << name << "\">"; 
 			return os.str();
 		}
-		static string objectEnd(const string& name, size_t depth) {
-			ostringstream os; os << tabs(depth) << "</object>"; 
+		static string closeTag(const string& tagName, const string& name, size_t depth) {
+			ostringstream os; os << tabs(depth) << "</" << tagName << ">"; 
 			return os.str();
 		}
-		template <class T> static string property(T& elem, const string& name, ReflectionState& state) {
-			ostringstream os; os << tabs(state.depth) << "<property name=\"" << name << "\">" << elem << "</property>"; 
+		template <class T> static string tag(const string& tagName, const string& name, T& elem, ReflectionState& state) {
+			ostringstream os; os << tabs(state.depth) << "<" << tagName << " name=\"" << name << "\">" << elem << "</" << tagName << ">"; 
 			return os.str();
 		}
 	public:
 		static void writeReflectable(BaseReflectable& reflectable, const string& name, ReflectionState state) {
 			auto fields = reflectable.getFields();
 			auto currentDepth = state.depth;
-			state.os << objectStart(name, currentDepth) << endl;
+			state.os << openTag("object", name, currentDepth) << endl;
 			state.depth += 1;
 			for (size_t i = 0; i < fields.size(); i++) 
 				fields[i]->write(state);
-			state.os << objectEnd(name, currentDepth) << endl;
+			state.os << closeTag("object", name, currentDepth) << endl;
 		}
 
 		template <class T>
 		static void write(T& object, const string& name, ReflectionState state) {
-			state.os << property(object, name, state) << endl;
+			state.os << tag("property", name, object, state) << endl;
+		}
+
+		template <class T>
+		static void write(vector<T>& vec, const string& name, ReflectionState state) {
+			auto currentDepth = state.depth;
+			state.depth = state.depth + 1;
+			state.os << openTag("vector", name, currentDepth) << endl;
+			for (size_t i = 0; i < vec.size(); i++)
+				state.os << tag("item", stringify(i), vec[i], state) << endl;
+			state.os << closeTag("vector", name, currentDepth) << endl;
 		}
 	};
 
 	template <>
 	void XmlWriter::write<float>(float& object, const string& name, ReflectionState state) {
-		auto precision = cout.precision();
-		state.os << setprecision(3) << property(object, name, state) << setprecision(precision) << endl;
+		auto originalPrecision = cout.precision();
+		state.os << setprecision(3) << tag("property", name, object, state) << setprecision(originalPrecision) << endl;
 	}
 
 	template <class TReflector, class TType, bool> struct Writer;
@@ -196,7 +215,7 @@ namespace myDemo2 {
 	template <class TReflector, class TType>
 	struct Writer<TReflector, TType, false> {
 		static void write(TType& object, const string& name, ReflectionState state) {
-			TReflector::template write<TType>(object, name, state);
+			TReflector::write(object, name, state);
 		}
 	};
 
@@ -229,6 +248,7 @@ namespace myDemo2 {
 		MyClass myClass;
 		myClass.setMyInt(42);
 		myClass.setMyFloat(1.2345f);
+		myClass.getMyCharVector() = vector<char>{ 'a', 'b', 'c' };
 		myClass.getMyInnerObject().setMyInnerDouble(9.87654);
 		MyInnerClass myInnerObject;
 		myInnerObject.setMyInnerDouble(-1.234567);
