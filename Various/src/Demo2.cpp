@@ -74,22 +74,22 @@ namespace myDemo2 {
 		}
 	};
 
-	struct ReflectionState {
+	struct ReflectionContext {
 		string reflectorName;
 		ostream& os;
 		size_t depth = 0;
-		ReflectionState(const string& reflectorName_, ostream& os_) :
+		ReflectionContext(const string& reflectorName_, ostream& os_) :
 			reflectorName(reflectorName_), os(os_)
 		{ }
 	};
 
 	template <class TType>
-	void write(TType& object, const string& name, ReflectionState state);
+	void write(TType& object, const string& name, ReflectionContext ctx);
 
 	class BaseField {
 	public:
 		virtual ~BaseField() { }
-		virtual void write(ReflectionState state) = 0;
+		virtual void write(ReflectionContext ctx) = 0;
 	};
 
 	template <class T>
@@ -99,8 +99,8 @@ namespace myDemo2 {
 	public:
 		Field(T& object, const string& name) : _object(object), _name(name) { }
 
-		virtual void write(ReflectionState state) {
-			myDemo2::write<T>(_object, _name, state);
+		virtual void write(ReflectionContext ctx) {
+			myDemo2::write<T>(_object, _name, ctx);
 		}
 	};
 
@@ -165,83 +165,85 @@ namespace myDemo2 {
 
 	class XmlWriter {
 	protected:
-		static string openTag(const string& tagName, const string& name, size_t depth) {
-			ostringstream os; os << tabs(depth) << "<" << tagName << " name=\"" << name << "\">"; 
+		static string openTag(const string& name, size_t depth) {
+			ostringstream os; os << tabs(depth) << "<" << name << ">"; 
 			return os.str();
 		}
-		static string closeTag(const string& tagName, const string& name, size_t depth) {
-			ostringstream os; os << tabs(depth) << "</" << tagName << ">"; 
+		static string closeTag(const string& name, size_t depth) {
+			ostringstream os; os << tabs(depth) << "</" << name << ">"; 
 			return os.str();
 		}
-		template <class T> static string tag(const string& tagName, const string& name, T& elem, ReflectionState& state) {
-			ostringstream os; os << tabs(state.depth) << "<" << tagName << " name=\"" << name << "\">" << elem << "</" << tagName << ">"; 
+		template <class T> static string tag(const string& name, T& elem, ReflectionContext& ctx) {
+			ostringstream os; os << tabs(ctx.depth) << "<" << name << ">" << elem << "</" << name << ">"; 
 			return os.str();
 		}
 	public:
-		static void writeReflectable(BaseReflectable& reflectable, const string& name, ReflectionState state) {
+		static void writeReflectable(BaseReflectable& reflectable, const string& name, ReflectionContext ctx) {
 			auto fields = reflectable.getFields();
-			auto currentDepth = state.depth;
-			state.os << openTag("object", name, currentDepth) << endl;
-			state.depth += 1;
+			auto currentDepth = ctx.depth;
+			ctx.os << openTag(name, currentDepth) << endl;
+			ctx.depth += 1;
 			for (size_t i = 0; i < fields.size(); i++) 
-				fields[i]->write(state);
-			state.os << closeTag("object", name, currentDepth) << endl;
+				fields[i]->write(ctx);
+			ctx.os << closeTag(name, currentDepth) << endl;
 		}
 
 		template <class T>
-		static void write(T& object, const string& name, ReflectionState state) {
-			state.os << tag("property", name, object, state) << endl;
+		static void write(T& object, const string& name, ReflectionContext ctx) {
+			ctx.os << tag(name, object, ctx) << endl;
 		}
 
 		template <class T>
-		static void write(vector<T>& vec, const string& name, ReflectionState state) {
-			auto currentDepth = state.depth;
-			state.depth = state.depth + 1;
-			state.os << openTag("vector", name, currentDepth) << endl;
+		static void write(vector<T>& vec, const string& name, ReflectionContext ctx) {
+			auto currentDepth = ctx.depth;
+			ctx.depth = ctx.depth + 1;
+			ctx.os << openTag( name, currentDepth) << endl;
 			for (size_t i = 0; i < vec.size(); i++)
-				state.os << tag("item", stringify(i), vec[i], state) << endl;
-			state.os << closeTag("vector", name, currentDepth) << endl;
+				ctx.os << tag("item", vec[i], ctx) << endl;
+			ctx.os << closeTag( name, currentDepth) << endl;
 		}
 	};
 
 	template <>
-	void XmlWriter::write<float>(float& object, const string& name, ReflectionState state) {
+	void XmlWriter::write<float>(float& object, const string& name, ReflectionContext ctx) {
 		auto originalPrecision = cout.precision();
-		state.os << setprecision(3) << tag("property", name, object, state) << setprecision(originalPrecision) << endl;
+		ctx.os << setprecision(3) << tag(name, object, ctx) << setprecision(originalPrecision) << endl;
 	}
 
 	template <class TReflector, class TType, bool> struct Writer;
 
+	// write non-reflectable field
 	template <class TReflector, class TType>
 	struct Writer<TReflector, TType, false> {
-		static void write(TType& object, const string& name, ReflectionState state) {
-			TReflector::write(object, name, state);
+		static void write(TType& object, const string& name, ReflectionContext ctx) {
+			TReflector::write(object, name, ctx);
 		}
 	};
 
+	// write reflectable field
 	template <class TReflector, class TType>
 	struct Writer<TReflector, TType, true> {
-		static void write(TType& reflectable, const string& name, ReflectionState state) {
-			TReflector::writeReflectable(reflectable, name, state);
+		static void write(TType& reflectable, const string& name, ReflectionContext ctx) {
+			TReflector::writeReflectable(reflectable, name, ctx);
 		}
 	};
 	
 	template <class TReflector, class TType>
-	void writeField(TType& object, const string& name, ReflectionState state) {
+	void writeField(TType& object, const string& name, ReflectionContext ctx) {
 		const bool isReflectable = is_base_of<BaseReflectable, TType>::value;
-		Writer<TReflector, TType, isReflectable>::write(object, name, state);
+		Writer<TReflector, TType, isReflectable>::write(object, name, ctx);
 	}
 
 	template <class TType>
-	void write(TType& object, const string& name, ReflectionState state) {
-		if (state.reflectorName == SB_NAMEOF(XmlWriter)) {
-			writeField<XmlWriter, TType>(object, name, state);
+	void write(TType& object, const string& name, ReflectionContext ctx) {
+		if (ctx.reflectorName == SB_NAMEOF(XmlWriter)) {
+			writeField<XmlWriter, TType>(object, name, ctx);
 		}
 	}
 
 	template <class TType>
 	void write(TType& object, const string& name, const string& reflectorName, ostringstream& os) {
-		write(object, name, ReflectionState(reflectorName, os));
+		write(object, name, ReflectionContext(reflectorName, os));
 	}
 
 	void demo3() {

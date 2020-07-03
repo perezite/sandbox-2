@@ -24,4 +24,7 @@
       <UniqueIdentifier>{12209b3e-c42d-4230-8237-6dbf5b959948}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
 </Project>

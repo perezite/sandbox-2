@@ -51,6 +51,9 @@
       <Project>{a93b1c36-ca9d-4291-aeb9-c06f0d2e996a}</Project>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{71ba3082-afac-433b-b51c-17e3c244fea7}</ProjectGuid>
     <Keyword>Android</Keyword>
