@@ -27,19 +27,25 @@
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v1\LibraryV1.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\LibraryV1.cpp">
       <Filter>Library\v1</Filter>
     </ClCompile>
-    <ClCompile Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v2\LibraryV2.cpp">
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\LibraryV2.cpp">
       <Filter>Library\v2</Filter>
+    </ClCompile>
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\OtherLibraryV1.cpp">
+      <Filter>Library\v1</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v1\LibraryV1.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\LibraryV1.h">
       <Filter>Library\v1\Headers</Filter>
     </ClInclude>
-    <ClInclude Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v2\LibraryV2.h">
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\LibraryV2.h">
       <Filter>Library\v2\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\OtherLibraryV1.h">
+      <Filter>Library\v1\Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
