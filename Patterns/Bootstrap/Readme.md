@@ -1,1 +1,1 @@
-Proof of concept for creating a game library by bootstrapping the library along the actual game
+Proof of concept for creating a game library alongside the actual game itself
