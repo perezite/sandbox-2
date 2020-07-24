@@ -4,30 +4,12 @@
     <ClCompile Include="SDL_android_main.c">
       <Filter>Sources</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\..\src\Android\AndroidAudio.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\Android\Java.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\..\src\Android\MusicImpl.cpp">
-      <Filter>Sources</Filter>
-    </ClCompile>
     <ClCompile Include="Precompiled.cpp">
       <Filter>Precompiled</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SDL_android_main.h">
-      <Filter>Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\Android\AndroidAudio.h">
-      <Filter>Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\Android\Java.h">
-      <Filter>Sources</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\src\Android\MusicImpl.h">
       <Filter>Sources</Filter>
     </ClInclude>
     <ClInclude Include="Precompiled.h">

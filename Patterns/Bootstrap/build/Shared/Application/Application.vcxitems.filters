@@ -16,18 +16,30 @@
     <Filter Include="Game\Headers">
       <UniqueIdentifier>{636bc02d-8be0-4527-9be7-7361a8c4b787}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Library\v2">
+      <UniqueIdentifier>{e13d0ecd-d892-4456-8e7c-307a4abb51f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Library\v2\Headers">
+      <UniqueIdentifier>{a5b2e68d-2029-4d28-8ec1-ce8aa7bc7c7b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\Main.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\..\src\v1\Library.cpp">
+    <ClCompile Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v1\LibraryV1.cpp">
       <Filter>Library\v1</Filter>
+    </ClCompile>
+    <ClCompile Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v2\LibraryV2.cpp">
+      <Filter>Library\v2</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(MSBuildThisFileDirectory)..\..\..\src\v1\Library.h">
+    <ClInclude Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v1\LibraryV1.h">
       <Filter>Library\v1\Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="E:\Indie\Development\Simulo\sandbox-2\Patterns\Bootstrap\build\Shared\Application\..\..\..\src\v2\LibraryV2.h">
+      <Filter>Library\v2\Headers</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

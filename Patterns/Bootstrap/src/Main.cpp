@@ -1,12 +1,11 @@
-#include "v1/Library.h"
+#include "v2/LibraryV2.h"
 #include <iostream>
 
-using namespace lib;
 using namespace std;
 
-int main() 
+int main()
 {
-	Library library;
+	v2::Library library;
 	library.sayHello();
 
 	cin.get();

@@ -1,5 +1,5 @@
 
-namespace lib 
+namespace v2 
 {
 	class Library 
 	{

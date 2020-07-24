@@ -1,9 +1,9 @@
-#include "Library.h"
+#include "LibraryV1.h"
 
 #include <iostream>
 using namespace std;
 
-namespace lib
+namespace v1
 {
 	void Library::sayHello()
 	{
