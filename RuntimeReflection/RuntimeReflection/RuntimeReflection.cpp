@@ -109,10 +109,10 @@ template <class T> class ClassMetadataBuilder2;
 
 class Reflection2
 {
-    vector<Metadata2*> _metadataList;
+    vector<Metadata2*> _fields;
 
 public:
-    virtual ~Reflection2() { deleteAll(_metadataList); }
+    virtual ~Reflection2() { deleteAll(_fields); }
 
     template <class T> ClassMetadataBuilder2<T> beginClass(const string& name) {
         return ClassMetadataBuilder2<T>(*this, name);
@@ -221,22 +221,24 @@ public:
 
 class Reflection1
 {
-    vector<Metadata1*> _metadataList;
+    vector<Metadata1*> _fields;
 
 public:
     virtual ~Reflection1() {
-        deleteAll(_metadataList);
+        deleteAll(_fields);
     }
 
     template <class T>
     void addField(const string& name, T& field) {
-        Metadata1* md = new Field1<T>(name, field);
-        _metadataList.push_back(md);
+        Metadata1* newField = new Field1<T>(name, field);
+        _fields.push_back(newField);
     }
 
-    inline vector<Metadata1*> getFields() const { return _metadataList; }
+    inline vector<Metadata1*> getFields() const { return _fields; }
 
     inline Metadata1& getField(int index) { return *(getFields()[index]); }
+
+    inline size_t countFields() const { return _fields.size(); }
 };
 
 void print(Metadata1& field)
@@ -257,9 +259,9 @@ void demo1()
      reflection.addField("x", x);
      reflection.addField("f", f);
      reflection.addField("x2", x2);
-     print(reflection.getField(0));
-     print(reflection.getField(1));
-     print(reflection.getField(2));
+
+     for (size_t i = 0; i < reflection.countFields(); i++)
+         print(reflection.getField(i));
 }
 
 void demo() {
