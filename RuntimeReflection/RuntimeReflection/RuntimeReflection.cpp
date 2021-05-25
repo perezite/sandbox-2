@@ -11,6 +11,12 @@ void deleteAll(T& t)
         delete (*it);
 }
 
+template <class T> string toString(T& t) {
+    ostringstream os;
+    os << t;
+    return os.str();
+}
+
 class Vector2f100 {
 public: 
     float x, y;
@@ -160,18 +166,17 @@ void demo2() {
     //      << md.getFields(0).getTypename() << md.getFields(0).toString();
 }
 
-static size_t FieldTypeId = 0;
+static size_t TypeIdCounter = 0;
 
-template <class T>
-class FieldType1 {
+template <class T> class Type1 {
     static bool MustGenerateTypeId;
 
     static size_t TypeId;
 
 public:
-    FieldType1() {
+    Type1() {
         if (MustGenerateTypeId) {
-            TypeId = ++FieldTypeId;
+            TypeId = ++TypeIdCounter;
             MustGenerateTypeId = false;
         }
     }
@@ -179,8 +184,8 @@ public:
     static size_t GetTypeId() { return TypeId; }
 };
 
-template <class T> size_t FieldType1<T>::TypeId;
-template <class T> bool FieldType1<T>::MustGenerateTypeId = true;
+template <class T> size_t Type1<T>::TypeId;
+template <class T> bool Type1<T>::MustGenerateTypeId = true;
 
 class Metadata1 {
     string _name;
@@ -195,21 +200,19 @@ public:
     virtual const string toString() = 0;
 };
 
-template <class T> string toString(T& t) {
-    ostringstream os;
-    os << t;
-    return os.str();
-}
+class FieldInfo1 : public Metadata1 {
+public:
+    FieldInfo1(const string& name) : Metadata1(name) { }
+};
 
-template <class T>
-class Field1 : public Metadata1 {
-    FieldType1<T> _type;
+template <class T> class ConcreteFieldInfo1 : public FieldInfo1 {
+    Type1<T> _type;
 
     T& _ref;
 
 public:
-    Field1(const string& name, T& ref)
-        : Metadata1(name), _ref(ref)
+    ConcreteFieldInfo1(const string& name, T& ref)
+        : FieldInfo1(name), _ref(ref)
     { }
 
     virtual size_t getTypeId() { return _type.GetTypeId(); }
@@ -221,7 +224,7 @@ public:
 
 class Reflection1
 {
-    vector<Metadata1*> _fields;
+    vector<FieldInfo1*> _fields;
 
 public:
     virtual ~Reflection1() {
@@ -230,22 +233,22 @@ public:
 
     template <class T>
     void addField(const string& name, T& field) {
-        Metadata1* newField = new Field1<T>(name, field);
-        _fields.push_back(newField);
+        FieldInfo1* fieldInfo = new ConcreteFieldInfo1<T>(name, field);
+        _fields.push_back(fieldInfo);
     }
 
-    inline vector<Metadata1*> getFields() const { return _fields; }
+    inline vector<FieldInfo1*> getFieldInfoList() const { return _fields; }
 
-    inline Metadata1& getField(int index) { return *(getFields()[index]); }
+    inline Metadata1& getFieldInfo(int index) { return *(getFieldInfoList()[index]); }
 
-    inline size_t countFields() const { return _fields.size(); }
+    inline size_t countFieldInfoList() const { return _fields.size(); }
 };
 
-void print(Metadata1& field)
+void print(Metadata1& fieldInfo)
 {
-    cout << field.getName()
-        << " (typeId " << field.getTypeId() << ")"
-        << ": " << field.toString()
+    cout << fieldInfo.getName()
+        << " (typeId " << fieldInfo.getTypeId() << ")"
+        << ": " << fieldInfo.toString()
         << endl;
 }
 
@@ -260,8 +263,8 @@ void demo1()
      reflection.addField("f", f);
      reflection.addField("x2", x2);
 
-     for (size_t i = 0; i < reflection.countFields(); i++)
-         print(reflection.getField(i));
+     for (size_t i = 0; i < reflection.countFieldInfoList(); i++)
+         print(reflection.getFieldInfo(i));
 }
 
 void demo() {
@@ -269,6 +272,17 @@ void demo() {
     //demo2();
     //demo100();
 }
+
+// Notes:
+//     - Object hierarchy
+//         - Metadata
+//             - ClassInfo
+//                 - ConcreteClassInfo<T>
+//             - FunctionInfo
+//                 - ConcreteFunctionInfo<T>
+//             - FieldInfo
+//                 - ConcreteFieldInfo<T>
+
 
 int main() {
     demo();
