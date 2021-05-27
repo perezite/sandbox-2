@@ -267,15 +267,86 @@ void demo1()
          print(reflection.getFieldInfo(i));
 }
 
+template<class T, class UnaryPredicate>
+vector<T*> find_all(const vector<T*>& elements, UnaryPredicate pred) {
+    vector<T*> result;
+    for (size_t i = 0; i < elements.size(); i++)
+        if (pred(*elements[i]))
+            result.push_back(elements[i]);
+
+    return result;
+}
+
+namespace d1 {
+    class EntityInfo {
+        string _name;
+    
+    public:
+        EntityInfo(const string& name) : _name(name) { }
+
+        const string& getName() const { return _name; }
+
+        virtual const string toString() const = 0;
+    };
+       
+    class VariableInfo : public EntityInfo {
+    public:
+        VariableInfo(const string& name) : EntityInfo(name) { }
+    };
+
+    template <class Var> class ConcreteVariableInfo : public VariableInfo {
+        Var& _var;
+
+    public:
+        ConcreteVariableInfo(const string& name, Var& var) 
+            : VariableInfo(name), _var(var) { }
+
+        virtual const string toString() const {
+            return ::toString(_var);
+        }
+    };
+
+    class Reflection {
+        vector<VariableInfo*> _variables;
+
+    public:
+        vector<VariableInfo*> getVariables() const { return _variables; }
+
+        inline VariableInfo& getVariable(size_t index) { return *_variables[index]; }
+
+        template <class Var> void addVariable(const string& name, Var& var) {
+            VariableInfo* variable = new ConcreteVariableInfo<Var>(name, var);
+            _variables.push_back(variable);
+        }
+    };
+
+    void print(VariableInfo& variable)
+    {
+        cout << variable.getName()
+            << ": " << variable.toString()
+            << endl;
+    }
+
+    void demo() {
+        int x = 42;
+
+        Reflection rf;
+        rf.addVariable("x", x);
+
+        print(rf.getVariable(0));
+    }
+}
+
 void demo() {
-    demo1();
+    d1::demo();
+    //demo1();
     //demo2();
     //demo100();
 }
 
 // Notes:
 //     - Object hierarchy
-//         - Metadata
+//         - EntityInfo
 //             - ClassInfo
 //                 - ConcreteClassInfo<T>
 //             - FunctionInfo
