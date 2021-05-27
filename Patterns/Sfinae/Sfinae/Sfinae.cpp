@@ -175,10 +175,10 @@ namespace t6 {
     }
 }
 
-namespace d7 {
+namespace t7 {
     template <class Func> struct has_one_argument {
         template<typename Ret, typename Arg1, Ret(*)(Arg1)> struct Sfinae {};
-        template<typename U> static char check(Sfinae<U, &U::used_memory>*);
+        //template<typename U> static char check(Sfinae<U, &U::used_memory>*);
         //static const bool value = sizeof(check<Func>(0) == sizeof(char));
     };
 
@@ -187,9 +187,57 @@ namespace d7 {
     }
 }
 
+template <bool> struct is_compiled_boolean {
+    static const bool value = true;
+};
+
+typedef char Yes[1];
+typedef char No[2];
+
+namespace d8 {
+
+    namespace has_one_arg {
+
+        template<typename Ret, typename Arg1> Yes& check(Ret(func)(Arg1)) { }
+        template<class Func> No& check(Func f) { }
+    }
+
+#define T8_EVAL(expression) (sizeof(expression) == sizeof(Yes))
+#define D8_HAS_ONE_ARG(func) (T8_EVAL(has_one_arg::check(func)))
+
+    void func(int x) { }
+    int func2(int x) { return 42; }
+    int func3() { return 42; }
+    float func4(float x, float y) { return 42; }
+
+
+    void demo() {
+        const bool constantExpression = true;
+        const bool nonConstantExpression = rand() % 3 == 0;
+        is_compiled_boolean<constantExpression>::value;
+        // is_compiled_boolean<nonConstantExpression>::value;      // will not compile
+
+        const bool result1 = D8_HAS_ONE_ARG(func);
+        const bool result2 = D8_HAS_ONE_ARG(func2);
+        const bool result3 = D8_HAS_ONE_ARG(func3);
+        const bool result4 = D8_HAS_ONE_ARG(func4);
+        is_compiled_boolean<result1>::value;
+        is_compiled_boolean<result2>::value;
+        is_compiled_boolean<result3>::value;
+        is_compiled_boolean<result4>::value;
+        
+        cout << boolalpha;
+        cout << result1 << endl;
+        cout << result2 << endl;
+        cout << result3 << endl;
+        cout << result4 << endl;
+    }
+}
+
 int main()  
 {
-    d7::demo();
+    d8::demo();
+    //t7::demo();
     //t6::demo();
     //t5::demo();
     //t4::demo();
