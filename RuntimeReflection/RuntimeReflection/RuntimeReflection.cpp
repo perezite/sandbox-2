@@ -310,6 +310,8 @@ namespace d1 {
         vector<VariableInfo*> _variables;
 
     public:
+        virtual ~Reflection() { deleteAll(_variables); }
+
         vector<VariableInfo*> getVariables() const { return _variables; }
 
         inline VariableInfo& getVariable(size_t index) { return *_variables[index]; }
@@ -320,8 +322,7 @@ namespace d1 {
         }
     };
 
-    void print(VariableInfo& variable)
-    {
+    void print(VariableInfo& variable) {
         cout << variable.getName()
             << ": " << variable.toString()
             << endl;
@@ -337,8 +338,58 @@ namespace d1 {
     }
 }
 
+namespace d2 {
+    class MyClass {
+
+    };
+
+    class ClassInfo {
+        string _name;
+
+    public:
+        ClassInfo(const string& name) : _name(name) { }
+
+        const string getName() const { return _name; }
+
+        const string toString() { return "<Class>"; }
+    };
+
+    template <class C> class ConcreteClassInfo : public ClassInfo {
+    public:
+        ConcreteClassInfo(const string& name) : ClassInfo(name) { }
+    };
+
+    class Reflection {
+        vector<ClassInfo*> _classes;
+
+    public:
+        virtual ~Reflection() { deleteAll(_classes); }
+
+        template <class C> void addClass(const string& name) {
+            ClassInfo* info = new ConcreteClassInfo<C>(name);
+            _classes.push_back(info);
+        }
+
+        ClassInfo& getClass(size_t index) { return *_classes[index]; }
+    };
+
+    void print(ClassInfo& theClass) {
+        cout << theClass.getName()
+            << ": " << theClass.toString()
+            << endl;
+    }
+
+    void demo() {
+        Reflection rf;
+        rf.addClass<MyClass>("MyClass");
+
+        print(rf.getClass(0));
+    }
+}
+
 void demo() {
-    d1::demo();
+    d2::demo();
+    //d1::demo();
     //demo1();
     //demo2();
     //demo100();
