@@ -1,8 +1,9 @@
 #include <iostream>
+#include <vector>
 
 using namespace std;
 
-namespace d1 {
+namespace t1 {
     namespace my {
         template<bool B, typename T = void> struct enable_if {
         };
@@ -34,7 +35,7 @@ namespace d1 {
     }
 }
 
-namespace d2 {
+namespace t2 {
     class Base {};
     class Derived : public Base {};
 
@@ -60,12 +61,148 @@ namespace d2 {
     }
 }
 
-int main()
+namespace t3 {
+    void func() {
+        cout << "func()" << endl;
+    }
+
+    template <class Func>
+    void execute(Func f) {
+        f();
+    }
+
+    void demo() {
+        execute(func);
+    }
+}
+
+namespace t4 {
+    void func(int x) { }
+
+    int func2(float x) { return 42; }
+
+    int func3() { return 42; }
+
+    typedef char Yes[1];
+    typedef char No[2];
+
+    template<typename Ret, typename Arg1> Yes& check(Ret(func)(Arg1)) { }
+    template<class Func> No& check(Func f) { }
+
+    template <class Func> static const bool has_one_argument_func(Func f) {
+        return sizeof(check(f)) == sizeof(Yes);
+    }
+
+    template <bool> void compileTimeConstantCheck() { }
+
+    static const bool myTest() { return false; }
+
+    struct test_struct {
+        static const bool compileTimeConstant = true;
+    };
+
+    template <typename Ret, typename Arg1, Ret(*)(Arg1)> struct has_one_argument {
+        static const bool value = true;
+    };
+
+    //template <typename Func> struct has_one_argument {
+    //    static const bool value = true;
+    //};
+
+#define T4_YES(expression) (sizeof(expression) == sizeof(Yes))
+
+    void demo()
+    {
+        //compileTimeConstantCheck<rand()% 3 == 5>();                   // will not compile
+
+        //compileTimeConstantCheck<has_one_argument_func(func)>();      // will not compile
+
+        //compileTimeConstantCheck<myTest()>();                         // will not compile
+ 
+        const bool myBool2 = true;
+        compileTimeConstantCheck<myBool2>();
+
+        compileTimeConstantCheck<test_struct::compileTimeConstant>();
+
+        const bool myBool3 = (sizeof(check(func2)) == sizeof(Yes));
+        compileTimeConstantCheck<myBool3>();
+
+        cout << T4_YES(check(func)) << endl;
+        cout << (sizeof(check(func2)) == sizeof(Yes)) << endl;
+        cout << (sizeof(check(func3)) == sizeof(Yes)) << endl;
+
+         //has_one_argument<func>::value;
+    }
+}
+
+namespace t5 {
+    template <class T> struct MyTemplate { };
+
+    template <template<class> class H, class S>
+    void f(const H<S>& var) {
+    }
+
+    template <template<class> class H, class S>
+    struct has_one_argument { };
+
+    //template <template<class, class> void(*)(Arg1), class Ret, class Arg1>
+    //struct has_one_argument_2 { };
+
+    int func(int) { return 0; }
+
+    void demo() {
+        //MyTemplate<int> test;
+        //has_one_argument<MyTemplate, int> test2;
+        //has_one_argument_2<func> test3;
+    }
+}
+
+namespace t6 {
+    template <class Ret, class Arg1> struct has_one_argument {
+        has_one_argument(Ret(func)(Arg1)) { }
+        //static const bool value = true;
+    };
+
+    //template <class Any = void, class Empty = void> class has_one_argument {
+    //    has_one_argument(class Any) { }
+    //    static const bool value = true;
+    //};
+
+    void func(int x) { }
+
+    void demo() {
+        //has_one_argument::temp(func);
+    }
+}
+
+namespace d7 {
+    template <class Func> struct has_one_argument {
+        template<typename Ret, typename Arg1, Ret(*)(Arg1)> struct Sfinae {};
+        template<typename U> static char check(Sfinae<U, &U::used_memory>*);
+        //static const bool value = sizeof(check<Func>(0) == sizeof(char));
+    };
+
+    void demo() {
+
+    }
+}
+
+int main()  
 {
-    d2::demo();
-    //d1::demo();
+    d7::demo();
+    //t6::demo();
+    //t5::demo();
+    //t4::demo();
+    //t3::demo();
+    //t2::demo();
+    //t1::demo();
     cin.get();
 }
 
 // Sources
 // https://eli.thegreenplace.net/2014/sfinae-and-enable_if/
+// https://jguegant.github.io/blogs/tech/sfinae-introduction.html
+// https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
+// https://people.eecs.berkeley.edu/~brock/blog/detection_idiom.php
+// https://stackoverflow.com/questions/257288/templated-check-for-the-existence-of-a-class-member-function
+// https://isocpp.org/wiki/faq/templates
