@@ -210,7 +210,6 @@ namespace d8 {
     int func3() { return 42; }
     float func4(float x, float y) { return 42; }
 
-
     void demo() {
         const bool constantExpression = true;
         const bool nonConstantExpression = rand() % 3 == 0;
@@ -234,9 +233,56 @@ namespace d8 {
     }
 }
 
+namespace t9 {    
+    struct FuncInfo {
+        virtual void print() = 0;
+    };
+
+    template <class Ret, class Arg1> struct Func1Info : public FuncInfo {
+        Ret(*func)(Arg1);
+
+        Func1Info(Ret(*func_)(Arg1)) : func(func_) { }
+
+        virtual void print() {
+            cout << "Function with one parameter" << endl;
+        }
+    };
+
+    template <class Ret> struct Func0Info : public FuncInfo {
+        Ret(*func)();
+
+        Func0Info(Ret(*func_)()) : func(func_) { }
+
+        virtual void print() {
+            cout << "Function with no parameters" << endl;
+        }
+    };
+
+    template <class Ret, class Arg1>
+    static Func1Info<Ret, Arg1>* createFuncInfo(Ret(func_)(Arg1)) { return new Func1Info<Ret, Arg1>(func_); }
+
+    template <class Ret>
+    static Func0Info<Ret>* createFuncInfo(Ret(func_)()) { return new Func0Info<Ret>(func_); }
+
+    void func(int x) { }
+
+    void func2() { }
+
+    void demo() {
+        FuncInfo* funcInfo = createFuncInfo(func);
+        FuncInfo* funcInfo2 = createFuncInfo(func2);
+        funcInfo->print();
+        funcInfo2->print();
+        delete funcInfo;
+        delete funcInfo2;
+        //auto funcInfo;
+    }
+}
+
 int main()  
 {
-    d8::demo();
+    t9::demo();
+    //d8::demo();
     //t7::demo();
     //t6::demo();
     //t5::demo();
