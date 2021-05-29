@@ -547,8 +547,6 @@ namespace t5 {
 }
 
 namespace t5a {
-    // https://stackoverflow.com/questions/9407367/determine-if-a-type-is-an-stl-container-at-compile-time
-
     template <typename Class, typename, typename> struct test_struct { };
 
     template <class T> void getElements();
@@ -560,26 +558,65 @@ namespace t5a {
     }
 }
 
+namespace my {
+    template <class T>
+    void join(vector<T>& v, ostringstream& os, const string& delimiter) {
+        if (v.empty())
+            return;
+
+        for (size_t i = 0; i < v.size() - 1; i++)
+            os << v[i] << delimiter;
+        os << v[v.size() - 1];
+    }
+}
+
 namespace t5b {
-    template <typename T> struct IsContainer {
-        static const bool value = false;
+    // https://stackoverflow.com/questions/9407367/determine-if-a-type-is-an-stl-container-at-compile-time
+
+    template <typename T> struct ContainerInspector {
+        static const bool isContainerType = false;
+
+        static void getContainerInfo(T& t) {
+            cout << "get non-container info" << endl;
+        }
     };
 
     template <typename T, typename Alloc>
-    struct IsContainer<std::vector<T, Alloc> > {
-        static const bool value = true;
+    struct ContainerInspector<vector<T, Alloc> > {
+        static const bool isContainerType = true;
+
+        static void getContainerInfo(vector<T, Alloc>& vec) {
+            cout << "get vector info" << endl;
+
+            ostringstream os;
+            my::join(vec, os, ", ");
+            cout << os.str() << endl;
+        }
     };
 
-    //template <typename T, typename U> struct isContainer2 {
-    //    static const bool value = false;
-    //};
+    template <typename T, typename U, typename Alloc>
+    struct ContainerInspector<map<T, U, Alloc> > {
+        static const bool isContainerType = true;
 
-    //template <typename T, typename U, typename Alloc>
-    //struct IsContainer2<std::map<T, U, Alloc> > {
-    //    static const bool value = true;
-    //};
+        static void getContainerInfo(map<T, U, Alloc>& m) {
+            cout << "get map info" << endl;
+        }
+    };
+
+    template <class T>
+    void check(T& t) {
+        ContainerInspector<T>::getContainerInfo(t);
+        cout << ContainerInspector<T>::isContainerType << endl;
+    }
 
     void test() {
+        vector<float> v { 1, 2, 3 };
+        map<int, int> m;
+        int i;
+
+        check(v);
+        check(m);
+        check(i);
     }
 }
 
