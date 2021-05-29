@@ -486,7 +486,7 @@ namespace t4 {
 
     void test() {
         Vector2f vec(1, 2);
-        Reflection rf;
+        //Reflection rf;
         // rf.beginClass<Vector2f>("Vector2f");
         //     .addProperty(&Vector2f::x);
         //     .addProperty(&Vector2f::y);
@@ -504,8 +504,91 @@ namespace t4 {
     }
 }
 
+namespace t5 {
+    class Reflection { };
+
+    class ObjectInfo { };
+
+    void indent(size_t depth) {
+        cout << string(depth * 4, ' ');
+    }
+
+    template <class T> void xmlSerialize(ObjectInfo& info, size_t depth = 0) {
+        // if (info.isCollection()) {
+        //     CollectionInfo collectionInfo = info.getCollectionInfo();
+        //     for (size_t i = 0; i < collectionInfo.size(); i++)
+        //         xmlSerialize(collectionInfo[i], depth + 1);     
+        // }
+        // else if (info.isSimple()) {
+        //     cout << "<" << info.getName() << ">" << info.toString() << "</" << info.getName() << ">" << endl;
+        // }
+        // else {
+        //     throw string("not supported");
+        // }
+    }
+
+    void test() {
+        //Reflection rf;
+
+        vector<int> numbers;
+        numbers.push_back(42);
+        numbers.push_back(43);
+        // ObjectInfo info = rf.getInfo(numbers);
+        //xmlSerialize(info, rf);
+
+        /*  Expected Output:            
+            <numbers>
+                <e>42</e>
+                <e>43</e>
+            </numbers>
+        
+        */
+    }
+}
+
+namespace t5a {
+    // https://stackoverflow.com/questions/9407367/determine-if-a-type-is-an-stl-container-at-compile-time
+
+    template <typename Class, typename, typename> struct test_struct { };
+
+    template <class T> void getElements();
+    template <> void getElements<int>() { }
+
+    void test() {
+        getElements<int>();
+        // getElements<float>();           // linker error
+    }
+}
+
+namespace t5b {
+    template <typename T> struct IsContainer {
+        static const bool value = false;
+    };
+
+    template <typename T, typename Alloc>
+    struct IsContainer<std::vector<T, Alloc> > {
+        static const bool value = true;
+    };
+
+    //template <typename T, typename U> struct isContainer2 {
+    //    static const bool value = false;
+    //};
+
+    //template <typename T, typename U, typename Alloc>
+    //struct IsContainer2<std::map<T, U, Alloc> > {
+    //    static const bool value = true;
+    //};
+
+    void test() {
+    }
+}
+
 void test() {
-    t4::test();
+    t5b::test();
+    //t5a::test();
+    //t5::test();
+
+    //t4::test();
     //t3::test();
     //t2::test();
     //t1::test();
