@@ -1,6 +1,12 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <map>
+
+// https://stackoverflow.com/questions/5047971/how-do-i-check-for-c11-support
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
+    #define CPP_11
+#endif
 
 using namespace std;
 
@@ -71,7 +77,7 @@ void demo100() {
     // Reflection reflection;
     // reflection
     //     .beginClass<Vector2f100>("Vector2f100")
-    //         .addField("x", x)
+    //         .addField("myInt", myInt)
     //         .addField("y", y)
     //     .endClass()
     //     .beginClass<Class100>("Class100")
@@ -155,7 +161,7 @@ void demo2() {
     Reflection2 reflection;
     // reflection
     //     .beginClass<MyClass1>("MyClass1");
-    //         .addField("x", x)    
+    //         .addField("myInt", myInt)    
     //     .endClass();
 
     MyClass2 myClass;
@@ -387,8 +393,89 @@ namespace d2 {
     }
 }
 
+namespace my {
+    template <class Key, class Val> Val& find(const Key& key, map<Key, Val>& m) {
+        return m.find(key)->second;
+    }
+
+    template <class T, class U> void deleteAll(map<T, U>& m) {
+        for (typename map<T, U>::iterator it = m.begin(); it != m.end(); ++it)
+            delete it->second;
+    }
+}
+
+namespace d3 {
+    class VariableInfo { 
+        string _name;
+    public:
+        VariableInfo(const string& name) : _name(name) { }
+
+        const string& getName() const { return _name; }
+
+        virtual void inspect() = 0;
+    };
+
+    template <class Var, class TInspector> class ConcreteVariableInfo : public VariableInfo {
+        Var& _ref;
+    public:
+        ConcreteVariableInfo(const string& name, Var& ref) : VariableInfo(name), _ref(ref) { }
+
+        virtual void inspect() {
+            TInspector::inspectVariable(_ref);
+        }
+    };
+
+    template <class TInspector> class Reflection {
+        map<string, VariableInfo*> _variables;
+
+    public:
+        virtual ~Reflection() { my::deleteAll(_variables); }
+
+        template <class Var> void addVariable(const string& name, Var& var) {
+            VariableInfo* info = new ConcreteVariableInfo<Var, TInspector>(name, var);
+            _variables[name] = info;
+        }
+
+        VariableInfo& getVariable(const string& name) { 
+            return *my::find(name, _variables);
+        }
+    };
+
+    class DefaultInspector { };
+
+    Reflection<DefaultInspector> createReflection() { return Reflection<DefaultInspector>(); }
+    template <class Inspector> Reflection<Inspector> createReflection() { return Reflection<Inspector>(); }
+
+    class Inspector {
+    public:
+        template <class Var> static void inspectVariable(Var& var) {
+            cout << "Raw variable: " << var << endl;
+            #ifdef CPP_11
+                cout << "is integral: " << std::is_integral<Var>::value << endl;
+            #endif      
+        }
+    };
+
+    void print(VariableInfo& info) {
+        cout << "inspect " << info.getName() << endl;
+        info.inspect();
+    }
+
+    void demo() {
+        int myInt = 42;
+        float myFloat = 3.1415f;
+
+        Reflection<Inspector> rf = createReflection<Inspector>();
+        rf.addVariable("myInt", myInt);
+        rf.addVariable("myFloat", myFloat);
+        print(rf.getVariable("myInt"));
+        print(rf.getVariable("myFloat"));
+    }
+}
+
 void demo() {
-    d2::demo();
+    d3::demo();
+    //d2::demo();
     //d1::demo();
     //demo1();
     //demo2();
