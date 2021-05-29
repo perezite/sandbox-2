@@ -157,7 +157,7 @@ public:
     MyClass2() : x(42) { }
 };
 
-void demo2() {
+void test2() {
     Reflection2 reflection;
     // reflection
     //     .beginClass<MyClass1>("MyClass1");
@@ -258,7 +258,7 @@ void print(Metadata1& fieldInfo)
         << endl;
 }
 
-void demo1()
+void test1()
 {
      int x = 42;
      float f = 3.1415f;
@@ -283,7 +283,7 @@ vector<T*> find_all(const vector<T*>& elements, UnaryPredicate pred) {
     return result;
 }
 
-namespace d1 {
+namespace t1 {
     class EntityInfo {
         string _name;
     
@@ -334,7 +334,7 @@ namespace d1 {
             << endl;
     }
 
-    void demo() {
+    void test() {
         int x = 42;
 
         Reflection rf;
@@ -344,7 +344,7 @@ namespace d1 {
     }
 }
 
-namespace d2 {
+namespace t2 {
     class MyClass {
 
     };
@@ -385,7 +385,7 @@ namespace d2 {
             << endl;
     }
 
-    void demo() {
+    void test() {
         Reflection rf;
         rf.addClass<MyClass>("MyClass");
 
@@ -404,7 +404,7 @@ namespace my {
     }
 }
 
-namespace d3 {
+namespace t3 {
     class VariableInfo { 
         string _name;
     public:
@@ -458,7 +458,7 @@ namespace d3 {
         info.inspect();
     }
 
-    void demo() {
+    void test() {
         int myInt = 42;
         float myFloat = 3.1415f;
 
@@ -470,12 +470,47 @@ namespace d3 {
     }
 }
 
-void demo() {
-    d3::demo();
-    //d2::demo();
-    //d1::demo();
-    //demo1();
-    //demo2();
+namespace t4 {
+    class Reflection {
+    public:
+    };
+
+    struct Vector2f {
+        float x, y;
+        Vector2f(float x_ = 0, float y_ = 0) : x(x_), y(y_) { }
+    };
+
+    template <class Object> void xmlSerialize(Object& o, Reflection& rf) {
+
+    }
+
+    void test() {
+        Vector2f vec(1, 2);
+        Reflection rf;
+        // rf.beginClass<Vector2f>("Vector2f");
+        //     .addProperty(&Vector2f::x);
+        //     .addProperty(&Vector2f::y);
+        // endClass();
+        // xmlSerialize(vec, rf);
+ 
+        // Expected output:
+        // References:
+        //     https://gist.github.com/perezite/c08c3b5458a66db3a936490d53014b06 
+        //     https://docs.microsoft.com/en-us/dotnet/standard/serialization/examples-of-xml-serialization
+        // <Vector2f>
+        //    <x>1</x>
+        //    <y>2</y>
+        // </Vector>
+    }
+}
+
+void test() {
+    t4::test();
+    //t3::test();
+    //t2::test();
+    //t1::test();
+    //test1();
+    //test2();
     //demo100();
 }
 
@@ -491,6 +526,6 @@ void demo() {
 
 
 int main() {
-    demo();
+    test();
     cin.get();
 }
