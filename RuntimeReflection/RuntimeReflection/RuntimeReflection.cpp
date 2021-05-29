@@ -409,9 +409,7 @@ namespace d3 {
         string _name;
     public:
         VariableInfo(const string& name) : _name(name) { }
-
         const string& getName() const { return _name; }
-
         virtual void inspect() = 0;
     };
 
@@ -419,15 +417,19 @@ namespace d3 {
         Var& _ref;
     public:
         ConcreteVariableInfo(const string& name, Var& ref) : VariableInfo(name), _ref(ref) { }
-
+        
         virtual void inspect() {
             TInspector::inspectVariable(_ref);
         }
     };
 
-    template <class TInspector> class Reflection {
-        map<string, VariableInfo*> _variables;
+    class DefaultInspector { 
+    public:
+        template <class Var> static void inspectVariable(Var& var) { }
+    };
 
+    template <class TInspector = DefaultInspector> class Reflection {
+        map<string, VariableInfo*> _variables;
     public:
         virtual ~Reflection() { my::deleteAll(_variables); }
 
@@ -440,11 +442,6 @@ namespace d3 {
             return *my::find(name, _variables);
         }
     };
-
-    class DefaultInspector { };
-
-    Reflection<DefaultInspector> createReflection() { return Reflection<DefaultInspector>(); }
-    template <class Inspector> Reflection<Inspector> createReflection() { return Reflection<Inspector>(); }
 
     class Inspector {
     public:
@@ -465,7 +462,7 @@ namespace d3 {
         int myInt = 42;
         float myFloat = 3.1415f;
 
-        Reflection<Inspector> rf = createReflection<Inspector>();
+        Reflection<Inspector> rf;
         rf.addVariable("myInt", myInt);
         rf.addVariable("myFloat", myFloat);
         print(rf.getVariable("myInt"));
