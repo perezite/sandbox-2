@@ -620,8 +620,45 @@ namespace t5b {
     }
 }
 
+namespace t6 {
+    template <class T>
+    struct FieldInfo {
+        const T& _ref;
+
+        FieldInfo(const T& ref) : _ref(ref) { }
+
+        template <class Inspector>
+        void inspect(Inspector& inspector) {
+            inspector.inspect(_ref);
+        }
+    };
+
+    struct MyInspector {
+        template <class T> void inspect(const T& t) {
+            cout << "inspecting unknown type" << endl;
+        }
+
+        template <> void inspect<int>(const int& i) {
+            cout << "inspecting int value: " << i << endl;
+        }
+    };
+
+    void test() {
+        int i = 42;
+        float f = 3.1415f;
+
+        FieldInfo<int> info1(i);
+        FieldInfo<float> info2(f);
+
+        MyInspector inspector;
+        info1.inspect(inspector);
+        info2.inspect(inspector);
+    }
+}
+
 void test() {
-    t5b::test();
+    t6::test();
+    //t5b::test();
     //t5a::test();
     //t5::test();
 
