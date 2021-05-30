@@ -745,7 +745,6 @@ namespace t8 {
         virtual TypeCategory getTypeCategory() const = 0;
 
         virtual string toString() const = 0;
-
     };
 
     template <class T> struct SimpleObject : public Object<T> {
@@ -779,12 +778,19 @@ namespace t8 {
         return NULL;
     }
 
+    template <class T, class U> struct temp {
+        static void call() { }
+    };
+
+    template <class T> struct temp<T, int> {
+        static void call() { }
+    };
+
     void test() {
-        int x = 42;
-        cout << x << endl;
+        int i = 42;
         Person person;
         Writer writer;
-        //writer.inspect<int>(x);
+        writer.inspect<int>("i", i);
         writer.inspect<Person>("person", person);
     }
 }
