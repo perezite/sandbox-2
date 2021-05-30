@@ -656,8 +656,74 @@ namespace t6 {
     }
 }
 
+namespace t7 {
+    template <class T> string stringify(const T& t) {
+        ostringstream os;
+        os << t;
+        return os.str();
+    }
+
+    struct Person {
+        int age = 42;
+    };
+
+    template <class T> struct TypeInfo {
+        static const bool IsClass = false;
+
+        const T& _ref;
+
+        TypeInfo(const T& ref) : _ref(ref) { }
+
+        string toString() const { return stringify(_ref); }
+
+        template <class Serializer> void serialize(Serializer& serializer) {
+            serializer.serialize<T>(_ref);
+        }
+    };
+
+    template <> struct TypeInfo<Person> {
+        static const bool IsClass = true;
+
+        const Person& _ref;
+
+        TypeInfo(const Person& ref) : _ref(ref) { }
+
+        string toString() const { return "nope"; }
+    };
+
+    struct MySerializer {
+        template <class T> void serialize(const TypeInfo<T>& typeInfo) {
+            if (TypeInfo<T>::IsClass)
+                serializeClass<T>(typeInfo);
+            else
+                serializeObject<T>(typeInfo);
+        }
+
+        template <class T> void serializeClass(const TypeInfo<T>& typeInfo) {
+            /*
+                for (size_t i = 0; i < typeInfo.countFields(); i++) {
+                    typeInfo.getField(i).serialize<MySerializer>(*this);
+                }
+            */
+        }
+
+        template <class T> void serializeObject(const TypeInfo<T>& typeInfo) {
+            cout << typeInfo.toString() << endl;
+        }
+    };
+
+    void test() {
+        int i = 123;
+        Person person;
+        MySerializer serializer;
+        serializer.serialize<int>(i);
+        serializer.serialize<Person>(person);
+    }
+}
+
 void test() {
-    t6::test();
+    t7::test();
+    //t6::test();
     //t5b::test();
     //t5a::test();
     //t5::test();
