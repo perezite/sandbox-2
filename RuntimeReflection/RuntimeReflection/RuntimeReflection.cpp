@@ -675,10 +675,6 @@ namespace t7 {
         TypeInfo(const T& ref) : _ref(ref) { }
 
         string toString() const { return stringify(_ref); }
-
-        template <class Serializer> void serialize(Serializer& serializer) {
-            serializer.serialize<T>(_ref);
-        }
     };
 
     template <> struct TypeInfo<Person> {
@@ -689,7 +685,18 @@ namespace t7 {
         TypeInfo(const Person& ref) : _ref(ref) { }
 
         string toString() const { return "nope"; }
+
+        template <class Serializer> void serialize(Serializer& serializer) {
+            serializer.serialize<Person>(_ref);
+        }
     };
+
+    //template <> struct TypeInfo<Person> : public ClassTypeInfo<Person> {
+    //    TypeInfo(const Person& ref) : ClassTypeInfo(ref) { }
+    //    template <class Serializer> void serialize(Serializer& serializer) {
+    //         serializer.serialize(age);       
+    //    }
+    //};
 
     struct MySerializer {
         template <class T> void serialize(const TypeInfo<T>& typeInfo) {
