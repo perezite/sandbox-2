@@ -728,8 +728,70 @@ namespace t7 {
     }
 }
 
+namespace t8 {
+    struct Person {
+        float height = 1.7f;
+    };
+
+    template <class T> string stringify(T& obj) {
+        ostringstream os;
+        os << obj;
+        return os.str();
+    }
+
+    enum class TypeCategory { Simple, Composite };
+
+    template <class T> struct Object {
+        virtual TypeCategory getTypeCategory() const = 0;
+
+        virtual string toString() const = 0;
+
+    };
+
+    template <class T> struct SimpleObject : public Object<T> {
+        T& _obj;
+
+        SimpleObject(T& obj) : _obj(obj) { }
+
+        virtual TypeCategory getTypeCategory() const { return TypeCategory::Simple; }
+
+        virtual string toString() const { return stringify(_obj); }
+    };
+    
+    template <class T, class Inspector> Object<T>* inspect(T& obj, Inspector& insp, size_t depth) {
+        return new SimpleObject<T>(obj);
+    }
+
+    void printLine(const string& name, const string& str, size_t depth) {
+        cout << string(depth * 4, ' ') << name << ": " << str << endl;
+    }
+
+    struct Writer {
+        template <class T> void inspect(const string& name, T& t, size_t depth = 0) {
+            Object<T>* object = t8::inspect<T, Writer>(t, *this, depth);
+            if (object && object->getTypeCategory() == TypeCategory::Simple)
+                printLine(name, object->toString(), depth);
+        }
+    };
+
+    template <> Object<Person>* inspect<Person, Writer>(Person& person, Writer& writer, size_t depth) {
+        writer.inspect("height", person.height, depth + 1);
+        return NULL;
+    }
+
+    void test() {
+        int x = 42;
+        cout << x << endl;
+        Person person;
+        Writer writer;
+        //writer.inspect<int>(x);
+        writer.inspect<Person>("person", person);
+    }
+}
+
 void test() {
-    t7::test();
+    t8::test();
+    //t7::test();
     //t6::test();
     //t5b::test();
     //t5a::test();
