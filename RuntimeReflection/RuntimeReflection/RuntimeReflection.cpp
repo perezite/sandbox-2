@@ -804,27 +804,61 @@ namespace t9 {
         return string(4 * depth, ' ');
     }
 
+    enum class Type { Simple, Composite };
+
     template <class Serializer, class T> struct Inspector { 
-        template <class Serializer> static void inspect(const string& name, T& t, size_t depth = 0) {
-            cout << indent(depth) << name << ": " << t << endl;
+        static const Type TheType = Type::Simple;
+
+        template <class Serializer> static string inspect(const string& name, T& t, Serializer& serializer, size_t depth = 0) {
+            ostringstream os; os << t;
+            return os.str();
         }
     };
 
     template <class Serializer> struct Inspector<Serializer, Person> { 
-        template <class Serializer> static void inspect(const string& name, Person& person, size_t depth = 0) {
-            cout << indent(depth) << name << ": ClassObject" << endl;
-            Inspector<Serializer, int>:: template inspect<int>("age", person.age, depth + 1);
+        static const Type TheType = Type::Composite;
+
+        template <class Serializer> static string inspect(const string& name, Person& person, Serializer& serializer, size_t depth = 0) {
+            serializer.serialize("age", person.age, depth + 1);
+            return "";
         }
     };
 
-    class Writer {
+    struct Writer {
+        template <class T> void serialize(const string& name, T& t, size_t depth = 0) {
+            typedef Inspector<Writer, T> TheInspector;
 
+            if (TheInspector::TheType == Type::Simple) {
+                string val = TheInspector:: template inspect<Writer>(name, t, *this);
+                cout << indent(depth) << name << ": " << val << endl;
+            }
+            else {
+                cout << indent(depth) << name << ": ClassObject" << endl;
+                TheInspector::template inspect<Writer>(name, t, *this, depth + 1);
+            }
+        }
     };
+
+    struct Employee {
+        vector<string> jobs = { "Chef", "Programmer" };
+    };
+
+    /*
+    * 
+        class Employee {
+            vector<string> jobs = { "Chef", "Programmer" } ;
+        }
+        
+        rf.beginClass<Person>()
+            .addCollection(jobs)
+        .endClass();
+
+    */
 
     void test() {
         Person person;
         Writer writer;
-        Inspector<Writer, Person>::inspect<Person>("person", person);
+        writer.serialize("person", person);
         
         // Expected:
         //     person : ClassObject
@@ -832,8 +866,90 @@ namespace t9 {
     }
 }
 
+namespace t10 {
+    typedef char Invalid[sizeof(vector<void*>) + 1];
+
+    char func1() { return ' '; }
+
+    int func2(int) { return 42; }
+
+    template <int(*)(int)> struct call {
+        static const bool IsCall = true;
+    };
+
+    template <class T> struct call2 {
+        static const bool IsCall = false;
+    };
+
+    class SomeClass { };
+
+    template <class T> float func() {
+
+    }
+
+    template <> float func<int>() {
+        return 1;
+    }
+
+    void test() {
+        cout << call<func2>::IsCall << endl;
+        cout << sizeof(func1()) << endl;
+        cout << sizeof(vector<int>) << endl;
+        cout << sizeof(vector<double>) << endl;
+        cout << sizeof(vector<void*>) << endl;
+        cout << sizeof(Invalid) << endl;
+
+        //cout << call2<func1>::IsCall << endl;
+    }
+}
+
+namespace t11 {
+    struct CollectionInfo { };
+
+    template <class T> vector<CollectionInfo*> getCollection(T &t) { 
+        cout << "get generic collection" << endl;
+        return vector<CollectionInfo*>();
+    }
+
+    template <class T> vector<CollectionInfo*> getCollection(vector<T>& v) {
+        cout << "get vector collection" << endl;
+        return vector<CollectionInfo*>();
+    }
+
+    template <class T, class U> vector<CollectionInfo*> getCollection(map<T, U>& m) {
+        cout << "get map collection" << endl;
+        return vector<CollectionInfo*>();
+    }
+
+    template <class T> struct ObjectInfo {
+        T& _ref;
+
+        ObjectInfo(T& ref) : _ref(ref) { }
+
+        vector<CollectionInfo*> getCollection() {
+           return t11::getCollection(_ref);
+        }
+    };
+
+    void test() {
+        int i = 42;
+        vector<int> v = { 1, 2, 3 };
+        map<string, int> m = { {"one", 1}, {"two", 2}, {"three", 3} };
+
+        ObjectInfo<int> intInfo(i);
+        ObjectInfo<vector<int>> vectorInfo(v);
+        ObjectInfo<map<string, int>> mapInfo(m);
+        intInfo.getCollection();
+        vectorInfo.getCollection();
+        mapInfo.getCollection();
+
+    }
+}
+
 void test() {
-    t9::test();
+    t11::test();
+    //t10::test();
+    //t9::test();
     //t8::test();
     //t7::test();
     //t6::test();
