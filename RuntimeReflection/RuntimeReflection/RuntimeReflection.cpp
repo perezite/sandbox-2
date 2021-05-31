@@ -795,8 +795,46 @@ namespace t8 {
     }
 }
 
+namespace t9 {
+    struct Person {
+        int age = 42;
+    };
+
+    string indent(size_t depth) {
+        return string(4 * depth, ' ');
+    }
+
+    template <class Serializer, class T> struct Inspector { 
+        template <class Serializer> static void inspect(const string& name, T& t, size_t depth = 0) {
+            cout << indent(depth) << name << ": " << t << endl;
+        }
+    };
+
+    template <class Serializer> struct Inspector<Serializer, Person> { 
+        template <class Serializer> static void inspect(const string& name, Person& person, size_t depth = 0) {
+            cout << indent(depth) << name << ": ClassObject" << endl;
+            Inspector<Serializer, int>:: template inspect<int>("age", person.age, depth + 1);
+        }
+    };
+
+    class Writer {
+
+    };
+
+    void test() {
+        Person person;
+        Writer writer;
+        Inspector<Writer, Person>::inspect<Person>("person", person);
+        
+        // Expected:
+        //     person : ClassObject
+        //         height: 42
+    }
+}
+
 void test() {
-    t8::test();
+    t9::test();
+    //t8::test();
     //t7::test();
     //t6::test();
     //t5b::test();
