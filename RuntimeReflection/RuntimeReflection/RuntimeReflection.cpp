@@ -946,8 +946,102 @@ namespace t11 {
     }
 }
 
+namespace t12 {
+    template <class T> void inspect(T& t) { 
+        cout << "generic inspect" << endl;
+    }
+
+    template <class T> void inspect(vector<T>& v) {
+        cout << "vector inspect" << endl;
+    }
+
+    template <class K, class V> void inspect(map<K, V>& m) {
+        cout << "map inspect" << endl;
+    }
+
+    template <class T> void callInspect(T& t) {
+        // beware: inspect<T>(t) will always call generic inspect!
+        inspect(t);     // here, generic parameters are implicitly forwarded
+    }
+
+    void test() {
+        int i = 42;
+        vector<float> v = { 3.1415f, 2.5f };
+        map<string, double> m = { { "one", 1 }, { "two", 2 } };
+        callInspect(i);
+        callInspect(v);
+        callInspect(m);
+    }
+}
+
+namespace t13 {
+    struct Person {
+        string name = "Peter";
+        vector<int> numbers = { 1, 2, 3 };
+    };
+
+    string indent(size_t depth) {
+        return string(depth * 4, ' ');
+    }
+
+    template <class T> void print(const string& key, T& t, size_t depth = 0) {
+        ostringstream os;
+        os << t;
+        cout << indent(depth) << "\"" << key << "\": " << "\"" << os.str() << "\"";
+                
+    }
+
+    template <class T, class Inspector> void inspectField(const string& name, T& t, Inspector& inspector, size_t depth = 0) {
+        print(name, t, depth);
+    }
+
+    template <class T, class Inspector> void inspectObject(const string& name, T& t, Inspector& inspector, size_t depth = 0) {
+        cout << "[inspectObject not implemented for this type]";
+    }
+
+    template <class T, class Inspector> void inspectCollection(const string& name, T& t, Inspector& inspector, size_t depth = 0) {
+        cout << "[inspectCollection not implemented for this type]";
+    }
+
+
+    template <class Inspector, class T> void inspectCollection(const string& name, vector<T>& v, Inspector& inspector, size_t depth = 0) {
+        cout << indent(depth) << "\"" << name << "\": " << "[";
+        for (size_t i = 0; i < v.size(); i++) {
+            string comma = i == 0 ? "" : ",";
+            cout << comma << " \"" << v[i] << "\"";
+        }
+        cout << " ]" << endl;
+    }
+
+    template <class Inspector> void inspectObject(const string& name, Person& p, Inspector& inspector, size_t depth = 0) {
+        cout << indent(depth) << "{" << endl;
+        inspectField("name", p.name, inspector, depth + 1);
+        cout << "," << endl;
+        inspectCollection("numbers", p.numbers, inspector, depth + 1);
+        cout << indent(depth) << "}" << endl;
+    }
+
+    struct Writer { };
+    
+
+    void test() {
+        Person peter;
+        Writer writer;
+
+        inspectObject("person", peter, writer);
+
+        // Expected output 
+        // {
+        //     "name": "Peter"
+        //     "numbers": [ "1", "2", "2" ]
+        // }
+    }
+}
+
 void test() {
-    t11::test();
+    t13::test();
+    //t12::test();
+    //t11::test();
     //t10::test();
     //t9::test();
     //t8::test();
