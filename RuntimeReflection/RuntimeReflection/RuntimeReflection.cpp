@@ -1144,8 +1144,28 @@ namespace t15 {
     }
 }
 
+namespace t16 {
+    class Writer { };
+
+    class Person { int age = 42; };
+
+    template <class I> class ClassInfo { 
+    };
+
+    template <class C, class I> ClassInfo<I> getClassInfo() { return ClassInfo<I>(); }
+
+    template <class I> ClassInfo<I> getClassInfo(Person* person) { 
+        return ClassInfo<I>();
+    }
+
+    void test() {
+        ClassInfo<Writer> personClassInfo = getClassInfo<Writer>((Person*)NULL);
+    }
+}
+
 void test() {
-    t15::test();
+    t16::test();
+    //t15::test();
     //t14::test();
     //t13::test();
     //t12::test();
