@@ -1078,8 +1078,75 @@ namespace t14 {
     }
 }
 
+namespace t15 {
+    struct Person {
+        int age = 42;
+    };
+
+    template <class C> struct PropertyInfo { 
+        // virtual void inspect(I& inspector) = 0
+    };
+
+    template <class C, class P> struct ConcretePropertyInfo : public PropertyInfo<C> { 
+        //virtual void inspect(I& inspector) {
+        //    
+        //}
+    };
+
+    template <class C> struct ClassInfo {
+        vector<PropertyInfo<C>*> _properties;
+
+        template <class P> void addProperty(const string& name, P C::*prop) {
+            _properties.push_back(new ConcretePropertyInfo<C, P>());
+        }
+
+        vector<PropertyInfo<C>*> getProperties() { return _properties; }
+    };
+
+    template <class C> ClassInfo<C> getClassInfo() { return ClassInfo<C>(); }
+
+    template <> ClassInfo<Person> getClassInfo<Person>() {
+        ClassInfo<Person> info;
+        info.addProperty("age", &Person::age);
+        return info;
+    }
+
+    struct LuaRegistry {
+        template <class C> void beginClass(const string& name) {
+            cout << "LuaRegistry::beginClass(\"" << name << "\")" << endl;
+        }
+    };
+
+    struct LuaBinder {
+        LuaRegistry _registry;
+
+        template <class T> void inspectProperty() {
+            //_registry.
+        }
+
+        template <class C> void bindClass(const string& name) {
+            _registry.beginClass<C>(name);
+            ClassInfo<C> classInfo = getClassInfo<C>();
+            vector<PropertyInfo<C>*> props = classInfo.getProperties();
+            for (size_t i = 0; i < props.size(); i++) {
+            //    props[i]->inspect(*this);    
+            }
+        }
+    };
+
+    void test() {
+        Person person;
+        
+        auto test = &Person::age;
+
+        LuaBinder binder;
+        binder.bindClass<Person>("Person");
+    }
+}
+
 void test() {
-    t14::test();
+    t15::test();
+    //t14::test();
     //t13::test();
     //t12::test();
     //t11::test();
