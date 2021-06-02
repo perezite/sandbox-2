@@ -1,5 +1,6 @@
 #include <iostream>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 #include <map>
 
@@ -1163,8 +1164,58 @@ namespace t16 {
     }
 }
 
+namespace t17 {
+    template<class T> struct Visitor {};            
+
+    template<class Cont> struct StlVisitor {
+        Cont& c;
+        typename Cont::iterator it;
+
+        StlVisitor(Cont& c_) : c(c_), it(c_.begin()) { }
+
+        typename Cont::value_type& get() { return *it; }
+
+        void next() { it++; }
+
+        bool end() { return it == c.end(); }
+    };
+
+    template <class T> struct Visitor<vector<T>> : public StlVisitor<vector<T>> {
+        Visitor(vector<T>& v) : StlVisitor<vector<T>>(v) { }
+    };
+
+    template <class K, class V> struct Visitor<map<K, V>> : public StlVisitor<map<K, V>> {
+        Visitor(map<K, V>& m) : StlVisitor<map<K, V>>(m) { }
+    };
+
+    template <class T> void printValue(T& t) { 
+        cout << t << endl;
+    }
+
+    template <class K, class V> void printValue(pair<K, V>& p) {
+        cout << p.first << ": " << p.second << endl;
+    }
+
+    template <class V> void print(V& vis) {
+        while (!vis.end()) {
+            printValue(vis.get());
+            vis.next();
+        }
+    }
+
+    void test() {
+        vector<int> v{ 1, 2, 3};
+        map<string, int> m{ {"z", 1}, {"y", 2}, {"x", 3} };
+        Visitor<vector<int>> vvis(v);
+        Visitor<map<string, int>> mvis(m);
+        print(vvis);
+        print(mvis);
+    }
+}
+
 void test() {
-    t16::test();
+    t17::test();
+    //t16::test();
     //t15::test();
     //t14::test();
     //t13::test();
@@ -1178,7 +1229,6 @@ void test() {
     //t5b::test();
     //t5a::test();
     //t5::test();
-
     //t4::test();
     //t3::test();
     //t2::test();
