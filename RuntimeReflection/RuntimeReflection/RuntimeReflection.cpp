@@ -1213,8 +1213,50 @@ namespace t17 {
     }
 }
 
+namespace t18 {
+    // check if free function overload exists for given type
+    // Combination of the following sources:
+    // https://stackoverflow.com/questions/38717341/test-if-a-not-class-member-function-exists-sfinae
+    // https://stackoverflow.com/questions/87372/check-if-a-class-has-a-member-function-of-a-given-signature
+
+    void print(int x) { }
+
+    typedef char No[1];
+    typedef char Yes[2];
+
+    template<typename T, void(*)(T)> struct Sfinae {};
+
+    template <class T> Yes& check(Sfinae<T, print>*) { }
+
+    template <class T> No& check(...) { }
+
+    template <class T> struct has_print {
+        template<typename T, void(*)(T)> struct Sfinae {};
+
+        template <class T> static  Yes& test(Sfinae<T, print>*) { }
+
+        template <class T> static No& test(...) { }
+
+        static const bool value = sizeof(test<T>(0)) == sizeof(Yes);
+    };
+
+    void test() {
+        Sfinae<int, print> temp;
+        //Sfinae<float, print> temp;                // compile error
+    
+        cout << "1 = no, 2 = yes" << endl;
+        cout << sizeof(check<int>(0)) << endl;      // returns 2
+        cout << sizeof(check<float>(0)) << endl;    // returns 1
+
+        cout << boolalpha;
+        cout << has_print<int>::value << endl;
+        cout << has_print<float>::value << endl;
+    }
+}
+
 void test() {
-    t17::test();
+    t18::test();
+    //t17::test();
     //t16::test();
     //t15::test();
     //t14::test();
