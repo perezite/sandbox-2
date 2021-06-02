@@ -1165,7 +1165,7 @@ namespace t16 {
 }
 
 namespace t17 {
-    template<class T> struct Visitor {};            
+    template<class T> struct Visitor { };            
 
     template<class Cont> struct StlVisitor {
         Cont& c;
@@ -1233,7 +1233,7 @@ namespace t18 {
     template <class T> struct has_print {
         template<typename T, void(*)(T)> struct Sfinae {};
 
-        template <class T> static  Yes& test(Sfinae<T, print>*) { }
+        template <class T> static Yes& test(Sfinae<T, print>*) { }
 
         template <class T> static No& test(...) { }
 
@@ -1241,7 +1241,10 @@ namespace t18 {
     };
 
     void test() {
+        #pragma warning( push ) 
+        #pragma warning( disable : 4101)
         Sfinae<int, print> temp;
+        #pragma warning( pop ) 
         //Sfinae<float, print> temp;                // compile error
     
         cout << "1 = no, 2 = yes" << endl;
@@ -1254,8 +1257,76 @@ namespace t18 {
     }
 }
 
+namespace t19 {
+    template<class T> struct Visitor { };
+
+    template<class Cont> struct StlVisitor {
+        Cont& c;
+        typename Cont::iterator it;
+
+        StlVisitor(Cont& c_) : c(c_), it(c_.begin()) { }
+
+        typename Cont::value_type& get() { return *it; }
+
+        void next() { it++; }
+
+        bool end() { return it == c.end(); }
+    };
+
+    template <class T> struct Visitor<vector<T>> : public StlVisitor<vector<T>> {
+        Visitor(vector<T>& v) : StlVisitor<vector<T>>(v) { }
+    };
+
+    template <class K, class V> struct Visitor<map<K, V>> : public StlVisitor<map<K, V>> {
+        Visitor(const map<K, V>& m) : StlVisitor<map<K, V>>(m) { }
+    };
+
+    struct Writer {
+        template <class T> void inspectSimple(T& t) {
+            cout << t << endl;
+        }
+
+        template <class T> void inspectCollection(T& t) {
+            Visitor<T> vis(t);
+            while (!vis.end()) {
+                inspectSimple(vis.get());
+                vis.next();
+            }
+        }
+    };
+
+    void test() {
+        pair<string, int> bla;
+        cout << bla.first << endl;
+
+        //cout << is_class<int>::value << endl;
+
+        float f;
+        cin >> f;
+        cout << f << endl;
+        vector<int> v = { 1, 2, 3 };
+        Writer writer;
+        Visitor<vector<int>> temp(v);
+        writer.inspectCollection(v);
+    }
+}
+
+namespace t20 {
+    // TODO: try out https://stackoverflow.com/questions/35213658/how-does-this-implementation-of-stdis-class-work
+    // to implement an is_class template 
+    // this would allow us to distinguish between class types, simple types and possibly collection types 
+    // Note: The latter would be the case, if a Visitor without a field Visitor<T>::NotImplemented is defined. The
+    // field Visitor<T>::NotImplemented is defined inside the default visitor (but of course not in the specialized Visitors).
+
+    void test() {
+
+    }
+}
+
 void test() {
-    t18::test();
+    t20::test();
+    //t19::test();
+    //t18::test();
     //t17::test();
     //t16::test();
     //t15::test();
@@ -1293,5 +1364,7 @@ void test() {
 
 int main() {
     test();
-    cin.get();
+#ifdef WIN32
+    system("pause");
+#endif
 }
