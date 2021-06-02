@@ -1038,8 +1038,49 @@ namespace t13 {
     }
 }
 
+namespace t14 {
+    template <class Inspector> struct SimpleMemberInfo {
+        string _name;
+
+        SimpleMemberInfo(const string& name) : _name(name) { }
+
+        string getName() const { return _name; }
+
+        virtual void inspect(Inspector& inspector) = 0;
+    };
+
+    template <class Inspector, class T> struct ConcreteSimpleMemberInfo : public SimpleMemberInfo<Inspector> {
+        T& _ref;
+
+        ConcreteSimpleMemberInfo(const string& name, T& ref) : SimpleMemberInfo<Inspector>(name), _ref(ref) { }
+
+        virtual void inspect(Inspector& inspector) {
+            inspector.inspectSimpleMember(SimpleMemberInfo<Inspector>::getName(), _ref);
+        }
+    };
+
+    template <class Inspector, class T> 
+    SimpleMemberInfo<Inspector>* getSimpleMemberInfo(const string& name, T& t) {
+        return new ConcreteSimpleMemberInfo<Inspector, T>(name, t);
+    }
+
+    struct Writer {
+        template <class T> void inspectSimpleMember(const string& name, T& t) {
+            cout << name << ": " << t << endl;
+        }
+    };
+
+    void test() {
+        int i = 42;
+        Writer writer;
+        SimpleMemberInfo<Writer>* info = getSimpleMemberInfo<Writer>("i", i);
+        info->inspect(writer);
+    }
+}
+
 void test() {
-    t13::test();
+    t14::test();
+    //t13::test();
     //t12::test();
     //t11::test();
     //t10::test();
