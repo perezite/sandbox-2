@@ -1325,11 +1325,11 @@ namespace t20 {
     template <class T> no& check(...) { }
 
     class TheClass { };
-    struct TheStruct { };
+    struct NotPrintable { };
 
     void test() {
         cout << sizeof(check<TheClass>(0)) << endl;
-        cout << sizeof(check<TheStruct>(0)) << endl;
+        cout << sizeof(check<NotPrintable>(0)) << endl;
         cout << sizeof(check<int>(0)) << endl;
     }
 }
@@ -1344,22 +1344,43 @@ namespace t21 {
         static const bool value = sizeof(check<T>(0)) == sizeof(yes);
     };
 
+
     class TheClass { };
-    template <class T> class TheTemplatedClass{ };
-    struct TheStruct { };
+    template <class T> class TheTemplatedClass { };
+    struct NotPrintable { };
 
     void test() {
         cout << boolalpha;
         cout << IsClass<TheClass>::value << endl;
         cout << IsClass<TheTemplatedClass<int>>::value << endl;
-        cout << IsClass<TheStruct>::value << endl;
+        cout << IsClass<NotPrintable>::value << endl;
         cout << IsClass<int>::value << endl;
+    }
+}
 
+namespace t22 {
+    template <class T> void print(T& t) { 
+        cout << t << endl;
+    }
+
+    typedef char no[1];
+    typedef char yes[2];
+
+    template <class T, void (*)(T&)> struct Sfinae { };
+    template <class T> yes& check(Sfinae<T, print<T>>*) { }
+    template <class T> no& check(...) { }
+
+    struct NotPrintable { };
+
+    void test() {
+        cout << sizeof(check<int>(0)) << endl;
+        cout << sizeof(check<NotPrintable>(0)) << endl;
     }
 }
 
 void test() {
-    t21::test();
+    t22::test();
+    //t21::test();
     //t20::test();
     //t19::test();
     //t18::test();
