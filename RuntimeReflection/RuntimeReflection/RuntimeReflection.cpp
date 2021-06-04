@@ -1318,13 +1318,49 @@ namespace t20 {
     // Note: The latter would be the case, if a Visitor without a field Visitor<T>::NotImplemented is defined. The
     // field Visitor<T>::NotImplemented is defined inside the default visitor (but of course not in the specialized Visitors).
 
+    typedef char no[1];
+    typedef char yes[2];
+
+    template <class T> yes& check(int T::*) { }
+    template <class T> no& check(...) { }
+
+    class TheClass { };
+    struct TheStruct { };
+
     void test() {
+        cout << sizeof(check<TheClass>(0)) << endl;
+        cout << sizeof(check<TheStruct>(0)) << endl;
+        cout << sizeof(check<int>(0)) << endl;
+    }
+}
+
+namespace t21 {
+    typedef char no[1];
+    typedef char yes[2];
+
+    template <class T> struct IsClass {
+        template <class U> static yes& check(int U::*) { }
+        template <class U> static no& check(...) { }
+        static const bool value = sizeof(check<T>(0)) == sizeof(yes);
+    };
+
+    class TheClass { };
+    template <class T> class TheTemplatedClass{ };
+    struct TheStruct { };
+
+    void test() {
+        cout << boolalpha;
+        cout << IsClass<TheClass>::value << endl;
+        cout << IsClass<TheTemplatedClass<int>>::value << endl;
+        cout << IsClass<TheStruct>::value << endl;
+        cout << IsClass<int>::value << endl;
 
     }
 }
 
 void test() {
-    t20::test();
+    t21::test();
+    //t20::test();
     //t19::test();
     //t18::test();
     //t17::test();
