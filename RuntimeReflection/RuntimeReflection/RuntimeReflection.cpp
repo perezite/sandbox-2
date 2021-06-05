@@ -1608,12 +1608,10 @@ namespace t30 {
 namespace t31 {
     // https://stackoverflow.com/questions/6534041/how-to-check-whether-operator-exists
     struct A { int  a; };
-
     bool operator==(const A& l, const A& r) { return (l.a == r.a); }
 
     struct B {
         int  b;
-
         bool operator==(const B& rhs) const { return (b == rhs.b); }
     };
 
@@ -1627,8 +1625,7 @@ namespace t31 {
         bool Check(...);
         No& Check(const No&);
 
-        template <typename T, typename Arg = T>
-        struct EqualExists
+        template <typename T, typename Arg = T> struct EqualExists
         {
             enum { value = (sizeof(Check(*(T*)(0) == *(Arg*)(0))) != sizeof(No)) };
         };
@@ -1642,9 +1639,50 @@ namespace t31 {
     }
 }
 
+namespace t32 {
+    // https://stackoverflow.com/questions/6534041/how-to-check-whether-operator-exists    
+    struct NoStream { };
+    struct WithStream { };
+
+    ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator<<" << endl; return os; }
+
+    template<typename T> char operator<< (ostream& os, const T&);
+
+    void test() {
+        cout << sizeof(*(ostringstream*)(0) << *(double*)(0)) << endl;
+        cout << sizeof(*(ostringstream*)(0) << *(int*)(0)) << endl;
+        cout << sizeof(*(ostringstream*)(0) << *(WithStream*)(0)) << endl;
+        cout << sizeof(*(ostringstream*)(0) << *(NoStream*)(0)) << endl;
+    }
+}
+
+namespace t33 {
+    // https://stackoverflow.com/questions/6534041/how-to-check-whether-operator-exists
+    namespace HasStream {
+        template<typename T> char operator<< (ostream& os, const T&);
+        
+        template <class T> static const bool value = 
+            sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(char);
+
+    };
+
+    struct WithoutStream { };
+    struct WithStream { };
+    ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator<<" << endl; return os; }
+
+    void test() {
+        cout << HasStream::value<WithoutStream> << endl;
+        cout << HasStream::value<int> << endl;
+        cout << HasStream::value<double> << endl;
+        cout << HasStream::value<WithStream> << endl;
+    }
+}
+
 void test()
 {
-    t31::test();
+    t33::test();
+    //t32::test();
+    //t31::test();
     //t30::test();
     //t29::test();
     //t28::test();
