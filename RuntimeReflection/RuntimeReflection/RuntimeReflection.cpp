@@ -1659,11 +1659,11 @@ namespace t32 {
 namespace t33 {
     // https://stackoverflow.com/questions/6534041/how-to-check-whether-operator-exists
     namespace HasStream {
-        template<typename T> char operator<< (ostream& os, const T&);
+        typedef char No[sizeof(ostringstream&) + 1];
+        template<typename T> No& operator<< (ostream& os, const T&);
         
         template <class T> static const bool value = 
-            sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(char);
-
+            sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&);
     };
 
     struct WithoutStream { };
