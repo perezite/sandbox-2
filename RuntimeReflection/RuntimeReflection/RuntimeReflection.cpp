@@ -1662,19 +1662,38 @@ namespace t33 {
         typedef char No[sizeof(ostringstream&) + 1];
         template<typename T> No& operator<< (ostream& os, const T&);
         
-        template <class T> static const bool value = 
-            sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&);
+        template <class T> struct StreamExists {
+            enum {                      // neded to make this a compile time constant
+                value = sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&)
+            };
+        };
+
+        static const bool test = sizeof(int) == sizeof(char);
+    };
+
+    template <class T> struct hasStream {
+        static const bool value = HasStream::StreamExists<T>::value;
     };
 
     struct WithoutStream { };
     struct WithStream { };
     ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator<<" << endl; return os; }
 
+    template <bool> struct CompileTimeCheck { };
+    template <> struct CompileTimeCheck<true> { static void print() { cout << "true" << endl; } };
+    template <> struct CompileTimeCheck<false> { static void print() { cout << "false" << endl; } };
+
+
     void test() {
-        cout << HasStream::value<WithoutStream> << endl;
-        cout << HasStream::value<int> << endl;
-        cout << HasStream::value<double> << endl;
-        cout << HasStream::value<WithStream> << endl;
+        cout << boolalpha;
+        cout << hasStream<WithoutStream>::value << endl;
+        cout << hasStream<int>::value << endl;
+        cout << hasStream<double>::value << endl;
+        cout << hasStream<WithStream>::value << endl;
+
+        CompileTimeCheck<hasStream<WithoutStream>::value>::print();
+        CompileTimeCheck<hasStream<WithStream>::value>::print();
+
     }
 }
 
