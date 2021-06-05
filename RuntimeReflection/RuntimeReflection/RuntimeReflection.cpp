@@ -1359,9 +1359,7 @@ namespace t21 {
 }
 
 namespace t22 {
-    template <class T> void print(T& t) { 
-        cout << t << endl;
-    }
+    template <class T> void print(T& t) { cout << t << endl; }
 
     typedef char no[1];
     typedef char yes[2];
@@ -1378,8 +1376,284 @@ namespace t22 {
     }
 }
 
-void test() {
-    t22::test();
+namespace t23 {
+    struct NotPrintable { };
+    struct Printable { };
+
+    template <class T> void print(T& t) { cout << t << endl; }
+    void print(Printable& p) { cout << "printing specialized" << endl; }
+
+    void call(void(*func)(Printable& p)) { cout << "call specialized" << endl; }
+    template <class T> void call(void(*func)(T&)) { cout << "call generic" << endl; }
+
+    template <class T> char check(T* t) { return char(); }
+    float check(Printable* p) { return float(); }
+
+    void test() { 
+        int i = 42;
+        Printable p;
+        print<int>(i);
+        print(p);
+        call(print);
+        call(print<int>);
+        int* pi = NULL;
+        Printable* pp = NULL;
+        cout << sizeof(check((int*)NULL)) << endl;
+        cout << sizeof(check((Printable*)NULL)) << endl;
+    }
+}
+
+namespace t24 {
+    class Printable { };
+
+    template <class T> void print(T& t) { cout << t << endl; }
+    void print(Printable& p) { cout << "printable" << endl; }
+
+    typedef char no[1];
+    typedef char yes[2];
+
+    template <class T, void (*)(T&)> struct Sfinae { };
+    //template <class T> yes& check(Sfinae<T, print<T>>*) { }
+    template <class T> yes& check(Sfinae<T, &print<T>>*) { }
+    template <class T> no& check(...) { }
+
+    struct NotPrintable { };
+
+    template <class T> struct TheCheck {
+        void call(T* t) { print(*t); }
+    };
+
+    template <class T> void myCheck(TheCheck<T>* theCheck) { cout << "match" << endl; }
+    template <class T> void myCheck(...) { cout << "no match" << endl; }
+
+    void test() {
+        myCheck<int>(0);
+        myCheck<NotPrintable>(0);
+        int i = 42;
+        print(i);
+        //cout << check<Printable>(0) << endl;
+        //cout << sizeof(check<NotPrintable>(0)) << endl;
+    }
+}
+
+namespace t25 {
+    struct Printable { };
+
+    template <class T> void print(T& t) { cout << t << endl; }
+    template <class T> void print(Printable& p) { cout << "print(Printable&)" << endl; }
+
+    typedef char no[1];
+    typedef char yes[2];
+
+    template <class T, void (*)(T&)> struct Sfinae { };
+    template <class T> yes& check(Sfinae<T, print<T>>*) { }
+    template <class T> no& check(...) { }
+
+    struct NotPrintable { };
+
+    void test() {
+        cout << sizeof(check<int>(0)) << endl;
+        cout << sizeof(check<Printable>(0)) << endl;
+        cout << sizeof(check<NotPrintable>(0)) << endl;
+    }
+}
+
+namespace t26 {
+    struct Printable { };
+    struct NotPrintable { };
+
+    template <class T> void print(T& t) { cout << t << endl; }
+    template <class T> void print(Printable& p) { cout << "print(Printable&)" << endl; }
+
+    template <class T> char probe() {
+        T* t = NULL;
+        print(*t);
+        return 42;
+    }
+
+    template <class T> struct hasPrint {
+        typedef char no[1];
+        typedef char yes[2];
+
+        template <class U, void (*)(U&)> struct Sfinae { };
+        template <class T> static yes& check(Sfinae<T, print<T>>*) { }
+        template <class T> static no& check(...) { }
+        static const size_t dummy = sizeof(check<char>(0));      // HACK: needed to prevent weird compile error...
+        static const bool value = sizeof(check<T>(0)) == sizeof(yes);
+    };
+
+    void test() {
+        cout << boolalpha;
+        cout << hasPrint<NotPrintable>::value << endl;      // would fail if this is the first check and the HACK above did not exist
+        cout << hasPrint<Printable>::value << endl;
+        cout << hasPrint<int>::value << endl;
+        cout << hasPrint<char>::value << endl;
+
+        probe<int>();
+        //probe<NotPrintable>();
+    }
+}
+
+namespace t27 {
+    struct Printable { };
+
+    template <class T> void print(T& t) { cout << t << endl; }
+    void print(Printable& p) { cout << "print(Printable&)" << endl; }
+    template <class T> void printWrap(T& t) { print(t); }
+
+    typedef char no[1];
+    typedef char yes[2];
+
+    template <class T, void (*)(T&)> struct Sfinae { };
+    template <class T> char check(Sfinae<T, &printWrap<T>>*) { cout << "check1" << endl; return char(); }
+    template <class T> int check(...) { cout << "check2" << endl; return int(); }
+    static const size_t dummy = sizeof(check<char>(0));      // HACK: needed to prevent weird compile error...
+
+    void myTest();
+
+    void test() {
+        check<int>(0);
+        check<Printable>(0);
+
+        //Sfinae<Printable, &printWrap<Printable>>* sfinae;
+
+        //cout << sizeof(check<int>(0)) << endl;
+        //cout << sizeof(check<Printable>(0)) << endl;
+    }
+}
+
+namespace t28 {
+    void overloaded(int a) { }
+    void overloaded(float b) { }
+
+    struct MyStruct {
+        void operator<<(int a) { }
+        void operator<<(float a) { }
+
+    };
+
+    template <void(MyStruct::*)(int)> struct MyTest {  };
+    template <class T, ostringstream&(*)(T)> struct MyTest2 { };
+    
+    // basic_ostream& __CLR_OR_THIS_CALL operator<<(int _Val) { // insert an int
+
+    struct SomeStruct { };
+
+    void test() {
+        //auto temp = &MyStruct::operator+;
+        //MyTest<&MyStruct::operator<< > temp2;
+        //int i = 42;
+        //ostringstream os; os << i << endl;
+        //ostringstream& (ostringstream::*temp3) (int);
+        //MyTest2<int, &MyStruct::operator<< > temp4;
+        //MyTest2<int, (&ostringstream::operator<<) > temp4;
+    }
+}
+
+namespace t29 {
+    template <class T> string stringify(T& t) { ostringstream os; os << t; return os.str(); }
+    string toString(int i) { return stringify(i); }
+    string toString(float f) { return stringify(f); }
+    template <class T> int toString(T& t) { return 0; }
+
+    struct SomeStruct { };
+
+    template <class T> struct hasPrint {
+        static const bool value = sizeof(toString(*((T*)NULL))) == sizeof(string);
+    };
+
+    void test() {
+        cout << boolalpha;
+        cout << hasPrint<int>::value << endl;
+        cout << hasPrint<float>::value << endl;
+        cout << hasPrint<unsigned int>::value << endl;
+        cout << hasPrint<double>::value << endl;
+        cout << hasPrint<SomeStruct>::value << endl;
+    }
+}
+
+namespace t30 {
+    template <class T> string stringify(T& t) { ostringstream os; os << t; return os.str(); }
+    string toString(int i) { return stringify(i); }
+    string toString(float f) { return stringify(f); }
+    template <class T> int toString(T& t) { return 0; }
+
+    struct SomeStruct { };
+
+    template <class T> struct hasPrint {
+        static const bool value = sizeof(toString(*((T*)NULL))) == sizeof(string);
+    };
+
+    template <class T, bool> struct Extract;
+    template <class T> struct Extract<T, true> { 
+        static string asString(T& t) { return toString(t); }
+    };
+    template <class T> struct Extract<T, false> { 
+        static string asString(T& t) { return "<unknown>"; }
+    };
+
+
+    template <class T> string getStringValue(T& t) {
+        return Extract<T, hasPrint<T>::value>::asString(t);
+    }
+
+    void test() {
+        int i = 42;
+        SomeStruct s;
+        cout << getStringValue(i) << endl;
+        cout << getStringValue(s) << endl;
+    }
+}
+
+namespace t31 {
+    // https://stackoverflow.com/questions/6534041/how-to-check-whether-operator-exists
+    struct A { int  a; };
+
+    bool operator==(const A& l, const A& r) { return (l.a == r.a); }
+
+    struct B {
+        int  b;
+
+        bool operator==(const B& rhs) const { return (b == rhs.b); }
+    };
+
+    struct C { };
+
+    namespace CHECK
+    {
+        class No { bool b[2]; };
+        template<typename T, typename Arg> No operator== (const T&, const Arg&);
+
+        bool Check(...);
+        No& Check(const No&);
+
+        template <typename T, typename Arg = T>
+        struct EqualExists
+        {
+            enum { value = (sizeof(Check(*(T*)(0) == *(Arg*)(0))) != sizeof(No)) };
+        };
+    }
+
+    void test() {
+        cout << CHECK::EqualExists<A>::value << endl;
+        cout << CHECK::EqualExists<B>::value << endl;
+        cout << CHECK::EqualExists<C>::value << endl;
+
+    }
+}
+
+void test()
+{
+    t31::test();
+    //t30::test();
+    //t29::test();
+    //t28::test();
+    //t27::test();
+    //t26::test();
+    //t25::test();
+    //t24::test();
+    //t23::test();
+    //t22::test();
     //t21::test();
     //t20::test();
     //t19::test();
