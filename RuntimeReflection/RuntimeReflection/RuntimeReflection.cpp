@@ -1344,7 +1344,6 @@ namespace t21 {
         static const bool value = sizeof(check<T>(0)) == sizeof(yes);
     };
 
-
     class TheClass { };
     template <class T> class TheTemplatedClass { };
     struct NotPrintable { };
@@ -1663,12 +1662,10 @@ namespace t33 {
         template<typename T> No& operator<< (ostream& os, const T&);
         
         template <class T> struct StreamExists {
-            enum {                      // neded to make this a compile time constant
+            enum {                      // neded to make 'value' a compile time constant
                 value = sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&)
             };
         };
-
-        static const bool test = sizeof(int) == sizeof(char);
     };
 
     template <class T> struct hasStream {
@@ -1680,9 +1677,8 @@ namespace t33 {
     ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator<<" << endl; return os; }
 
     template <bool> struct CompileTimeCheck { };
-    template <> struct CompileTimeCheck<true> { static void print() { cout << "true" << endl; } };
-    template <> struct CompileTimeCheck<false> { static void print() { cout << "false" << endl; } };
-
+    template <> struct CompileTimeCheck<true> { static void print() { cout << "true value" << endl; } };
+    template <> struct CompileTimeCheck<false> { static void print() { cout << "false value" << endl; } };
 
     void test() {
         cout << boolalpha;
@@ -1693,13 +1689,132 @@ namespace t33 {
 
         CompileTimeCheck<hasStream<WithoutStream>::value>::print();
         CompileTimeCheck<hasStream<WithStream>::value>::print();
+    }
+}
+
+namespace t34 {
+    namespace HasStream {
+        typedef char No[sizeof(ostringstream&) + 1];
+        template<typename T> No& operator<< (ostream& os, const T&);
+
+        template <class T> struct StreamExists {
+            enum {                      // neded to make 'value' a compile time constant
+                value = sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&)
+            };
+        };
+    };
+
+    template <class T> struct hasStream {
+        static const bool value = HasStream::StreamExists<T>::value;
+    };
+
+    struct WithoutStream { };
+    struct WithStream { };
+    ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator<<" << endl; return os; }
+
+    template <class T> string toString(T& t) { ostringstream os; os << t; return os.str(); }
+
+    template <class T, bool /*has Stream*/> struct ToString;
+    template <class T> struct ToString<T, true> { static string value(T& t) { return toString(t); } };
+    template <class T> struct ToString<T, false> { static string value(T& t) { return "<unknown>"; } };
+
+    template <class T> struct TypeInfo {
+        TypeInfo()  { }
+
+        inline static bool hasStream() { return hasStream<T>::value; }
+
+        static string toString(T& t) { 
+            static const bool hasStream = t34::hasStream<T>::value;
+            return ToString<T, hasStream>::value(t); 
+        }
+    };
+
+    void test() {
+        int i = 42;
+        TypeInfo<int> ti;
+        cout << ti.toString(i) << endl;
+
+        WithoutStream wos;
+        TypeInfo<WithoutStream> twos;
+        cout << twos.toString(wos) << endl;
+
+        WithStream ws;
+        TypeInfo<WithStream> tws;
+        cout << tws.toString(ws) << endl;
+    }
+}
+
+namespace t35 {
+    namespace HasStream {
+        typedef char No[sizeof(ostringstream&) + 1];
+        template<typename T> No& operator<< (ostream& os, const T&);
+
+        template <class T> struct StreamExists {
+            enum {                      // neded to make 'value' a compile time constant
+                value = sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&)
+            };
+        };
+    };
+
+    template <class T> struct hasStream {
+        static const bool value = HasStream::StreamExists<T>::value;
+    };
+
+    struct WithoutStream { };
+    struct WithStream { };
+    ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator<<"; return os; }
+
+    template <class T> string toString(T& t) { ostringstream os; os << t; return os.str(); }
+
+    template <class T, bool /*has Stream*/> struct ToString;
+    template <class T> struct ToString<T, true> { static string value(T& t) { return toString(t); } };
+    template <class T> struct ToString<T, false> { static string value(T& t) { return "<error>"; } };
+
+    struct ObjectInfo {
+        virtual bool hasStream() = 0;
+
+        virtual string toString() = 0;
+    };
+
+    template <class T> struct ConcreteObjectInfo : public ObjectInfo {
+        T& _ref;
+        
+        ConcreteObjectInfo(T& ref) : _ref(ref) { }
+
+        virtual bool hasStream() { return t35::hasStream<T>::value; }
+
+        string toString() {
+            static const bool hasStream = t35::hasStream<T>::value;
+            return ToString<T, hasStream>::value(_ref);
+        }
+    };
+
+    void test() {
+        int i = 42;
+        float f = 3.1415f;
+        WithoutStream wos;
+        WithStream ws;
+        vector<ObjectInfo*> oil;
+        oil.push_back(new ConcreteObjectInfo<WithoutStream>(wos));
+        oil.push_back(new ConcreteObjectInfo<int>(i));
+        oil.push_back(new ConcreteObjectInfo<float>(f));
+        oil.push_back(new ConcreteObjectInfo<WithStream>(ws));
+
+        for (size_t i = 0; i < oil.size(); i++) {
+            if (oil[i]->hasStream())
+                cout << oil[i]->toString() << endl;
+            else
+                cout << "no toString()" << endl;
+        }
 
     }
 }
 
 void test()
 {
-    t33::test();
+    t35::test();
+    //t34::test();
+    //t33::test();
     //t32::test();
     //t31::test();
     //t30::test();
