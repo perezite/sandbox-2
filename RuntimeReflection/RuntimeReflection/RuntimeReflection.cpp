@@ -6,7 +6,7 @@
 
 // https://stackoverflow.com/questions/5047971/how-do-i-check-for-c11-support
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
-    #define CPP_11
+#define CPP_11
 #endif
 
 using namespace std;
@@ -25,7 +25,7 @@ template <class T> string toString(T& t) {
 }
 
 class Vector2f100 {
-public: 
+public:
     float x, y;
 
     Vector2f100(float x_ = 0, float y_ = 0)
@@ -40,7 +40,7 @@ public:
     int health;
 
 public:
-    Class100() 
+    Class100()
         : position(1, 2), health(100)
     { }
 };
@@ -55,18 +55,18 @@ void indent100(size_t level) {
     const size_t spaces = level * 4;
     for (size_t i = 0; i < spaces; i++)
         cout << " ";
-}   
+}
 
 /*
 void printMetadata100(Metadata& md, size_t level = 0) {
-    for (size_t i = 0; i < md.countOwnFields(); i++) { 
+    for (size_t i = 0; i < md.countOwnFields(); i++) {
         Metadata field = md.getOwnFields()[i];
         if (field.isComposite()) {
             cout << indent100(level) << field.getName()
-                 << " (" << field.getTypename() << "):" << endl; 
+                 << " (" << field.getTypename() << "):" << endl;
             printMetadata(field, level + 1);
         else if (field.isSimple()) {
-            cout << indent100(level) << field.getName() 
+            cout << indent100(level) << field.getName()
                  << " (" << field.getTypename() << "): "
                  << field.toString() << endl;
         }
@@ -90,20 +90,19 @@ void demo100() {
     //     .endClass();
 
     Derived100 derived;
-    // Metadata md = reflection.getMetadata(derived); 
+    // Metadata md = reflection.getMetadata(derived);
     // cout << md.getName();
     //
-    // printMetadata100(md); 
-    // 
+    // printMetadata100(md);
+    //
     // for (size_t i = 0; i < md.countFields(); i++) {
     //     if (md.getFields()[i].isOfType<int>())
     //         cout << md.getFields()[i].getName() << " os of type int" << endl;
     // }
 
-
     // Output
     // Derived
-    // 
+    //
 }
 
 class Metadata2
@@ -114,7 +113,6 @@ public:
     Metadata2(const string& name) : _name(name) { }
 
     template <class T> void addField(const string& name, T& field) {
-
     }
 };
 
@@ -150,7 +148,6 @@ public:
     }
 };
 
-
 class MyClass2 {
 public:
     int x;
@@ -162,14 +159,14 @@ void test2() {
     Reflection2 reflection;
     // reflection
     //     .beginClass<MyClass1>("MyClass1");
-    //         .addField("myInt", myInt)    
+    //         .addField("myInt", myInt)
     //     .endClass();
 
     MyClass2 myClass;
 
     // Metadata md = reflection.getMetadata(myClass);
     // cout << md.getName();
-    // cout << md.getFields(0).getName() << " " 
+    // cout << md.getFields(0).getName() << " "
     //      << md.getFields(0).getTypename() << md.getFields(0).toString();
 }
 
@@ -196,7 +193,7 @@ template <class T> bool Type1<T>::MustGenerateTypeId = true;
 
 class Metadata1 {
     string _name;
-   
+
 public:
     Metadata1(const string& name) : _name(name) { }
 
@@ -261,17 +258,17 @@ void print(Metadata1& fieldInfo)
 
 void test1()
 {
-     int x = 42;
-     float f = 3.1415f;
-     int x2 = 43;
+    int x = 42;
+    float f = 3.1415f;
+    int x2 = 43;
 
-     Reflection1 reflection;
-     reflection.addField("x", x);
-     reflection.addField("f", f);
-     reflection.addField("x2", x2);
+    Reflection1 reflection;
+    reflection.addField("x", x);
+    reflection.addField("f", f);
+    reflection.addField("x2", x2);
 
-     for (size_t i = 0; i < reflection.countFieldInfoList(); i++)
-         print(reflection.getFieldInfo(i));
+    for (size_t i = 0; i < reflection.countFieldInfoList(); i++)
+        print(reflection.getFieldInfo(i));
 }
 
 template<class T, class UnaryPredicate>
@@ -287,7 +284,7 @@ vector<T*> find_all(const vector<T*>& elements, UnaryPredicate pred) {
 namespace t1 {
     class EntityInfo {
         string _name;
-    
+
     public:
         EntityInfo(const string& name) : _name(name) { }
 
@@ -295,7 +292,7 @@ namespace t1 {
 
         virtual const string toString() const = 0;
     };
-       
+
     class VariableInfo : public EntityInfo {
     public:
         VariableInfo(const string& name) : EntityInfo(name) { }
@@ -305,7 +302,7 @@ namespace t1 {
         Var& _var;
 
     public:
-        ConcreteVariableInfo(const string& name, Var& var) 
+        ConcreteVariableInfo(const string& name, Var& var)
             : VariableInfo(name), _var(var) { }
 
         virtual const string toString() const {
@@ -347,7 +344,6 @@ namespace t1 {
 
 namespace t2 {
     class MyClass {
-
     };
 
     class ClassInfo {
@@ -406,7 +402,7 @@ namespace my {
 }
 
 namespace t3 {
-    class VariableInfo { 
+    class VariableInfo {
         string _name;
     public:
         VariableInfo(const string& name) : _name(name) { }
@@ -418,13 +414,13 @@ namespace t3 {
         Var& _ref;
     public:
         ConcreteVariableInfo(const string& name, Var& ref) : VariableInfo(name), _ref(ref) { }
-        
+
         virtual void inspect() {
             TInspector::inspectVariable(_ref);
         }
     };
 
-    class DefaultInspector { 
+    class DefaultInspector {
     public:
         template <class Var> static void inspectVariable(Var& var) { }
     };
@@ -439,7 +435,7 @@ namespace t3 {
             _variables[name] = info;
         }
 
-        VariableInfo& getVariable(const string& name) { 
+        VariableInfo& getVariable(const string& name) {
             return *my::find(name, _variables);
         }
     };
@@ -448,9 +444,9 @@ namespace t3 {
     public:
         template <class Var> static void inspectVariable(Var& var) {
             cout << "Raw variable: " << var << endl;
-            #ifdef CPP_11
-                cout << "is integral: " << std::is_integral<Var>::value << endl;
-            #endif      
+#ifdef CPP_11
+            cout << "is integral: " << std::is_integral<Var>::value << endl;
+#endif
         }
     };
 
@@ -482,7 +478,6 @@ namespace t4 {
     };
 
     template <class Object> void xmlSerialize(Object& o, Reflection& rf) {
-
     }
 
     void test() {
@@ -493,10 +488,10 @@ namespace t4 {
         //     .addProperty(&Vector2f::y);
         // endClass();
         // xmlSerialize(vec, rf);
- 
+
         // Expected output:
         // References:
-        //     https://gist.github.com/perezite/c08c3b5458a66db3a936490d53014b06 
+        //     https://gist.github.com/perezite/c08c3b5458a66db3a936490d53014b06
         //     https://docs.microsoft.com/en-us/dotnet/standard/serialization/examples-of-xml-serialization
         // <Vector2f>
         //    <x>1</x>
@@ -518,7 +513,7 @@ namespace t5 {
         // if (info.isCollection()) {
         //     CollectionInfo collectionInfo = info.getCollectionInfo();
         //     for (size_t i = 0; i < collectionInfo.size(); i++)
-        //         xmlSerialize(collectionInfo[i], depth + 1);     
+        //         xmlSerialize(collectionInfo[i], depth + 1);
         // }
         // else if (info.isSimple()) {
         //     cout << "<" << info.getName() << ">" << info.toString() << "</" << info.getName() << ">" << endl;
@@ -537,12 +532,12 @@ namespace t5 {
         // ObjectInfo info = rf.getInfo(numbers);
         //xmlSerialize(info, rf);
 
-        /*  Expected Output:            
+        /*  Expected Output:
             <numbers>
                 <e>42</e>
                 <e>43</e>
             </numbers>
-        
+
         */
     }
 }
@@ -611,7 +606,7 @@ namespace t5b {
     }
 
     void test() {
-        vector<float> v { 1, 2, 3 };
+        vector<float> v{ 1, 2, 3 };
         map<int, int> m;
         int i;
 
@@ -695,7 +690,7 @@ namespace t7 {
     //template <> struct TypeInfo<Person> : public ClassTypeInfo<Person> {
     //    TypeInfo(const Person& ref) : ClassTypeInfo(ref) { }
     //    template <class Serializer> void serialize(Serializer& serializer) {
-    //         serializer.serialize(age);       
+    //         serializer.serialize(age);
     //    }
     //};
 
@@ -757,7 +752,7 @@ namespace t8 {
 
         virtual string toString() const { return stringify(_obj); }
     };
-    
+
     template <class T, class Inspector> Object<T>* inspect(T& obj, Inspector& insp, size_t depth) {
         return new SimpleObject<T>(obj);
     }
@@ -807,7 +802,7 @@ namespace t9 {
 
     enum class Type { Simple, Composite };
 
-    template <class Serializer, class T> struct Inspector { 
+    template <class Serializer, class T> struct Inspector {
         static const Type TheType = Type::Simple;
 
         template <class Serializer> static string inspect(const string& name, T& t, Serializer& serializer, size_t depth = 0) {
@@ -816,7 +811,7 @@ namespace t9 {
         }
     };
 
-    template <class Serializer> struct Inspector<Serializer, Person> { 
+    template <class Serializer> struct Inspector<Serializer, Person> {
         static const Type TheType = Type::Composite;
 
         template <class Serializer> static string inspect(const string& name, Person& person, Serializer& serializer, size_t depth = 0) {
@@ -845,11 +840,11 @@ namespace t9 {
     };
 
     /*
-    * 
+    *
         class Employee {
             vector<string> jobs = { "Chef", "Programmer" } ;
         }
-        
+
         rf.beginClass<Person>()
             .addCollection(jobs)
         .endClass();
@@ -860,7 +855,7 @@ namespace t9 {
         Person person;
         Writer writer;
         writer.serialize("person", person);
-        
+
         // Expected:
         //     person : ClassObject
         //         height: 42
@@ -885,7 +880,6 @@ namespace t10 {
     class SomeClass { };
 
     template <class T> float func() {
-
     }
 
     template <> float func<int>() {
@@ -907,7 +901,7 @@ namespace t10 {
 namespace t11 {
     struct CollectionInfo { };
 
-    template <class T> vector<CollectionInfo*> getCollection(T &t) { 
+    template <class T> vector<CollectionInfo*> getCollection(T& t) {
         cout << "get generic collection" << endl;
         return vector<CollectionInfo*>();
     }
@@ -928,7 +922,7 @@ namespace t11 {
         ObjectInfo(T& ref) : _ref(ref) { }
 
         vector<CollectionInfo*> getCollection() {
-           return t11::getCollection(_ref);
+            return t11::getCollection(_ref);
         }
     };
 
@@ -943,12 +937,11 @@ namespace t11 {
         intInfo.getCollection();
         vectorInfo.getCollection();
         mapInfo.getCollection();
-
     }
 }
 
 namespace t12 {
-    template <class T> void inspect(T& t) { 
+    template <class T> void inspect(T& t) {
         cout << "generic inspect" << endl;
     }
 
@@ -989,7 +982,6 @@ namespace t13 {
         ostringstream os;
         os << t;
         cout << indent(depth) << "\"" << key << "\": " << "\"" << os.str() << "\"";
-                
     }
 
     template <class T, class Inspector> void inspectField(const string& name, T& t, Inspector& inspector, size_t depth = 0) {
@@ -1003,7 +995,6 @@ namespace t13 {
     template <class T, class Inspector> void inspectCollection(const string& name, T& t, Inspector& inspector, size_t depth = 0) {
         cout << "[inspectCollection not implemented for this type]";
     }
-
 
     template <class Inspector, class T> void inspectCollection(const string& name, vector<T>& v, Inspector& inspector, size_t depth = 0) {
         cout << indent(depth) << "\"" << name << "\": " << "[";
@@ -1023,7 +1014,6 @@ namespace t13 {
     }
 
     struct Writer { };
-    
 
     void test() {
         Person peter;
@@ -1031,7 +1021,7 @@ namespace t13 {
 
         inspectObject("person", peter, writer);
 
-        // Expected output 
+        // Expected output
         // {
         //     "name": "Peter"
         //     "numbers": [ "1", "2", "2" ]
@@ -1060,7 +1050,7 @@ namespace t14 {
         }
     };
 
-    template <class Inspector, class T> 
+    template <class Inspector, class T>
     SimpleMemberInfo<Inspector>* getSimpleMemberInfo(const string& name, T& t) {
         return new ConcreteSimpleMemberInfo<Inspector, T>(name, t);
     }
@@ -1084,20 +1074,20 @@ namespace t15 {
         int age = 42;
     };
 
-    template <class C> struct PropertyInfo { 
+    template <class C> struct PropertyInfo {
         // virtual void inspect(I& inspector) = 0
     };
 
-    template <class C, class P> struct ConcretePropertyInfo : public PropertyInfo<C> { 
+    template <class C, class P> struct ConcretePropertyInfo : public PropertyInfo<C> {
         //virtual void inspect(I& inspector) {
-        //    
+        //
         //}
     };
 
     template <class C> struct ClassInfo {
         vector<PropertyInfo<C>*> _properties;
 
-        template <class P> void addProperty(const string& name, P C::*prop) {
+        template <class P> void addProperty(const string& name, P C::* prop) {
             _properties.push_back(new ConcretePropertyInfo<C, P>());
         }
 
@@ -1130,14 +1120,14 @@ namespace t15 {
             ClassInfo<C> classInfo = getClassInfo<C>();
             vector<PropertyInfo<C>*> props = classInfo.getProperties();
             for (size_t i = 0; i < props.size(); i++) {
-            //    props[i]->inspect(*this);    
+                //    props[i]->inspect(*this);
             }
         }
     };
 
     void test() {
         Person person;
-        
+
         auto test = &Person::age;
 
         LuaBinder binder;
@@ -1150,12 +1140,12 @@ namespace t16 {
 
     class Person { int age = 42; };
 
-    template <class I> class ClassInfo { 
+    template <class I> class ClassInfo {
     };
 
     template <class C, class I> ClassInfo<I> getClassInfo() { return ClassInfo<I>(); }
 
-    template <class I> ClassInfo<I> getClassInfo(Person* person) { 
+    template <class I> ClassInfo<I> getClassInfo(Person* person) {
         return ClassInfo<I>();
     }
 
@@ -1165,7 +1155,7 @@ namespace t16 {
 }
 
 namespace t17 {
-    template<class T> struct Visitor { };            
+    template<class T> struct Visitor { };
 
     template<class Cont> struct StlVisitor {
         Cont& c;
@@ -1188,7 +1178,7 @@ namespace t17 {
         Visitor(map<K, V>& m) : StlVisitor<map<K, V>>(m) { }
     };
 
-    template <class T> void printValue(T& t) { 
+    template <class T> void printValue(T& t) {
         cout << t << endl;
     }
 
@@ -1204,7 +1194,7 @@ namespace t17 {
     }
 
     void test() {
-        vector<int> v{ 1, 2, 3};
+        vector<int> v{ 1, 2, 3 };
         map<string, int> m{ {"z", 1}, {"y", 2}, {"x", 3} };
         Visitor<vector<int>> vvis(v);
         Visitor<map<string, int>> mvis(m);
@@ -1241,12 +1231,12 @@ namespace t18 {
     };
 
     void test() {
-        #pragma warning( push ) 
-        #pragma warning( disable : 4101)
+#pragma warning( push )
+#pragma warning( disable : 4101)
         Sfinae<int, print> temp;
-        #pragma warning( pop ) 
+#pragma warning( pop )
         //Sfinae<float, print> temp;                // compile error
-    
+
         cout << "1 = no, 2 = yes" << endl;
         cout << sizeof(check<int>(0)) << endl;      // returns 2
         cout << sizeof(check<float>(0)) << endl;    // returns 1
@@ -1313,8 +1303,8 @@ namespace t19 {
 
 namespace t20 {
     // TODO: try out https://stackoverflow.com/questions/35213658/how-does-this-implementation-of-stdis-class-work
-    // to implement an is_class template 
-    // this would allow us to distinguish between class types, simple types and possibly collection types 
+    // to implement an is_class template
+    // this would allow us to distinguish between class types, simple types and possibly collection types
     // Note: The latter would be the case, if a Visitor without a field Visitor<T>::NotImplemented is defined. The
     // field Visitor<T>::NotImplemented is defined inside the default visitor (but of course not in the specialized Visitors).
 
@@ -1388,7 +1378,7 @@ namespace t23 {
     template <class T> char check(T* t) { return char(); }
     float check(Printable* p) { return float(); }
 
-    void test() { 
+    void test() {
         int i = 42;
         Printable p;
         print<int>(i);
@@ -1528,14 +1518,12 @@ namespace t28 {
     struct MyStruct {
         void operator<<(int a) { }
         void operator<<(float a) { }
-
     };
 
     template <void(MyStruct::*)(int)> struct MyTest {  };
-    template <class T, ostringstream&(*)(T)> struct MyTest2 { };
-    
-    // basic_ostream& __CLR_OR_THIS_CALL operator<<(int _Val) { // insert an int
+    template <class T, ostringstream& (*)(T)> struct MyTest2 { };
 
+    // basic_ostream& __CLR_OR_THIS_CALL operator<<(int _Val) { // insert an int
     struct SomeStruct { };
 
     void test() {
@@ -1584,13 +1572,12 @@ namespace t30 {
     };
 
     template <class T, bool> struct Extract;
-    template <class T> struct Extract<T, true> { 
+    template <class T> struct Extract<T, true> {
         static string asString(T& t) { return toString(t); }
     };
-    template <class T> struct Extract<T, false> { 
+    template <class T> struct Extract<T, false> {
         static string asString(T& t) { return "<unknown>"; }
     };
-
 
     template <class T> string getStringValue(T& t) {
         return Extract<T, hasPrint<T>::value>::asString(t);
@@ -1634,12 +1621,11 @@ namespace t31 {
         cout << CHECK::EqualExists<A>::value << endl;
         cout << CHECK::EqualExists<B>::value << endl;
         cout << CHECK::EqualExists<C>::value << endl;
-
     }
 }
 
 namespace t32 {
-    // https://stackoverflow.com/questions/6534041/how-to-check-whether-operator-exists    
+    // https://stackoverflow.com/questions/6534041/how-to-check-whether-operator-exists
     struct NoStream { };
     struct WithStream { };
 
@@ -1660,7 +1646,7 @@ namespace t33 {
     namespace HasStream {
         typedef char No[sizeof(ostringstream&) + 1];
         template<typename T> No& operator<< (ostream& os, const T&);
-        
+
         template <class T> struct StreamExists {
             enum {                      // neded to make 'value' a compile time constant
                 value = sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&)
@@ -1719,13 +1705,13 @@ namespace t34 {
     template <class T> struct ToString<T, false> { static string value(T& t) { return "<unknown>"; } };
 
     template <class T> struct TypeInfo {
-        TypeInfo()  { }
+        TypeInfo() { }
 
         inline static bool hasStream() { return hasStream<T>::value; }
 
-        static string toString(T& t) { 
+        static string toString(T& t) {
             static const bool hasStream = t34::hasStream<T>::value;
-            return ToString<T, hasStream>::value(t); 
+            return ToString<T, hasStream>::value(t);
         }
     };
 
@@ -1762,7 +1748,7 @@ namespace t35 {
 
     struct WithoutStream { };
     struct WithStream { };
-    ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator<<"; return os; }
+    ostream& operator<<(ostream& os, const WithStream& ws) { os << "WithStream::operator <<"; return os; }
 
     template <class T> string toString(T& t) { ostringstream os; os << t; return os.str(); }
 
@@ -1778,7 +1764,7 @@ namespace t35 {
 
     template <class T> struct ConcreteObjectInfo : public ObjectInfo {
         T& _ref;
-        
+
         ConcreteObjectInfo(T& ref) : _ref(ref) { }
 
         virtual bool hasStream() { return t35::hasStream<T>::value; }
@@ -1794,25 +1780,99 @@ namespace t35 {
         float f = 3.1415f;
         WithoutStream wos;
         WithStream ws;
-        vector<ObjectInfo*> oil;
-        oil.push_back(new ConcreteObjectInfo<WithoutStream>(wos));
-        oil.push_back(new ConcreteObjectInfo<int>(i));
-        oil.push_back(new ConcreteObjectInfo<float>(f));
-        oil.push_back(new ConcreteObjectInfo<WithStream>(ws));
+        vector<ObjectInfo*> voi;
+        voi.push_back(new ConcreteObjectInfo<WithoutStream>(wos));
+        voi.push_back(new ConcreteObjectInfo<WithStream>(ws));
+        voi.push_back(new ConcreteObjectInfo<int>(i));
+        voi.push_back(new ConcreteObjectInfo<float>(f));
 
-        for (size_t i = 0; i < oil.size(); i++) {
-            if (oil[i]->hasStream())
-                cout << oil[i]->toString() << endl;
+        for (size_t i = 0; i < voi.size(); i++) {
+            if (voi[i]->hasStream())
+                cout << voi[i]->toString() << endl;
             else
-                cout << "no toString()" << endl;
+                cout << "operator << not implemented" << endl;
         }
+    }
+}
 
+namespace my {
+    template <class T> T& last(vector<T>& v) {
+        return v[v.size() - 1];
+    }
+
+    template <class T> void deleteAll(vector<T*>& v) {
+        for (size_t i = 0; i < v.size(); i++)
+            delete v[i];
+    }
+}
+
+namespace t36 {
+    struct Hero {
+        string name = "The Hero";
+        int health = 42;
+    };
+
+    template <class C> struct PropertyInfo { 
+        const string _name;
+
+        PropertyInfo(const string& name) : _name(name) { }
+    };
+
+    template <class C, class P> struct ConcretePropertyInfo : public PropertyInfo<C> {
+        P C::* _prop;
+        
+        ConcretePropertyInfo(const string& name, P C::* prop) : PropertyInfo<C>(name), _prop(prop) { }
+    };
+
+    struct ClassInfo { 
+        const string _name;
+    
+        ClassInfo(const string& name) : _name(name) { }
+    };
+
+    template <class C> struct ConcreteClassInfo : public ClassInfo {
+        vector<PropertyInfo<C>*> _propertyInfos;
+
+        ConcreteClassInfo(const string& name) : ClassInfo(name) { }
+
+        template <class P> ConcreteClassInfo<C>& addProperty(const string& name, P C::* prop) {
+            ConcretePropertyInfo<C, P>* propInfo = new ConcretePropertyInfo<C, P>(name, prop);
+            _propertyInfos.push_back(propInfo);
+            return *this;
+        }
+        
+    };
+
+    struct ReflectionInfo {
+        vector<ClassInfo*> _classInfos;
+        
+        virtual ~ReflectionInfo() { my::deleteAll(_classInfos); }
+
+        template <class C> ConcreteClassInfo<C>& beginClass(const string& name) {
+            ConcreteClassInfo<C>* classInfo = new ConcreteClassInfo<C>(name);
+            _classInfos.push_back(classInfo);
+            return *classInfo;
+        }
+    };
+
+    void test() {
+        Hero hero;
+
+        ReflectionInfo reflectionInfo;
+        reflectionInfo.beginClass<Hero>("Hero")
+            .addProperty("name", &Hero::name)
+            .addProperty("health", &Hero::health);
+        // .endClass();
+        // 
+        // Serializer serializer(reflection);
+        // serializer.serialize(hero);
     }
 }
 
 void test()
 {
-    t35::test();
+    t36::test();
+    //t35::test();
     //t34::test();
     //t33::test();
     //t32::test();
@@ -1854,16 +1914,11 @@ void test()
     //demo100();
 }
 
-// Notes:
-//     - Object hierarchy
-//         - EntityInfo
-//             - ClassInfo
-//                 - ConcreteClassInfo<T>
-//             - FunctionInfo
-//                 - ConcreteFunctionInfo<T>
-//             - FieldInfo
-//                 - ConcreteFieldInfo<T>
-
+// TODO:
+// Serialize object with two properties
+// Deserialize object
+// Attach editor to object and edit values
+// Register object to (fake) Script Binding system
 
 int main() {
     test();
