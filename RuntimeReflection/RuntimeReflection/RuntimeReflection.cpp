@@ -1866,6 +1866,10 @@ namespace t36 {
         ClassObjectInfo(ConcreteClassInfo<T>& classInfo) : _classInfo(classInfo) { }
     };
 
+    template <class T> T& empty() {
+        return *((T*)(NULL));
+    }
+
     struct ReflectionInfo {
         vector<ClassInfo*> _classInfos;
         
@@ -1887,7 +1891,7 @@ namespace t36 {
             }
 
             cout << "type is not registered" << endl;
-            return ClassObjectInfo<T>(*(ConcreteClassInfo<T>*)_classInfos[0]);
+            return empty<ClassObjectInfo<T>>();
         }
     };
 
