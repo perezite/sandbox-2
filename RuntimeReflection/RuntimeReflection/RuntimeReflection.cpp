@@ -1804,6 +1804,10 @@ namespace my {
         for (size_t i = 0; i < v.size(); i++)
             delete v[i];
     }
+
+    template <class T, class UnaryPredicate> typename T::iterator& find_if(T& t, UnaryPredicate pred) {
+        return std::find_if(t.begin(), t.end(), pred);
+    }
 }
 
 namespace t36 {
@@ -1812,35 +1816,54 @@ namespace t36 {
         int health = 42;
     };
 
-    template <class C> struct PropertyInfo { 
+    struct PropertyInfo { 
         const string _name;
 
         PropertyInfo(const string& name) : _name(name) { }
     };
 
-    template <class C, class P> struct ConcretePropertyInfo : public PropertyInfo<C> {
+    template <class C, class P> struct ConcretePropertyInfo : public PropertyInfo {
         P C::* _prop;
         
-        ConcretePropertyInfo(const string& name, P C::* prop) : PropertyInfo<C>(name), _prop(prop) { }
+        ConcretePropertyInfo(const string& name, P C::* prop) : PropertyInfo(name), _prop(prop) { }
     };
+
+    size_t LastTypeId = 0;
+
+    template <class T> size_t getTypeId() {
+        static size_t typeId = ++LastTypeId;
+        return typeId;
+    }
 
     struct ClassInfo { 
+        size_t _typeId;
         const string _name;
     
-        ClassInfo(const string& name) : _name(name) { }
+        ClassInfo(size_t typeId, const string& name) : _typeId(typeId), _name(name) { }
     };
 
-    template <class C> struct ConcreteClassInfo : public ClassInfo {
-        vector<PropertyInfo<C>*> _propertyInfos;
+    struct ReflectionInfo;
 
-        ConcreteClassInfo(const string& name) : ClassInfo(name) { }
+    template <class C> struct ConcreteClassInfo : public ClassInfo {
+        ReflectionInfo& _reflectionInfo;
+        vector<PropertyInfo*> _propertyInfos;
+
+        ConcreteClassInfo(const string& name, ReflectionInfo& reflectionInfo) : 
+            _reflectionInfo(reflectionInfo), ClassInfo(getTypeId<C>(), name) { }
 
         template <class P> ConcreteClassInfo<C>& addProperty(const string& name, P C::* prop) {
             ConcretePropertyInfo<C, P>* propInfo = new ConcretePropertyInfo<C, P>(name, prop);
             _propertyInfos.push_back(propInfo);
             return *this;
         }
-        
+
+        ReflectionInfo& endClass() { return _reflectionInfo; }
+    };
+
+    template <class T> struct ClassObjectInfo { 
+        ConcreteClassInfo<T>& _classInfo;
+
+        ClassObjectInfo(ConcreteClassInfo<T>& classInfo) : _classInfo(classInfo) { }
     };
 
     struct ReflectionInfo {
@@ -1849,23 +1872,39 @@ namespace t36 {
         virtual ~ReflectionInfo() { my::deleteAll(_classInfos); }
 
         template <class C> ConcreteClassInfo<C>& beginClass(const string& name) {
-            ConcreteClassInfo<C>* classInfo = new ConcreteClassInfo<C>(name);
+            ConcreteClassInfo<C>* classInfo = new ConcreteClassInfo<C>(name, *this);
             _classInfos.push_back(classInfo);
             return *classInfo;
+        }
+
+        template <class T> ClassObjectInfo<T> getObjectInfo(T& t) {
+            for (size_t i = 0; i < _classInfos.size(); i++) {
+                if (_classInfos[i]->_typeId == getTypeId<T>()) {
+                    ConcreteClassInfo<T>* concreteClassInfoPointer = (ConcreteClassInfo<T>*)_classInfos[i];
+                    ConcreteClassInfo<T> concreteClassInfo = *concreteClassInfoPointer;
+                    return ClassObjectInfo<T>(concreteClassInfo);
+                }
+            }
+
+            cout << "type is not registered" << endl;
+            return ClassObjectInfo<T>(*(ConcreteClassInfo<T>*)_classInfos[0]);
         }
     };
 
     void test() {
-        Hero hero;
-
         ReflectionInfo reflectionInfo;
         reflectionInfo.beginClass<Hero>("Hero")
             .addProperty("name", &Hero::name)
-            .addProperty("health", &Hero::health);
-        // .endClass();
-        // 
-        // Serializer serializer(reflection);
-        // serializer.serialize(hero);
+            .addProperty("health", &Hero::health)
+        .endClass();
+
+        Hero hero;
+        ClassObjectInfo<Hero> heroInfo = reflectionInfo.getObjectInfo(hero);
+        // for(size_t i = 0; i < heroInfo.countProperties(); i++) {
+        //     PropertyInfo prop = heroInfo.getProperty(i);
+        //     if (prop.hasBasicType())
+        //         cout << prop.getName() << ": " << prop.getValue() << endl;
+        // }
     }
 }
 
@@ -1915,10 +1954,12 @@ void test()
 }
 
 // TODO:
-// Serialize object with two properties
-// Deserialize object
+// Serialize object with two basic properties
+// Serialize object with one basic and one nested Property
+// Deserialize object with two basic properties
+// Deserialize object with one basic and one nested Property
 // Attach editor to object and edit values
-// Register object to (fake) Script Binding system
+// Register object in (fake) Script Binding system
 
 int main() {
     test();
