@@ -1895,6 +1895,18 @@ namespace t36 {
         }
     };
 
+    // void print(ObjectInfo& object) {
+    //     if (object.hasClassType()) {
+    //         ClassObjectInfo& classObject = object.asClassObjectInfo();
+    //         for(size_t i = 0; i < classObject.countProperties(); i++)
+    //             ObjectInfo& property = classObject.getProperty(i);
+    //             print(property);
+    //     }
+    // 
+    //     else if (objectInfo.hasBasicType()) 
+    //         cout << objectInfo.getName() << ": " << objectInfo.toString() << endl;
+    // }
+
     void test() {
         ReflectionInfo reflectionInfo;
         reflectionInfo.beginClass<Hero>("Hero")
@@ -1903,18 +1915,75 @@ namespace t36 {
         .endClass();
 
         Hero hero;
-        ClassObjectInfo<Hero> heroInfo = reflectionInfo.getObjectInfo(hero);
-        // for(size_t i = 0; i < heroInfo.countProperties(); i++) {
-        //     PropertyInfo prop = heroInfo.getProperty(i);
-        //     if (prop.hasBasicType())
-        //         cout << prop.getName() << ": " << prop.getValue() << endl;
-        // }
+        // ObjectInfo heroInfo = reflectionInfo.getObjectInfo(hero);
+        // print(heroInfo);
+    }
+}
+
+namespace t37 {
+    struct Property {
+        string _name;
+        Property(const string& name) : _name(name) { }
+    };
+
+    template <class C, class P> struct ConcreteProperty : public Property {
+        P C::* _member;
+        ConcreteProperty(const string& name, P C::* member) : Property(name), _member(member) { }
+    };
+
+    template <class C> struct Class {
+        string _name;
+        vector<Property*> _properties;
+        Class(const string& name) : _name(name) { }
+        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
+    };
+
+    struct Inspector;
+    template <class C> struct ClassBuilder {
+        Inspector _inspector;
+        Class<C> _class;
+        ClassBuilder(const string& name, Inspector& inspector) : _class(name), _inspector(inspector) { }
+        template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { 
+            _class.addProperty<P>(name, member); return *this; 
+        }
+    };
+
+    struct Inspector {
+        template <class C> ClassBuilder<C> beginClass(const string &name) { return ClassBuilder<C>(name, *this); }
+    };
+
+    struct Hero { string name = "Chuck"; int health = 42; };
+    
+    /*
+    void print(Object& object) {
+        if (object.hasClassType()) {
+            cout << "Class-object :" << object.getTypename() << endl;   
+            for (size_t i = 0; i < object.countProperties(); i++) 
+                print(object.getProperty(i));
+        }
+        else if (object.hasBasicType()) 
+            cout << object.getName() << ": " << object.toString() << endl;
+    }
+    */
+
+    void test() {
+        
+        Inspector inspector;
+        inspector.beginClass<Hero>("Hero")
+            .addProperty("name", &Hero::name)
+            .addProperty("health", &Hero::health);
+        //.endClass();
+
+        //Hero hero;
+        //Object heroObject = inspector.getObject<Hero>(hero);
+        //print(heroObject);
     }
 }
 
 void test()
 {
-    t36::test();
+    t37::test();
+    //t36::test();
     //t35::test();
     //t34::test();
     //t33::test();
