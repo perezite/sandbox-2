@@ -1921,6 +1921,8 @@ namespace t36 {
 }
 
 namespace t37 {
+    struct Object;
+
     struct Property {
         string _name;
         Property(const string& name) : _name(name) { }
@@ -1931,25 +1933,37 @@ namespace t37 {
         ConcreteProperty(const string& name, P C::* member) : Property(name), _member(member) { }
     };
 
-    template <class C> struct Class {
+    struct Class {
         string _name;
-        vector<Property*> _properties;
         Class(const string& name) : _name(name) { }
+    };
+
+    template <class C> struct ConcreteClass : public Class {
+        vector<Property*> _properties;
+        ConcreteClass(const string& name) : Class(name) { }
         template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
     };
 
     struct Inspector;
     template <class C> struct ClassBuilder {
-        Inspector _inspector;
-        Class<C> _class;
+        Inspector& _inspector;
+        ConcreteClass<C> _class;
         ClassBuilder(const string& name, Inspector& inspector) : _class(name), _inspector(inspector) { }
         template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { 
             _class.addProperty<P>(name, member); return *this; 
         }
+        Inspector& endClass() { _inspector.addClass(_class); return _inspector; }
+    };
+
+    struct Object { 
+        template <class T> Object create(T& t) { }
     };
 
     struct Inspector {
+        vector<Class*> _classes;
         template <class C> ClassBuilder<C> beginClass(const string &name) { return ClassBuilder<C>(name, *this); }
+        void addClass(Class& theClass) { _classes.push_back(new Class(theClass)); }
+        template <class T> Object getObject(T& t) { return Object(); }
     };
 
     struct Hero { string name = "Chuck"; int health = 42; };
@@ -1967,15 +1981,16 @@ namespace t37 {
     */
 
     void test() {
-        
+        // Next: implement object
+
         Inspector inspector;
         inspector.beginClass<Hero>("Hero")
             .addProperty("name", &Hero::name)
-            .addProperty("health", &Hero::health);
-        //.endClass();
+            .addProperty("health", &Hero::health)
+        .endClass();
 
-        //Hero hero;
-        //Object heroObject = inspector.getObject<Hero>(hero);
+        Hero hero;
+        Object heroObject = inspector.getObject<Hero>(hero);
         //print(heroObject);
     }
 }
