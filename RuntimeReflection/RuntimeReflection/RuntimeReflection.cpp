@@ -1941,12 +1941,12 @@ namespace t37 {
 
     struct Class {
         string _name;
+        vector<Property*> _properties;
         Class(const string& name) : _name(name) { }
         virtual size_t getTypeId() = 0;
     };
 
     template <class C> struct ConcreteClass : public Class {
-        vector<Property*> _properties;
         ConcreteClass(const string& name) : Class(name) { }
         template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
         virtual size_t getTypeId() { return t37::getTypeId<C>(); }
@@ -1964,35 +1964,53 @@ namespace t37 {
     };
 
     template <class T> struct ConcreteObject;
-
+ 
     struct Inspector {
         vector<Class*> _classes;
         template <class C> ClassBuilder<C> beginClass(const string &name) { return ClassBuilder<C>(name, *this); }
         template <class C> void addClass(ConcreteClass<C>& theClass) { _classes.push_back(new ConcreteClass<C>(theClass)); }
-        template <class T> ConcreteObject<T> getObject(T& t) { return ConcreteObject<T>(t, *this); }
-        template <class T> bool hasClass() { return false; }
+        template <class T> Object* getObject(T& t) { return new ConcreteObject<T>(t, *this); }
+        template <class T> bool hasClass() { return getClass<T>() != NULL; }
+        template <class T> Class* getClass() { 
+            for (size_t i = 0; i < _classes.size(); i++)
+                if (_classes[i]->getTypeId() == getTypeId<T>())
+                    return _classes[i];
+            return NULL;
+        }
     };
 
     struct Object {
         virtual bool hasClassType() = 0;
+        virtual const string& getName() = 0;
+        virtual size_t countProperties() = 0;
+        virtual Object* getProperty(size_t index) = 0;
     };
     
     template <class T> struct ConcreteObject : public Object {
         T& _ref;
         Inspector& _inspector;
         ConcreteObject(T& t, Inspector& inspector) : _ref(t), _inspector(inspector) { }
-        virtual bool hasClassType() { return _inspector.hasClass<int>(); }
+        virtual bool hasClassType() { return _inspector.hasClass<T>(); }
+        virtual const string& getName() { return _inspector.getClass<T>()->_name; }
+        virtual size_t countProperties() { return _inspector.getClass<T>()->_properties.size(); }
+        virtual Object* getProperty(size_t index) { 
+            //return _inspector.getClass<T>()->_properties[i]
+            return NULL;
+        }
     };
 
     struct Hero { string name = "Chuck"; int health = 42; };
     
-    void print(Object& object) {
+    void print(Object& object, size_t indent = 0) {
         if (object.hasClassType()) {
-
+            cout << "Class-object: " << object.getName() << endl;  
+            for (size_t i = 0; i < object.countProperties(); i++)
+                cout << "property" << endl;
+                //print(object.getProperty(i));
         }
 
         //if (object.hasClassType()) {
-        //    cout << "Class-object :" << object.getTypename() << endl;   
+        //    cout << "Class-object :" << object.getName() << endl;   
         //    for (size_t i = 0; i < object.countProperties(); i++) 
         //        print(object.getProperty(i));
         //}
@@ -2000,9 +2018,14 @@ namespace t37 {
         //    cout << object.getName() << ": " << object.toString() << endl;
     }
     
-
     void test() {
-        // Next: implement Object.hasClassType()
+        // Next: Implement getProperty(). Basic idea: 
+        // 1) Downcast the Class we get from getClass() to a concrete class (since we know which type it is..)
+        //    Or better even: return the concrete class from getClass()
+        // 2) Add an intermediate 'semi-concrete' ClassProperty class which still has the parent class as a template parameter
+        //    Store a vector of ClassProperty inside the ConcreteClass
+        // 3) Add a function Object* ClassObject<T>::getObject(T& theObject) to retrieve the property-object
+        // 4) Profit!
 
         Inspector inspector;
         inspector.beginClass<Hero>("Hero")
@@ -2011,13 +2034,15 @@ namespace t37 {
         .endClass();
 
         Hero hero;
-        ConcreteObject<Hero> heroObject = inspector.getObject<Hero>(hero);
-        print(heroObject);
+        Object* heroObject = inspector.getObject<Hero>(hero);
+        print(*heroObject);
+        delete heroObject;
     }
 }
 
 void test()
 {
+    // next: solve the problem problem that I am being forced to return the Object as a pointer
     t37::test();
     //t36::test();
     //t35::test();
