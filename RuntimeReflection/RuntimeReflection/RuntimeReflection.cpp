@@ -1933,15 +1933,23 @@ namespace t37 {
         ConcreteProperty(const string& name, P C::* member) : Property(name), _member(member) { }
     };
 
+    static size_t TypeIdCounter = 0;
+    template <class T> size_t getTypeId() {
+        static size_t typeId = ++TypeIdCounter;
+        return typeId;
+    }
+
     struct Class {
         string _name;
         Class(const string& name) : _name(name) { }
+        virtual size_t getTypeId() = 0;
     };
 
     template <class C> struct ConcreteClass : public Class {
         vector<Property*> _properties;
         ConcreteClass(const string& name) : Class(name) { }
         template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
+        virtual size_t getTypeId() { return t37::getTypeId<C>(); }
     };
 
     struct Inspector;
@@ -1952,36 +1960,49 @@ namespace t37 {
         template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { 
             _class.addProperty<P>(name, member); return *this; 
         }
-        Inspector& endClass() { _inspector.addClass(_class); return _inspector; }
+        Inspector& endClass() { _inspector.addClass<C>(_class); return _inspector; }
     };
 
-    struct Object { 
-        template <class T> Object create(T& t) { }
-    };
+    template <class T> struct ConcreteObject;
 
     struct Inspector {
         vector<Class*> _classes;
         template <class C> ClassBuilder<C> beginClass(const string &name) { return ClassBuilder<C>(name, *this); }
-        void addClass(Class& theClass) { _classes.push_back(new Class(theClass)); }
-        template <class T> Object getObject(T& t) { return Object(); }
+        template <class C> void addClass(ConcreteClass<C>& theClass) { _classes.push_back(new ConcreteClass<C>(theClass)); }
+        template <class T> ConcreteObject<T> getObject(T& t) { return ConcreteObject<T>(t, *this); }
+        template <class T> bool hasClass() { return false; }
+    };
+
+    struct Object {
+        virtual bool hasClassType() = 0;
+    };
+    
+    template <class T> struct ConcreteObject : public Object {
+        T& _ref;
+        Inspector& _inspector;
+        ConcreteObject(T& t, Inspector& inspector) : _ref(t), _inspector(inspector) { }
+        virtual bool hasClassType() { return _inspector.hasClass<int>(); }
     };
 
     struct Hero { string name = "Chuck"; int health = 42; };
     
-    /*
     void print(Object& object) {
         if (object.hasClassType()) {
-            cout << "Class-object :" << object.getTypename() << endl;   
-            for (size_t i = 0; i < object.countProperties(); i++) 
-                print(object.getProperty(i));
+
         }
-        else if (object.hasBasicType()) 
-            cout << object.getName() << ": " << object.toString() << endl;
+
+        //if (object.hasClassType()) {
+        //    cout << "Class-object :" << object.getTypename() << endl;   
+        //    for (size_t i = 0; i < object.countProperties(); i++) 
+        //        print(object.getProperty(i));
+        //}
+        //else if (object.hasBasicType()) 
+        //    cout << object.getName() << ": " << object.toString() << endl;
     }
-    */
+    
 
     void test() {
-        // Next: implement object
+        // Next: implement Object.hasClassType()
 
         Inspector inspector;
         inspector.beginClass<Hero>("Hero")
@@ -1990,8 +2011,8 @@ namespace t37 {
         .endClass();
 
         Hero hero;
-        Object heroObject = inspector.getObject<Hero>(hero);
-        //print(heroObject);
+        ConcreteObject<Hero> heroObject = inspector.getObject<Hero>(hero);
+        print(heroObject);
     }
 }
 
@@ -2051,7 +2072,5 @@ void test()
 
 int main() {
     test();
-#ifdef WIN32
-    system("pause");
-#endif
+    cin.get();
 }
