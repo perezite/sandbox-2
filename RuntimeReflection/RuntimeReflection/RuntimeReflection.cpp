@@ -1921,16 +1921,27 @@ namespace t36 {
 }
 
 namespace t37 {
+    struct Inspector;
     struct Object;
+    template <class T> struct ConcreteObject;
 
     struct Property {
         string _name;
         Property(const string& name) : _name(name) { }
     };
 
-    template <class C, class P> struct ConcreteProperty : public Property {
+    template <class C> struct ClassProperty : public Property { 
+        ClassProperty(const string& name) : Property(name) { }
+        virtual Object* getPropertyObject(C& parent, Inspector& inspector) = 0;
+    };
+
+    template <class C, class P> struct ConcreteProperty : public ClassProperty<C> {
         P C::* _member;
-        ConcreteProperty(const string& name, P C::* member) : Property(name), _member(member) { }
+        ConcreteProperty(const string& name, P C::* member) : ClassProperty<C>(name), _member(member) { }
+        virtual Object* getPropertyObject(C& parent, Inspector& inspector) {
+            P* propertyObject = &(parent.*_member);
+            return new ConcreteObject<P>(*propertyObject, inspector);
+        }
     };
 
     static size_t TypeIdCounter = 0;
@@ -1941,18 +1952,20 @@ namespace t37 {
 
     struct Class {
         string _name;
-        vector<Property*> _properties;
         Class(const string& name) : _name(name) { }
+        virtual size_t countProperties() = 0;
         virtual size_t getTypeId() = 0;
     };
 
     template <class C> struct ConcreteClass : public Class {
+        vector<Property*> _properties;
         ConcreteClass(const string& name) : Class(name) { }
         template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
+        virtual size_t countProperties() { return _properties.size(); }
         virtual size_t getTypeId() { return t37::getTypeId<C>(); }
+        void test() { }
     };
 
-    struct Inspector;
     template <class C> struct ClassBuilder {
         Inspector& _inspector;
         ConcreteClass<C> _class;
@@ -1963,7 +1976,6 @@ namespace t37 {
         Inspector& endClass() { _inspector.addClass<C>(_class); return _inspector; }
     };
 
-    template <class T> struct ConcreteObject;
  
     struct Inspector {
         vector<Class*> _classes;
@@ -1971,10 +1983,10 @@ namespace t37 {
         template <class C> void addClass(ConcreteClass<C>& theClass) { _classes.push_back(new ConcreteClass<C>(theClass)); }
         template <class T> Object* getObject(T& t) { return new ConcreteObject<T>(t, *this); }
         template <class T> bool hasClass() { return getClass<T>() != NULL; }
-        template <class T> Class* getClass() { 
-            for (size_t i = 0; i < _classes.size(); i++)
+        template <class T> ConcreteClass<T>* getClass() { 
+            /*for (size_t i = 0; i < _classes.size(); i++)
                 if (_classes[i]->getTypeId() == getTypeId<T>())
-                    return _classes[i];
+                    return _classes[i];*/
             return NULL;
         }
     };
@@ -1991,10 +2003,15 @@ namespace t37 {
         Inspector& _inspector;
         ConcreteObject(T& t, Inspector& inspector) : _ref(t), _inspector(inspector) { }
         virtual bool hasClassType() { return _inspector.hasClass<T>(); }
-        virtual const string& getName() { return _inspector.getClass<T>()->_name; }
-        virtual size_t countProperties() { return _inspector.getClass<T>()->_properties.size(); }
+        virtual const string& getName() {           // must enable only if T is class object 
+            ConcreteClass<T>* test = _inspector.getClass<T>();
+            test->test();           
+            //test->countProperties();
+            return /*_inspector.getClass<T>()->_name;*/ "bla"; 
+        }
+        virtual size_t countProperties() { return/* _inspector.getClass<T>()->countProperties();*/ 42; }
         virtual Object* getProperty(size_t index) { 
-            //return _inspector.getClass<T>()->_properties[i]
+            //return _inspector.getClass<T>()->_properties[i]->getObject<T>(*this, _inspector);
             return NULL;
         }
     };
@@ -2019,13 +2036,16 @@ namespace t37 {
     }
     
     void test() {
-        // Next: Implement getProperty(). Basic idea: 
-        // 1) Downcast the Class we get from getClass() to a concrete class (since we know which type it is..)
-        //    Or better even: return the concrete class from getClass()
-        // 2) Add an intermediate 'semi-concrete' ClassProperty class which still has the parent class as a template parameter
-        //    Store a vector of ClassProperty inside the ConcreteClass
-        // 3) Add a function Object* ClassObject<T>::getObject(T& theObject) to retrieve the property-object
-        // 4) Profit!
+
+        // Next: 
+        // Enable ConcreteObject<T>::getName() and ConcreteObject<T>::getProperties() depending on whether T is a class
+        // 1) Implement getProperty(). Basic idea: 
+        //      1 a) Downcast the Class we get from getClass() to a concrete class (since we know which type it is..)
+        //           Or better even: return the concrete class from getClass()
+        //      1 b) Add an intermediate 'semi-concrete' ClassProperty class which still has the parent class as a template parameter
+        //           Store a vector of ClassProperty pointers inside the ConcreteClass
+        //      1 c) Add a function Object* ClassObject<T>::getObject(T& theObject) to retrieve the property-object
+        //      1 d) Profit!
 
         Inspector inspector;
         inspector.beginClass<Hero>("Hero")
@@ -2033,10 +2053,12 @@ namespace t37 {
             .addProperty("health", &Hero::health)
         .endClass();
 
+        //ConcreteClass<Hero>* test = inspector.getClass<Hero>();
+        //test->countProperties();
+
         Hero hero;
         Object* heroObject = inspector.getObject<Hero>(hero);
         print(*heroObject);
-        delete heroObject;
     }
 }
 
