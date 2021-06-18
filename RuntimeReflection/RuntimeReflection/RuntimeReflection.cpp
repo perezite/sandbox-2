@@ -2009,12 +2009,7 @@ namespace t37 {
         virtual Object* getProperty(size_t index) = 0;
     };
     
-    // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
-    template <bool /*is class*/> string getObjectName(Object& object) { }
-    //template <> string getObjectName<true /*is class*/>(Object& object) { return object._ins }
-    //template <> string getObjectName<false /*is class*/>(Object& object) { return "bla"; }
-
-    template <bool> struct Identity { };
+    template <bool> struct Identity { };                                                        // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
 
     template <class T> struct ConcreteObject : public Object {
         T& _ref;
