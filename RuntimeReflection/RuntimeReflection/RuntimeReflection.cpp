@@ -1920,6 +1920,17 @@ namespace t36 {
     }
 }
 
+namespace my {
+    typedef char no[1];
+    typedef char yes[2];
+
+    template <class T> struct IsClass {
+        template <class U> static yes& check(int U::*) { }
+        template <class U> static no& check(...) { }
+        static const bool value = sizeof(check<T>(0)) == sizeof(yes);
+    };
+}
+
 namespace t37 {
     struct Inspector;
     struct Object;
@@ -1984,32 +1995,40 @@ namespace t37 {
         template <class T> Object* getObject(T& t) { return new ConcreteObject<T>(t, *this); }
         template <class T> bool hasClass() { return getClass<T>() != NULL; }
         template <class T> ConcreteClass<T>* getClass() { 
-            /*for (size_t i = 0; i < _classes.size(); i++)
+            for (size_t i = 0; i < _classes.size(); i++)
                 if (_classes[i]->getTypeId() == getTypeId<T>())
-                    return _classes[i];*/
+                    return (ConcreteClass<T>*)_classes[i];
             return NULL;
         }
     };
 
     struct Object {
         virtual bool hasClassType() = 0;
-        virtual const string& getName() = 0;
+        virtual const string getName() = 0;
         virtual size_t countProperties() = 0;
         virtual Object* getProperty(size_t index) = 0;
     };
     
+    // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+    template <bool /*is class*/> string getObjectName(Object& object) { }
+    //template <> string getObjectName<true /*is class*/>(Object& object) { return object._ins }
+    //template <> string getObjectName<false /*is class*/>(Object& object) { return "bla"; }
+
+    template <bool> struct Identity { };
+
     template <class T> struct ConcreteObject : public Object {
         T& _ref;
         Inspector& _inspector;
         ConcreteObject(T& t, Inspector& inspector) : _ref(t), _inspector(inspector) { }
-        virtual bool hasClassType() { return _inspector.hasClass<T>(); }
-        virtual const string& getName() {           // must enable only if T is class object 
-            ConcreteClass<T>* test = _inspector.getClass<T>();
-            test->test();           
-            //test->countProperties();
-            return /*_inspector.getClass<T>()->_name;*/ "bla"; 
-        }
-        virtual size_t countProperties() { return/* _inspector.getClass<T>()->countProperties();*/ 42; }
+        virtual bool hasClassType() { return hasClassType(Identity<my::IsClass<T>::value>()); }
+        bool hasClassType(Identity<true> isClass) { return _inspector.hasClass<T>(); }
+        bool hasClassType(Identity<false> isclass) { return false; }
+        virtual const string getName() { return getName(Identity<my::IsClass<T>::value>()); }   // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+        const string getName(Identity<true>) { return _inspector.getClass<T>()->_name; }
+        const string getName(Identity<false>) { return "unnamed"; }
+        virtual size_t countProperties() { return countProperties(Identity<my::IsClass<T>::value>()); }
+        size_t countProperties(Identity<true> isClass) { return _inspector.getClass<T>()->countProperties(); }
+        size_t countProperties(Identity<false> isClass) { return 0; }
         virtual Object* getProperty(size_t index) { 
             //return _inspector.getClass<T>()->_properties[i]->getObject<T>(*this, _inspector);
             return NULL;
