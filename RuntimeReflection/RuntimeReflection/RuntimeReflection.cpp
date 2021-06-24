@@ -1929,6 +1929,27 @@ namespace my {
         template <class U> static no& check(...) { }
         static const bool value = sizeof(check<T>(0)) == sizeof(yes);
     };
+
+    template <class T> string toString(T& t) {
+        ostringstream os; os << t;
+        return os.str();
+    }
+
+    namespace CheckOutStream {
+        typedef char No[sizeof(ostringstream&) + 1];
+        template<typename T> No& operator<< (ostream& os, const T&);
+
+        template <class T> struct StreamExists {
+            enum {  value = sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&) };   // neded to make 'value' a compile time constant
+        };
+    };
+
+    template <class T> struct HasOutStream {
+        static const bool value = CheckOutStream::StreamExists<T>::value;
+    };
+
+    template <> struct HasOutStream<string> { static const bool value = true; };    // string has a predefined << operator, which confuses the compiler. So instead 
+                                                                                    // we just hardcode the correct value for this specific type
 }
 
 namespace t37 {
@@ -2016,11 +2037,13 @@ namespace t37 {
         virtual const string getTypename() = 0;
         virtual size_t countProperties() = 0;
         virtual Object* getProperty(size_t index) = 0;
+        virtual string toString() = 0;
     };
     
 
     template <class T> struct ConcreteObject : public Object {
         static const bool IsClass = my::IsClass<T>::value;
+        static const bool HasOutStream = my::HasOutStream<T>::value;
         T& _ref;
         Inspector& _inspector;
         ConcreteObject(T& t, const string& name, Inspector& inspector) : Object(name), _ref(t), _inspector(inspector) { }
@@ -2028,8 +2051,8 @@ namespace t37 {
         bool hasClassType(Identity<true> isClass) { return _inspector.getClass<T>(); }
         bool hasClassType(Identity<false> isclass) { return false; }
         virtual const string getTypename() { return getTypename(Identity<IsClass>()); }   // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
-        const string getTypename(Identity<true>) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_name : "<unknown-type>"; }
-        const string getTypename(Identity<false>) { return "<unknown-type>"; }
+        const string getTypename(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_name : "<unknown-type/builtin-type>"; }
+        const string getTypename(Identity<false> isClass) { return "<builtin-type>"; }
         virtual size_t countProperties() { return countProperties(Identity<IsClass>()); }
         size_t countProperties(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->countProperties() : 0; }
         size_t countProperties(Identity<false> isClass) { return 0; }
@@ -2038,27 +2061,23 @@ namespace t37 {
             return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_properties[index]->getPropertyObject(_ref, _inspector) : NULL; 
         }
         Object* getProperty(size_t index, Identity<false> isClass) { error("invalid"); return NULL; }
+        virtual string toString() { return toString(Identity<HasOutStream>()); }
+        string toString(Identity<true> hasOutStream) { return my::toString(_ref); }
+        string toString(Identity<false> hasOutStream) { return "operator << missing"; }
     };
 
     struct Hero { string name = "Chuck"; int health = 42; };
     
     inline string indent(size_t depth) { return string(depth * 4, ' '); }
 
-    void print(Object& object, size_t depth = 0) {
-        //bool hasClassType = object.hasClassType();
-        cout << indent(depth) << object.getTypename() << " " << object.getName() << endl;
+    void print(Object& object, size_t depth = 0) { 
         if (object.hasClassType()) {
+            cout << indent(depth) << object.getTypename() << " " << object.getName() << ": " << endl;
             for (size_t i = 0; i < object.countProperties(); i++)
                 print(*object.getProperty(i), depth + 1);
-        }
-
-        //if (object.hasClassType()) {
-        //    cout << "Class-object :" << object.getName() << endl;   
-        //    for (size_t i = 0; i < object.countProperties(); i++) 
-        //        print(object.getProperty(i));
-        //}
-        //else if (object.hasBasicType()) 
-        //    cout << object.getName() << ": " << object.toString() << endl;
+        } 
+        else 
+            cout << indent(depth) << object.getTypename() << " " << object.getName() << ": " << object.toString() << endl;
     }
 
     void test() {
@@ -2067,9 +2086,6 @@ namespace t37 {
             .addProperty("name", &Hero::name)
             .addProperty("health", &Hero::health)
         .endClass();
-
-        //ConcreteClass<Hero>* test = inspector.getClass<Hero>();
-        //test->countProperties();
 
         Hero hero;
         Object* heroObject = inspector.getObject<Hero>(hero, "hero");
