@@ -1953,12 +1953,6 @@ namespace my {
 }
 
 namespace t37 {
-    void error(const string& message) {
-        cout << "Error: " << message << endl;
-        cin.get();
-        exit(0);
-    }
-
     struct Inspector;
     struct Object;
     template <class T> struct ConcreteObject;
@@ -2060,7 +2054,7 @@ namespace t37 {
         Object* getProperty(size_t index, Identity<true> isClass) { 
             return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_properties[index]->getPropertyObject(_ref, _inspector) : NULL; 
         }
-        Object* getProperty(size_t index, Identity<false> isClass) { error("invalid"); return NULL; }
+        Object* getProperty(size_t index, Identity<false> isClass) { return NULL; }
         virtual string toString() { return toString(Identity<HasOutStream>()); }
         string toString(Identity<true> hasOutStream) { return my::toString(_ref); }
         string toString(Identity<false> hasOutStream) { return "operator << missing"; }
