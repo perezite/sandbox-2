@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <vector>
 #include <map>
+#include <complex>
 
 // https://stackoverflow.com/questions/5047971/how-do-i-check-for-c11-support
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
@@ -1920,6 +1921,27 @@ namespace t36 {
     }
 }
 
+namespace t37 {
+    class NoStream { };
+
+    // https://people.eecs.berkeley.edu/~brock/blog/detection_idiom.php
+    template <class T> struct HasOutStream {
+        typedef char yes[1];
+        typedef char no[2];
+
+        template <class U> static yes& check(int(*)[sizeof(*(ostream*)(0) << *(U*)(0))]);
+        template <class U> static no& check(...);
+
+        static const bool value = sizeof(check<T>(0)) == sizeof(yes);
+    };
+
+    void test() {
+        cout << HasOutStream<int>::value << endl;
+        cout << HasOutStream<NoStream>::value << endl;
+        cout << HasOutStream<complex<float>>::value << endl;
+    }
+}
+
 namespace my {
     typedef char no[1];
     typedef char yes[2];
@@ -1935,24 +1957,19 @@ namespace my {
         return os.str();
     }
 
-    namespace CheckOutStream {
-        typedef char No[sizeof(ostringstream&) + 1];
-        template<typename T> No& operator<< (ostream& os, const T&);
-
-        template <class T> struct StreamExists {
-            enum {  value = sizeof(*(ostringstream*)(0) << *(T*)(0)) != sizeof(No&) };   // neded to make 'value' a compile time constant
-        };
-    };
-
+    // https://people.eecs.berkeley.edu/~brock/blog/detection_idiom.php
     template <class T> struct HasOutStream {
-        static const bool value = CheckOutStream::StreamExists<T>::value;
-    };
+        typedef char yes[1];
+        typedef char no[2];
 
-    template <> struct HasOutStream<string> { static const bool value = true; };    // string has a predefined << operator, which confuses the compiler. So instead 
-                                                                                    // we just hardcode the correct value for this specific type
+        template <class U> static yes& check(int(*)[sizeof(*(ostream*)(0) << *(U*)(0))]);
+        template <class U> static no& check(...);
+
+        static const bool value = sizeof(check<T>(0)) == sizeof(yes);
+    };
 }
 
-namespace t37 {
+namespace t38 {
     struct Inspector;
     struct Object;
     template <class T> struct ConcreteObject;
@@ -1994,7 +2011,7 @@ namespace t37 {
         ConcreteClass(const string& name) : Class(name) { }
         template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
         virtual size_t countProperties() { return _properties.size(); }
-        virtual size_t getTypeId() { return t37::getTypeId<C>(); }
+        virtual size_t getTypeId() { return t38::getTypeId<C>(); }
     };
 
     template <class C> struct ClassBuilder {
@@ -2088,7 +2105,8 @@ namespace t37 {
 
 void test()
 {
-    t37::test();
+    t38::test();
+    //t37::test();
     //t36::test();
     //t35::test();
     //t34::test();
