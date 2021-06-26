@@ -2033,7 +2033,6 @@ namespace t37 {
         virtual Object* getProperty(size_t index) = 0;
         virtual string toString() = 0;
     };
-    
 
     template <class T> struct ConcreteObject : public Object {
         static const bool IsClass = my::IsClass<T>::value;
@@ -2066,12 +2065,12 @@ namespace t37 {
 
     void print(Object& object, size_t depth = 0) { 
         if (object.hasClassType()) {
-            cout << indent(depth) << object.getTypename() << " " << object.getName() << ": " << endl;
+            cout << indent(depth) << " " << object.getName() << " (" << object.getTypename() <<  ")" << ": " << endl;
             for (size_t i = 0; i < object.countProperties(); i++)
                 print(*object.getProperty(i), depth + 1);
         } 
         else 
-            cout << indent(depth) << object.getTypename() << " " << object.getName() << ": " << object.toString() << endl;
+            cout << indent(depth) << object.getName() << ": " << object.toString() << endl;
     }
 
     void test() {
@@ -2089,7 +2088,6 @@ namespace t37 {
 
 void test()
 {
-    // next: solve the problem problem that I am being forced to return the Object as a pointer
     t37::test();
     //t36::test();
     //t35::test();
