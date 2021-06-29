@@ -2092,29 +2092,13 @@ namespace t38 {
             cout << indent(depth) << object.getName() << ": " << object.toString() << endl;
     }
 
-    void test1() {
+    // Serialize object with two basic properties
+    void test() {
         Inspector inspector;
         inspector.beginClass<Hero>("Hero")
             .addProperty("name", &Hero::name)
             .addProperty("health", &Hero::health)
             .addProperty("position", &Hero::position)
-        .endClass();
-
-        Hero hero;
-        Object* heroObject = inspector.getObject<Hero>(hero, "hero");
-        print(*heroObject);
-    }
-
-    void test2() {
-        Inspector inspector;
-        inspector.beginClass<Hero>("Hero")
-            .addProperty("name", &Hero::name)
-            .addProperty("health", &Hero::health)
-            .addProperty("position", &Hero::position)
-        .endClass()
-        .beginClass<Vector2f>("Vector2f")
-            .addProperty("x", &Vector2f::x)
-            .addProperty("y", &Vector2f::y)
         .endClass();
 
         Hero hero;
@@ -2234,7 +2218,7 @@ namespace t39 {
     
     inline string indent(size_t depth) { return string(depth * 4, ' '); }
 
-    struct JsonWriter : public Inspector {
+    struct Writer : public Inspector {
         void write(Object& object, ostringstream& os, size_t depth) {
             if (object.hasClassType()) {
                 os << indent(depth) << object.getName() << " (" << object.getTypename() << ")" << ": " << endl;
@@ -2254,27 +2238,276 @@ namespace t39 {
         }
     };
 
+    // Serialize object with one basic and one nested Property
     void test() {
-        JsonWriter jsonWriter;
-        jsonWriter.beginClass<Hero>("Hero")
+
+
+        Writer writer;
+        writer.beginClass<Hero>("Hero")
             .addProperty("name", &Hero::name)
             .addProperty("health", &Hero::health)
         .endClass();
 
         Hero hero;
         string result;
-        jsonWriter.writeToString("hero", hero, result);
+        writer.writeToString("hero", hero, result);
         
-        cout << "TODO: make this actual json" << endl;
         cout << result << endl;
+    }
+}
+
+namespace my {
+    void split(const string& str, const string& delim, vector<string>& parts) {
+        string s(str); size_t pos = 0; string token;
+        while ((pos = s.find(delim)) != string::npos) {
+            parts.push_back(s.substr(0, pos));
+            s.erase(0, pos + delim.length());
+        }
+
+        if (s.length() > 0)
+            parts.push_back(s);
+    }
+
+    // https://www.techiedelight.com/remove-whitespaces-string-cpp/
+    const std::string whitespaces(" \t\f\v\n\r");
+
+    void ltrim(const string& str, string& result) {
+        string s(str);
+        size_t pos = s.find_first_not_of(whitespaces);
+        result = pos != string::npos ? s.substr(pos) : "";
+    }
+
+    void rtrim(const string& str, string& result) {
+        string s(str);
+        size_t pos = s.find_last_not_of(whitespaces);
+        result = pos != string::npos ? s.substr(0, pos + 1) : "";
+    }
+
+    void trim(const string& str, string& result) {
+        ltrim(str, result);
+        rtrim(result, result);
+    }
+}
+
+namespace t40 {
+    void test() {
+        string str = " this\n  is a \n   test test ";
+        vector<string> parts;
+        my::split(str, "\n", parts);
+        for (size_t i = 0; i < parts.size(); i++)
+            cout << parts[i] << endl;
+    }
+}
+
+namespace t41 {
+    void test() {
+        string str = "  abc";
+        string trimmed;
+        my::ltrim(str, trimmed);
+        cout << str << endl;
+        cout << trimmed << endl;
+
+        string str2 = "abc  ";
+        string trimmed2;
+        my::rtrim(str2, trimmed2);
+        cout << str2 << "x" << endl;
+        cout << trimmed2 << "x" << endl;
+
+        string str3 = "  abc  ";
+        string trimmed3;
+        my::trim(str3, trimmed3);
+        cout << str3 << "x" << endl;
+        cout << trimmed3 << "x" << endl;
+    }
+}
+
+namespace t42 {
+    struct Inspector;
+    struct Object;
+    template <class T> struct ConcreteObject;
+
+    struct Property {
+        string _name;
+        Property(const string& name) : _name(name) { }
+    };
+
+    template <class C> struct ClassProperty : public Property {
+        ClassProperty(const string& name) : Property(name) { }
+        virtual Object* getPropertyObject(C& parent, Inspector& inspector) = 0;
+    };
+
+    template <class C, class P> struct ConcreteProperty : public ClassProperty<C> {
+        P C::* _member;
+        ConcreteProperty(const string& name, P C::* member) : ClassProperty<C>(name), _member(member) { }
+        virtual Object* getPropertyObject(C& parent, Inspector& inspector) {
+            P* propertyObject = &(parent.*_member);
+            return new ConcreteObject<P>(*propertyObject, Property::_name, inspector);
+        }
+    };
+
+    static size_t TypeIdCounter = 0;
+    template <class T> size_t getTypeId() {
+        static size_t typeId = ++TypeIdCounter;
+        return typeId;
+    }
+
+    struct Class {
+        string _name;
+        Class(const string& name) : _name(name) { }
+        virtual size_t countProperties() = 0;
+        virtual size_t getTypeId() = 0;
+    };
+
+    template <class C> struct ConcreteClass : public Class {
+        vector<ClassProperty<C>*> _properties;
+        ConcreteClass(const string& name) : Class(name) { }
+        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
+        virtual size_t countProperties() { return _properties.size(); }
+        virtual size_t getTypeId() { return t42::getTypeId<C>(); }
+    };
+
+    template <class C> struct ClassBuilder {
+        Inspector& _inspector;
+        ConcreteClass<C> _class;
+        ClassBuilder(const string& name, Inspector& inspector) : _class(name), _inspector(inspector) { }
+        template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { _class.addProperty<P>(name, member); return *this; }
+        Inspector& endClass() { _inspector.addClass<C>(_class); return _inspector; }
+    };
+
+    template <bool> struct Identity { };                                                        // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+
+    struct Inspector {
+        vector<Class*> _classes;
+        template <class C> ClassBuilder<C> beginClass(const string& name) { return ClassBuilder<C>(name, *this); }
+        template <class C> void addClass(ConcreteClass<C>& theClass) { _classes.push_back(new ConcreteClass<C>(theClass)); }
+        template <class T> Object* getObject(T& t, const string& name) { return new ConcreteObject<T>(t, name, *this); }
+        template <class T> bool hasClass() { return getClass<T>() != NULL; }
+        template <class T> ConcreteClass<T>* getClass() { return getClass<T>(Identity<my::IsClass<T>::value>()); }           // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+        template <class T> ConcreteClass<T>* getClass(Identity<true> isClass) {
+            for (size_t i = 0; i < _classes.size(); i++)
+                if (_classes[i]->getTypeId() == getTypeId<T>())
+                    return (ConcreteClass<T>*)_classes[i];
+            return NULL;
+        }
+        template <class T> ConcreteClass<T>* getClass(Identity<false> isClass) { return NULL; }
+    };
+
+    struct Object {
+        string _name;
+        Object(const string& name) : _name(name) { }
+        const string& getName() { return _name; };
+        virtual bool hasClassType() = 0;
+        virtual const string getTypename() = 0;
+        virtual size_t countProperties() = 0;
+        virtual Object* getProperty(size_t index) = 0;
+        virtual string toString() = 0;
+    };
+
+    template <class T> struct ConcreteObject : public Object {
+        static const bool IsClass = my::IsClass<T>::value;
+        static const bool HasOutStream = my::HasOutStream<T>::value;
+        T& _ref;
+        Inspector& _inspector;
+        ConcreteObject(T& t, const string& name, Inspector& inspector) : Object(name), _ref(t), _inspector(inspector) { }
+        virtual bool hasClassType() { return hasClassType(Identity<IsClass>()); }
+        bool hasClassType(Identity<true> isClass) { return _inspector.getClass<T>(); }
+        bool hasClassType(Identity<false> isclass) { return false; }
+        virtual const string getTypename() { return getTypename(Identity<IsClass>()); }   // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+        const string getTypename(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_name : "unknown or builtin type"; }
+        const string getTypename(Identity<false> isClass) { return "builtin type"; }
+        virtual size_t countProperties() { return countProperties(Identity<IsClass>()); }
+        size_t countProperties(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->countProperties() : 0; }
+        size_t countProperties(Identity<false> isClass) { return 0; }
+        virtual Object* getProperty(size_t index) { return getProperty(index, Identity<IsClass>()); }
+        Object* getProperty(size_t index, Identity<true> isClass) {
+            return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_properties[index]->getPropertyObject(_ref, _inspector) : NULL;
+        }
+        Object* getProperty(size_t index, Identity<false> isClass) { return NULL; }
+        virtual string toString() { return toString(Identity<HasOutStream>()); }
+        string toString(Identity<true> hasOutStream) { return my::toString(_ref); }
+        string toString(Identity<false> hasOutStream) { return "operator << missing"; }
+    };
+
+    struct Hero { string name = "Chuck"; int health = 42; };
+
+    inline string indent(size_t depth) { return string(depth * 4, ' '); }
+
+    struct Writer : public Inspector {
+        void write(Object& object, ostringstream& os, size_t depth = 0) {
+            if (object.hasClassType()) {
+                os << indent(depth) << object.getName() << ": " << endl;
+                for (size_t i = 0; i < object.countProperties(); i++)
+                    write(*object.getProperty(i), os, depth + 1);
+            }
+            else
+                os << indent(depth) << object.getName() << ": " << object.toString() << endl;
+        }
+
+        template <class T> void writeToString(string name, T& t, string& result) {
+            ostringstream os;
+            Object* object = this->getObject<T>(t, name);
+            write(*object, os, 0);
+            delete object;
+            result = os.str();
+        }
+    };
+
+    void sanitize(const vector<string>& parts, vector<string>& sanitized) {
+        for (size_t i = 0; i < parts.size(); i++) {
+            string trimmed;
+            my::trim(parts[i], trimmed);
+            if (!trimmed.empty())
+                sanitized.push_back(trimmed);
+        }
+
+    }
+
+    struct Reader : public Inspector {
+        // https://cpppatterns.com/patterns/read-line-by-line.html
+        void read(Object& object, istringstream& is, size_t depth = 0) {
+            string result; getline(is, result);
+            vector<string> parts; my::split(result, ":", parts);
+            vector<string> sanitized; sanitize(parts, sanitized);
+        }
+
+        template <class T> void read(const string& name, const string& data, T& t) { 
+            istringstream is; is.str(data);
+            Object* object = this->getObject<T>(t, name);
+            read(*object, is, 0);
+            delete object;
+        }
+    };
+
+    template <class Inspector> void registerTypes(Inspector& inspector) {
+        inspector.beginClass<Hero>("Hero")
+            .addProperty("name", &Hero::name)
+            .addProperty("health", &Hero::health)
+        .endClass();
+    }
+
+    void test() {        
+        Writer writer;
+        Reader reader;
+        registerTypes(writer);
+        registerTypes(reader);
+
+        Hero hero;
+        string result;
+        writer.writeToString("hero", hero, result);
+        cout << result;
+
+        Hero hero2;
+        reader.read("hero", result, hero2);
     }
 }
 
 void test()
 {
-    t39::test();
-    //t38::test2();
-    //t38::test1();
+    t42::test();
+    //t41::test();
+    //t40::test();
+    //t39::test();
+    //t38::test();
     //t37::test();
     //t36::test();
     //t35::test();
@@ -2320,8 +2553,6 @@ void test()
 }
 
 // TODO:
-// Serialize object with two basic properties - DONE
-// Serialize object with one basic and one nested Property - DONE
 // Deserialize object with two basic properties
 // Deserialize object with one basic and one nested Property
 // Attach editor to object and edit values
