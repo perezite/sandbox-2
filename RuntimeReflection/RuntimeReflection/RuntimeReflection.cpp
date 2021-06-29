@@ -2443,7 +2443,7 @@ namespace t42 {
                 os << indent(depth) << object.getName() << ": " << object.toString() << endl;
         }
 
-        template <class T> void writeToString(string name, T& t, string& result) {
+        template <class T> void write(string name, T& t, string& result) {
             ostringstream os;
             Object* object = this->getObject<T>(t, name);
             write(*object, os, 0);
@@ -2493,7 +2493,7 @@ namespace t42 {
 
         Hero hero;
         string result;
-        writer.writeToString("hero", hero, result);
+        writer.write("hero", hero, result);
         cout << result;
 
         Hero hero2;
