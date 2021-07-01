@@ -2507,7 +2507,7 @@ namespace t42 {
     };
     
     struct Reader : public Inspector {
-        vector<string> splitLine(const string& line, vector<string>& result) {
+        void splitLine(const string& line, vector<string>& result) {
             vector<string> parts;  my::split(line, ":", parts);
             sanitize(parts, result);
         }
@@ -2526,29 +2526,13 @@ namespace t42 {
             } else {
                 object.fromString(parts[1]);
             }
-            /*
-            vector<string> parts; split(line, parts);
-            if (isClassObject(parts)) {
-                while(stream.hasContent()) {
-                    size_t propertyIndent = getIndent(line) + 1;
-                    string nextLine; stream.peekLine(nextLine);
-                    if (getIndent(nextLine) != propertyIndent) 
-                        return;
-                    string currentLine; stream.readLine(currentLine);
-                    string name = getName(currentLine);
-                    read(*object.getProperty(name), currentLine, is);        
-                }
-            } else {
-                property->fromString(getValue(line));
-            }
-            */
         }
 
         template <class T> void read(const string& name, const string& data, T& t) { 
             InputStream stream(data);
             Object* object = this->getObject<T>(t, name);
-            // string line; readLine(is, line);
-            //read(*object, line, is);
+            string line; stream.readLine(line);
+            read(*object, line, stream);
             delete object;
         }
     };
