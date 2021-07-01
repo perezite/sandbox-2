@@ -1975,7 +1975,7 @@ namespace my {
         typedef char yes[1];
         typedef char no[2];
 
-        template <class U> static yes& check(int(*)[sizeof(*(ostream*)(0) >> *(U*)(0))]);
+        template <class U> static yes& check(int(*)[sizeof(*(istream*)(0) >> *(U*)(0))]);
         template <class U> static no& check(...);
 
         static const bool value = sizeof(check<T>(0)) == sizeof(yes);
@@ -2461,8 +2461,6 @@ namespace t42 {
         vector<ClassProperty<T>*> getProperties() { return _inspector.getClass<T>()->_properties; }
     };
 
-    struct Hero { string name = "Chuck"; int health = 42; };
-
     inline string indent(size_t depth) { return string(depth * 4, ' '); }
 
     struct Writer : public Inspector {
@@ -2521,7 +2519,8 @@ namespace t42 {
                     string nextLine; stream.peekLine(nextLine);
                     if (getIndent(nextLine) != propertyIndent) return;
                     string currentLine; stream.readLine(currentLine);
-                    read(*object.getProperty(parts[1]), currentLine, stream);
+                    vector<string> currentParts; splitLine(currentLine, currentParts);
+                    read(*object.getProperty(currentParts[0]), currentLine, stream);
                 }
             } else {
                 object.fromString(parts[1]);
@@ -2537,10 +2536,19 @@ namespace t42 {
         }
     };
 
+    struct Vector2f { float x = 1; float y = 2; };
+
+    struct Hero { string name = "Chuck"; int health = 42; Vector2f position; };
+
     template <class Inspector> void registerTypes(Inspector& inspector) {
         inspector.beginClass<Hero>("Hero")
             .addProperty("name", &Hero::name)
             .addProperty("health", &Hero::health)
+            .addProperty("position", &Hero::position)
+        .endClass()
+        .beginClass<Vector2f>("Vector2f")
+            .addProperty("x", &Vector2f::x)
+            .addProperty("y", &Vector2f::y)
         .endClass();
     }
 
@@ -2553,8 +2561,12 @@ namespace t42 {
         writer.write("hero", hero, result);
         cout << result;
 
-        Hero hero2;
+        Hero hero2; hero2.health = 0; hero2.name = ""; hero2.position.x = 0; hero2.position.y = 0;
         reader.read("hero", result, hero2);
+
+        cout << hero2.health << endl;
+        cout << hero2.name << endl;
+        cout << hero2.position.x << " " << hero2.position.y << endl;
     }
 }
 
