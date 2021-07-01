@@ -2452,28 +2452,40 @@ namespace t42 {
         }
     };
 
-    void sanitize(const vector<string>& parts, vector<string>& sanitized) {
+    void sanitize(const vector<string>& parts, vector<string>& result) {
         for (size_t i = 0; i < parts.size(); i++) {
             string trimmed;
             my::trim(parts[i], trimmed);
             if (!trimmed.empty())
-                sanitized.push_back(trimmed);
+                result.push_back(trimmed);
         }
-
     }
 
     struct Reader : public Inspector {
         // https://cpppatterns.com/patterns/read-line-by-line.html
-        void read(Object& object, istringstream& is, size_t depth = 0) {
-            string result; getline(is, result);
-            vector<string> parts; my::split(result, ":", parts);
-            vector<string> sanitized; sanitize(parts, sanitized);
+        void read(Object& object, string line, istringstream& is) {
+            /*
+            if (isClassObject(line)) {
+                while(stream.hasContent()) {
+                    size_t propertyIndent = getIndent(line) + 1;
+                    string nextLine; stream.peekLine(nextLine);
+                    if (getIndent(nextLine) != propertyIndent) 
+                        return;
+                    string currentLine; stream.readLine(currentLine);
+                    string name = getName(currentLine);
+                    read(*object.getProperty(name), currentLine, is);        
+                }
+            } else {
+                property->fromString(getValue(line));
+            }
+            */
         }
 
         template <class T> void read(const string& name, const string& data, T& t) { 
             istringstream is; is.str(data);
             Object* object = this->getObject<T>(t, name);
-            read(*object, is, 0);
+            // string line; readLine(is, line);
+            //read(*object, line, is);
             delete object;
         }
     };
@@ -2486,10 +2498,8 @@ namespace t42 {
     }
 
     void test() {        
-        Writer writer;
-        Reader reader;
-        registerTypes(writer);
-        registerTypes(reader);
+        Writer writer; registerTypes(writer);
+        Reader reader; registerTypes(reader);
 
         Hero hero;
         string result;
