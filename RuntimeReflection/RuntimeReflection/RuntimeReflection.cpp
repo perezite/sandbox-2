@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iostream>
 #include <sstream>
 #include <unordered_map>
 #include <vector>
@@ -1957,12 +1958,24 @@ namespace my {
         return os.str();
     }
 
+    template <class T> void fromString(T& t, const string& str) { istringstream is(str); is >> t; }
+
     // https://people.eecs.berkeley.edu/~brock/blog/detection_idiom.php
     template <class T> struct HasOutStream {
         typedef char yes[1];
         typedef char no[2];
 
         template <class U> static yes& check(int(*)[sizeof(*(ostream*)(0) << *(U*)(0))]);
+        template <class U> static no& check(...);
+
+        static const bool value = sizeof(check<T>(0)) == sizeof(yes);
+    };
+
+    template <class T> struct HasInStream {
+        typedef char yes[1];
+        typedef char no[2];
+
+        template <class U> static yes& check(int(*)[sizeof(*(ostream*)(0) >> *(U*)(0))]);
         template <class U> static no& check(...);
 
         static const bool value = sizeof(check<T>(0)) == sizeof(yes);
@@ -2287,6 +2300,11 @@ namespace my {
         ltrim(str, result);
         rtrim(result, result);
     }
+
+    void error(const string& message) {
+        cout << "error: " << message << endl; 
+        cin.get(); exit(0);
+    }
 }
 
 namespace t40 {
@@ -2400,12 +2418,15 @@ namespace t42 {
         virtual const string getTypename() = 0;
         virtual size_t countProperties() = 0;
         virtual Object* getProperty(size_t index) = 0;
+        virtual Object* getProperty(const string& name) = 0;
         virtual string toString() = 0;
+        virtual void fromString(const string& str) = 0;
     };
 
     template <class T> struct ConcreteObject : public Object {
         static const bool IsClass = my::IsClass<T>::value;
         static const bool HasOutStream = my::HasOutStream<T>::value;
+        static const bool HasInStream = my::HasInStream<T>::value;
         T& _ref;
         Inspector& _inspector;
         ConcreteObject(T& t, const string& name, Inspector& inspector) : Object(name), _ref(t), _inspector(inspector) { }
@@ -2416,16 +2437,28 @@ namespace t42 {
         const string getTypename(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_name : "unknown or builtin type"; }
         const string getTypename(Identity<false> isClass) { return "builtin type"; }
         virtual size_t countProperties() { return countProperties(Identity<IsClass>()); }
-        size_t countProperties(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->countProperties() : 0; }
+        size_t countProperties(Identity<true> isClass) { return _inspector.hasClass<T>() ? getProperties().size() : 0; }
         size_t countProperties(Identity<false> isClass) { return 0; }
         virtual Object* getProperty(size_t index) { return getProperty(index, Identity<IsClass>()); }
         Object* getProperty(size_t index, Identity<true> isClass) {
-            return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_properties[index]->getPropertyObject(_ref, _inspector) : NULL;
+            return _inspector.hasClass<T>() ? getProperties()[index]->getPropertyObject(_ref, _inspector) : NULL;
         }
         Object* getProperty(size_t index, Identity<false> isClass) { return NULL; }
+        virtual Object* getProperty(const string& name) { return getProperty(name, Identity<IsClass>()); }
+        Object* getProperty(const string& name, Identity<true> isClass) {
+            if (!_inspector.hasClass<T>()) return NULL;
+            for (size_t i = 0; i < getProperties().size(); i++)
+                if (getProperties()[i]->_name == name) return getProperties()[i]->getPropertyObject(_ref, _inspector);
+            return NULL;
+        }
+        Object* getProperty(const string& name, Identity<false> isClass) { return NULL; }
         virtual string toString() { return toString(Identity<HasOutStream>()); }
         string toString(Identity<true> hasOutStream) { return my::toString(_ref); }
         string toString(Identity<false> hasOutStream) { return "operator << missing"; }
+        virtual void fromString(const string& str) { fromString(str, Identity<HasInStream>()); }
+        void fromString(const string& str, Identity<true> hasInStream) { my::fromString(_ref, str); }
+        void fromString(const string& str, Identity<false> hasInStream) { my::error( "operator >> missing"); }
+        vector<ClassProperty<T>*> getProperties() { return _inspector.getClass<T>()->_properties; }
     };
 
     struct Hero { string name = "Chuck"; int health = 42; };
@@ -2461,11 +2494,41 @@ namespace t42 {
         }
     }
 
+    struct InputStream {
+        istringstream _is;
+        string _peekLine;
+        InputStream(const string& str) : _is(str) { }
+        bool hasContent() { return !_is.eof() || !_peekLine.empty(); }
+        void peekLine(string& result) { std::getline(_is, _peekLine); result = _peekLine; }
+        void readLine(string& result) { 
+            if (_peekLine.empty()) std::getline(_is, result);
+            else result = _peekLine;
+        }
+    };
+    
     struct Reader : public Inspector {
-        // https://cpppatterns.com/patterns/read-line-by-line.html
-        void read(Object& object, string line, istringstream& is) {
+        vector<string> splitLine(const string& line, vector<string>& result) {
+            vector<string> parts;  my::split(line, ":", parts);
+            sanitize(parts, result);
+        }
+        bool isClassObject(vector<string>& parts) { return parts.size() == 1; }
+        size_t getIndent(const string& line) { return line.find_first_not_of(my::whitespaces) / 4; }
+        void read(Object& object, const string& line, InputStream& stream) {    // https://cpppatterns.com/patterns/read-line-by-line.html
+            vector<string> parts; splitLine(line, parts);
+            if (isClassObject(parts)) {
+                while (stream.hasContent()) {
+                    size_t propertyIndent = getIndent(line) + 1;
+                    string nextLine; stream.peekLine(nextLine);
+                    if (getIndent(nextLine) != propertyIndent) return;
+                    string currentLine; stream.readLine(currentLine);
+                    read(*object.getProperty(parts[1]), currentLine, stream);
+                }
+            } else {
+                object.fromString(parts[1]);
+            }
             /*
-            if (isClassObject(line)) {
+            vector<string> parts; split(line, parts);
+            if (isClassObject(parts)) {
                 while(stream.hasContent()) {
                     size_t propertyIndent = getIndent(line) + 1;
                     string nextLine; stream.peekLine(nextLine);
@@ -2482,7 +2545,7 @@ namespace t42 {
         }
 
         template <class T> void read(const string& name, const string& data, T& t) { 
-            istringstream is; is.str(data);
+            InputStream stream(data);
             Object* object = this->getObject<T>(t, name);
             // string line; readLine(is, line);
             //read(*object, line, is);
