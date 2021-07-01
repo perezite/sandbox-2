@@ -2552,16 +2552,17 @@ namespace t42 {
         .endClass();
     }
 
+    // Deserialize object with two basic properties and one nested Property
     void test() {        
         Writer writer; registerTypes(writer);
         Reader reader; registerTypes(reader);
 
-        Hero hero;
+        Hero hero; hero.name = "Mary"; hero.health = 9000; hero.position.x = 42; hero.position.y = 43;
         string result;
         writer.write("hero", hero, result);
         cout << result;
 
-        Hero hero2; hero2.health = 0; hero2.name = ""; hero2.position.x = 0; hero2.position.y = 0;
+        Hero hero2;
         reader.read("hero", result, hero2);
 
         cout << hero2.health << endl;
@@ -2622,8 +2623,7 @@ void test()
 }
 
 // TODO:
-// Deserialize object with two basic properties
-// Deserialize object with one basic and one nested Property
+
 // Attach editor to object and edit values
 // Register object in (fake) Script Binding system
 
