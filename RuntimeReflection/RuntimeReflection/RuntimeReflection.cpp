@@ -2572,26 +2572,26 @@ namespace t42 {
 }
 
 namespace t43 {
-    struct Inspector;
+    template <class I> struct Inspector;
     struct Object;
-    template <class T> struct ConcreteObject;
+    template <class T, class I> struct ConcreteObject;
 
     struct Property {
         string _name;
         Property(const string& name) : _name(name) { }
     };
 
-    template <class C> struct ClassProperty : public Property {
+    template <class C, class I> struct ClassProperty : public Property {
         ClassProperty(const string& name) : Property(name) { }
-        virtual Object* getPropertyObject(C& parent, Inspector& inspector) = 0;
+        virtual Object* getPropertyObject(C& parent, I& inspector) = 0;
     };
 
-    template <class C, class P> struct ConcreteProperty : public ClassProperty<C> {
+    template <class C, class P, class I> struct ConcreteProperty : public ClassProperty<C, I> {
         P C::* _member;
-        ConcreteProperty(const string& name, P C::* member) : ClassProperty<C>(name), _member(member) { }
-        virtual Object* getPropertyObject(C& parent, Inspector& inspector) {
+        ConcreteProperty(const string& name, P C::* member) : ClassProperty<C, I>(name), _member(member) { }
+        virtual Object* getPropertyObject(C& parent, I& inspector) {
             P* propertyObject = &(parent.*_member);
-            return new ConcreteObject<P>(*propertyObject, Property::_name, inspector);
+            return new ConcreteObject<P, I>(*propertyObject, Property::_name, inspector);
         }
     };
 
@@ -2608,38 +2608,38 @@ namespace t43 {
         virtual size_t getTypeId() = 0;
     };
 
-    template <class C> struct ConcreteClass : public Class {
-        vector<ClassProperty<C>*> _properties;
+    template <class C, class I> struct ConcreteClass : public Class {
+        vector<ClassProperty<C, I>*> _properties;
         ConcreteClass(const string& name) : Class(name) { }
-        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P>(name, member)); }
+        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P, I>(name, member)); }
         virtual size_t countProperties() { return _properties.size(); }
         virtual size_t getTypeId() { return t43::getTypeId<C>(); }
     };
 
-    template <class C> struct ClassBuilder {
-        Inspector& _inspector;
-        ConcreteClass<C> _class;
-        ClassBuilder(const string& name, Inspector& inspector) : _class(name), _inspector(inspector) { }
+    template <class C, class I> struct ClassBuilder {
+        I& _inspector;
+        ConcreteClass<C, I> _class;
+        ClassBuilder(const string& name, I& inspector) : _class(name), _inspector(inspector) { }
         template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { _class.addProperty<P>(name, member); return *this; }
-        Inspector& endClass() { _inspector.addClass<C>(_class); return _inspector; }
+        I& endClass() { _inspector.addClass<C>(_class); return _inspector; }
     };
 
     template <bool> struct Identity { };                                                        // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
 
-    struct Inspector {
+    template <class I> struct Inspector {
         vector<Class*> _classes;
-        template <class C> ClassBuilder<C> beginClass(const string& name) { return ClassBuilder<C>(name, *this); }
-        template <class C> void addClass(ConcreteClass<C>& theClass) { _classes.push_back(new ConcreteClass<C>(theClass)); }
-        template <class T> Object* getObject(T& t, const string& name) { return new ConcreteObject<T>(t, name, *this); }
+        template <class C> ClassBuilder<C, I> beginClass(const string& name) { return ClassBuilder<C, I>(name, (I&)(*this)); }
+        template <class C> void addClass(ConcreteClass<C, I>& theClass) { _classes.push_back(new ConcreteClass<C, I>(theClass)); }
+        template <class T> Object* getObject(T& t, const string& name, I& inspector) { return new ConcreteObject<T, I>(t, name, inspector); }
         template <class T> bool hasClass() { return getClass<T>() != NULL; }
-        template <class T> ConcreteClass<T>* getClass() { return getClass<T>(Identity<my::IsClass<T>::value>()); }           // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
-        template <class T> ConcreteClass<T>* getClass(Identity<true> isClass) {
+        template <class C> ConcreteClass<C, I>* getClass() { return getClass<C>(Identity<my::IsClass<C>::value>()); }           // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+        template <class C> ConcreteClass<C, I>* getClass(Identity<true> isClass) {
             for (size_t i = 0; i < _classes.size(); i++)
-                if (_classes[i]->getTypeId() == getTypeId<T>())
-                    return (ConcreteClass<T>*)_classes[i];
+                if (_classes[i]->getTypeId() == getTypeId<C>())
+                    return (ConcreteClass<C, I>*)_classes[i];
             return NULL;
         }
-        template <class T> ConcreteClass<T>* getClass(Identity<false> isClass) { return NULL; }
+        template <class C> ConcreteClass<C, I>* getClass(Identity<false> isClass) { return NULL; }
     };
 
     struct Object {
@@ -2653,15 +2653,16 @@ namespace t43 {
         virtual Object* getProperty(const string& name) = 0;
         virtual string toString() = 0;
         virtual void fromString(const string& str) = 0;
+        virtual void inspect() = 0;
     };
 
-    template <class T> struct ConcreteObject : public Object {
+    template <class T, class I> struct ConcreteObject : public Object {
         static const bool IsClass = my::IsClass<T>::value;
         static const bool HasOutStream = my::HasOutStream<T>::value;
         static const bool HasInStream = my::HasInStream<T>::value;
         T& _ref;
-        Inspector& _inspector;
-        ConcreteObject(T& t, const string& name, Inspector& inspector) : Object(name), _ref(t), _inspector(inspector) { }
+        I& _inspector;
+        ConcreteObject(T& t, const string& name, I& inspector) : Object(name), _ref(t), _inspector(inspector) { }
         virtual bool hasClassType() { return hasClassType(Identity<IsClass>()); }
         bool hasClassType(Identity<true> isClass) { return _inspector.getClass<T>(); }
         bool hasClassType(Identity<false> isclass) { return false; }
@@ -2690,29 +2691,30 @@ namespace t43 {
         virtual void fromString(const string& str) { fromString(str, Identity<HasInStream>()); }
         void fromString(const string& str, Identity<true> hasInStream) { my::fromString(_ref, str); }
         void fromString(const string& str, Identity<false> hasInStream) { my::error("operator >> missing"); }
-        vector<ClassProperty<T>*> getProperties() { return _inspector.getClass<T>()->_properties; }
+        vector<ClassProperty<T, I>*> getProperties() { return _inspector.getClass<T>()->_properties; }
+        virtual void inspect() { _inspector.onInspect(*this); }
     };
 
     inline string indent(size_t depth) { return string(depth * 4, ' '); }
 
     struct NonSerializable { };
     struct Hero { string name = "Chuck"; int health = 42; NonSerializable temp; };
-
-    struct Editor : public Inspector {
-        template <class T> void onInspect(ConcreteObject<T>& obj) {
+    
+    struct Editor : public Inspector<Editor> {
+        template <class T> void onInspect(ConcreteObject<T, Editor>& obj) {
             cout << "Enter new value: "; 
             string input; cin >> input; cout << endl;
             obj.fromString(input);
         }
 
         template <class T> void edit(T& t, const string& name) {
-            Object* object = this->getObject<T>(t, name);
+            Object* object = getObject(t, name, *this);
             while (true) {
                 cout << "Enter property name to edit (or done to exit): ";
                 string input; cin >> input; cout << endl;
                 if (input == "done") return;
                 Object* prop = object->getProperty(input);
-                //prop->inspect();
+                prop->inspect();
             }
         }
     };
@@ -2730,6 +2732,7 @@ namespace t43 {
 
         cout << "Object dump after editing: " << endl;
         cout << hero.health << endl << hero.name << endl;
+        cin.get();
     }
 }
 
