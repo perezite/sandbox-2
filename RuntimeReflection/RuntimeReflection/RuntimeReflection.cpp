@@ -2797,9 +2797,30 @@ namespace t45 {
     }
 }
 
+namespace t46 {
+    struct Test {
+        void say() { cout << "hello world" << endl; }
+    };
+    
+    void test() {
+        string script = "local test = Test()\n"
+                        "test:say()";
+        lua_State* L = luaL_newstate();
+        luaL_openlibs(L);
+        getGlobalNamespace(L)
+            .beginClass<Test>("Test")
+                .addConstructor<void(*) (void)>()
+                .addFunction("say", &Test::say)
+            .endClass();
+        int result = luaL_dostring(L, script.c_str());
+        if (result != LUA_OK) my::error(lua_tostring(L, -1));
+    }
+}
+
 void test()
 {
-    t45::test();
+    t46::test();
+    //t45::test();
     //t44::test();
     //t43::test();
     //t42::test();
