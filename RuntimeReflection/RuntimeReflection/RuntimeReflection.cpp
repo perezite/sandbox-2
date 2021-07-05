@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <complex>
+#include <Windows.h>
 
 extern "C"
 {
@@ -12,6 +13,8 @@ extern "C"
 #include "lua542/include/lauxlib.h"
 #include "lua542/include/lualib.h"
 }
+
+#include "LuaBridge/LuaBridge.h"
 
 #ifdef _WIN32
 #pragma comment(lib, "lua542/liblua54.a")
@@ -23,6 +26,7 @@ extern "C"
 #endif
 
 using namespace std;
+using namespace luabridge;
 
 template <class T>
 void deleteAll(T& t)
@@ -2757,7 +2761,7 @@ namespace t43 {
 namespace t44 { 
     // https://www.youtube.com/watch?v=4l5HdmPoynw&ab_channel=javidx9
     void test() {
-        string cmd = "a = 7 + 11";
+        string cmd = "a = 7 + blub";
         lua_State* L = luaL_newstate();
         int r = luaL_dostring(L, cmd.c_str());
         if (r == LUA_OK) {
@@ -2775,9 +2779,28 @@ namespace t44 {
     }
 }
 
+namespace t45 {
+    void test() {
+        string script = "testString = 'LuaBridge works!'\n"
+                        "number = 42";
+        lua_State* L = luaL_newstate();
+        int result = luaL_dostring(L, script.c_str());
+        if (result != LUA_OK) my::error(lua_tostring(L, -1));
+        luaL_openlibs(L);
+        lua_pcall(L, 0, 0, 0);
+        LuaRef s = getGlobal(L, "testString");
+        LuaRef n = getGlobal(L, "number");
+        std::string luaString = s.cast<std::string>();
+        int answer = n.cast<int>();
+        std::cout << luaString << std::endl;
+        std::cout << "And here's our number: " << answer << std::endl;
+    }
+}
+
 void test()
 {
-    t44::test();
+    t45::test();
+    //t44::test();
     //t43::test();
     //t42::test();
     //t41::test();
@@ -2834,5 +2857,5 @@ void test()
 
 int main() {
     test();
-    cin.get();
+    cin.get(); 
 }
