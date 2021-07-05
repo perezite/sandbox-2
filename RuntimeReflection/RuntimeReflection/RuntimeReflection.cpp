@@ -6,6 +6,17 @@
 #include <map>
 #include <complex>
 
+extern "C"
+{
+#include "lua542/include/lua.h"
+#include "lua542/include/lauxlib.h"
+#include "lua542/include/lualib.h"
+}
+
+#ifdef _WIN32
+#pragma comment(lib, "lua542/liblua54.a")
+#endif
+
 // https://stackoverflow.com/questions/5047971/how-do-i-check-for-c11-support
 #if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
 #define CPP_11
@@ -2303,7 +2314,7 @@ namespace my {
 
     void error(const string& message) {
         cout << "error: " << message << endl; 
-        cin.get(); exit(0);
+        cin.get(); cin.get(); exit(0);
     }
 }
 
@@ -2576,6 +2587,14 @@ namespace t43 {
     struct Object;
     template <class T, class I> struct ConcreteObject;
 
+    template<class Inspector, class Object> struct HasOnInspectMethod {
+        typedef char yes[1]; typedef char no[2];
+        template<class Inspector2, class Object2, void(Inspector2::*)(ConcreteObject<Object2, Inspector2>&)> struct Sfinae {};
+        template<class Inspector2, class Object2> static yes& check(Sfinae<Inspector2, Object2, &Inspector2::onInspect>*);
+        template<class Inspector2, class Object2> static no& check(...);
+        static const bool value = sizeof(check<Inspector, Object>(0)) == sizeof(yes);
+    };
+
     struct Property {
         string _name;
         Property(const string& name) : _name(name) { }
@@ -2591,8 +2610,7 @@ namespace t43 {
         ConcreteProperty(const string& name, P C::* member) : ClassProperty<C, I>(name), _member(member) { }
         virtual Object* getPropertyObject(C& parent, I& inspector) {
             P* propertyObject = &(parent.*_member);
-            return new ConcreteObject<P, I>(*propertyObject, Property::_name, inspector);
-        }
+            return new ConcreteObject<P, I>(*propertyObject, Property::_name, inspector); }
     };
 
     static size_t TypeIdCounter = 0;
@@ -2637,8 +2655,7 @@ namespace t43 {
             for (size_t i = 0; i < _classes.size(); i++)
                 if (_classes[i]->getTypeId() == getTypeId<C>())
                     return (ConcreteClass<C, I>*)_classes[i];
-            return NULL;
-        }
+            return NULL; }
         template <class C> ConcreteClass<C, I>* getClass(Identity<false> isClass) { return NULL; }
     };
 
@@ -2660,6 +2677,7 @@ namespace t43 {
         static const bool IsClass = my::IsClass<T>::value;
         static const bool HasOutStream = my::HasOutStream<T>::value;
         static const bool HasInStream = my::HasInStream<T>::value;
+        static const bool HasOnInspect = HasOnInspectMethod<I, T>::value;
         T& _ref;
         I& _inspector;
         ConcreteObject(T& t, const string& name, I& inspector) : Object(name), _ref(t), _inspector(inspector) { }
@@ -2674,16 +2692,14 @@ namespace t43 {
         size_t countProperties(Identity<false> isClass) { return 0; }
         virtual Object* getProperty(size_t index) { return getProperty(index, Identity<IsClass>()); }
         Object* getProperty(size_t index, Identity<true> isClass) {
-            return _inspector.hasClass<T>() ? getProperties()[index]->getPropertyObject(_ref, _inspector) : NULL;
-        }
+            return _inspector.hasClass<T>() ? getProperties()[index]->getPropertyObject(_ref, _inspector) : NULL; }
         Object* getProperty(size_t index, Identity<false> isClass) { return NULL; }
         virtual Object* getProperty(const string& name) { return getProperty(name, Identity<IsClass>()); }
         Object* getProperty(const string& name, Identity<true> isClass) {
             if (!_inspector.hasClass<T>()) return NULL;
             for (size_t i = 0; i < getProperties().size(); i++)
                 if (getProperties()[i]->_name == name) return getProperties()[i]->getPropertyObject(_ref, _inspector);
-            return NULL;
-        }
+            return NULL; }
         Object* getProperty(const string& name, Identity<false> isClass) { return NULL; }
         virtual string toString() { return toString(Identity<HasOutStream>()); }
         string toString(Identity<true> hasOutStream) { return my::toString(_ref); }
@@ -2692,7 +2708,9 @@ namespace t43 {
         void fromString(const string& str, Identity<true> hasInStream) { my::fromString(_ref, str); }
         void fromString(const string& str, Identity<false> hasInStream) { my::error("operator >> missing"); }
         vector<ClassProperty<T, I>*> getProperties() { return _inspector.getClass<T>()->_properties; }
-        virtual void inspect() { _inspector.onInspect(*this); }
+        virtual void inspect() { inspect(Identity<HasOnInspect>()); }
+        void inspect(Identity<true> hasOnInspect) { _inspector.onInspect(*this); }
+        void inspect(Identity<false> hasOnInspect) { my::error("onInspect() method missing"); }
     };
 
     inline string indent(size_t depth) { return string(depth * 4, ' '); }
@@ -2710,7 +2728,7 @@ namespace t43 {
         template <class T> void edit(T& t, const string& name) {
             Object* object = getObject(t, name, *this);
             while (true) {
-                cout << "Enter property name to edit (or done to exit): ";
+                cout << "Enter property name to edit (or 'done' to exit): ";
                 string input; cin >> input; cout << endl;
                 if (input == "done") return;
                 Object* prop = object->getProperty(input);
@@ -2736,9 +2754,31 @@ namespace t43 {
     }
 }
 
+namespace t44 { 
+    // https://www.youtube.com/watch?v=4l5HdmPoynw&ab_channel=javidx9
+    void test() {
+        string cmd = "a = 7 + 11";
+        lua_State* L = luaL_newstate();
+        int r = luaL_dostring(L, cmd.c_str());
+        if (r == LUA_OK) {
+            lua_getglobal(L, "a");
+            if (lua_isnumber(L, -1)) {
+                float a_in_cpp = (float)lua_tonumber(L, -1);
+                cout << "the number: " << a_in_cpp << endl;
+            }
+        } else {
+            string errormsg = lua_tostring(L, -1);
+            cout << errormsg << endl;
+        }
+
+        lua_close(L);
+    }
+}
+
 void test()
 {
-    t43::test();
+    t44::test();
+    //t43::test();
     //t42::test();
     //t41::test();
     //t40::test();
