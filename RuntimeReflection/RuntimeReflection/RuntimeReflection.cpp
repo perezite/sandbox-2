@@ -2799,12 +2799,13 @@ namespace t45 {
 
 namespace t46 {
     struct Test {
-        void say() { cout << "hello world" << endl; }
+        void say(int x) { cout << "hello world " << x << endl; }
     };
     
     void test() {
         string script = "local test = Test()\n"
-                        "test:say()";
+                        "test:say(42)"
+                        "print 'Just a test'";
         lua_State* L = luaL_newstate();
         luaL_openlibs(L);
         getGlobalNamespace(L)
@@ -2814,6 +2815,158 @@ namespace t46 {
             .endClass();
         int result = luaL_dostring(L, script.c_str());
         if (result != LUA_OK) my::error(lua_tostring(L, -1));
+    }
+}
+
+namespace t47 {
+    template <class I> struct Inspector;
+    struct Object;
+    template <class T, class I> struct ConcreteObject;
+
+    template<class Inspector, class Object> struct HasOnInspectMethod {
+        typedef char yes[1]; typedef char no[2];
+        template<class Inspector2, class Object2, void(Inspector2::*)(ConcreteObject<Object2, Inspector2>&)> struct Sfinae {};
+        template<class Inspector2, class Object2> static yes& check(Sfinae<Inspector2, Object2, &Inspector2::onInspect>*);
+        template<class Inspector2, class Object2> static no& check(...);
+        static const bool value = sizeof(check<Inspector, Object>(0)) == sizeof(yes);
+    };
+
+    struct Property {
+        string _name;
+        Property(const string& name) : _name(name) { }
+    };
+
+    template <class C, class I> struct ClassProperty : public Property {
+        ClassProperty(const string& name) : Property(name) { }
+        virtual Object* getPropertyObject(C& parent, I& inspector) = 0;
+    };
+
+    template <class C, class P, class I> struct ConcreteProperty : public ClassProperty<C, I> {
+        P C::* _member;
+        ConcreteProperty(const string& name, P C::* member) : ClassProperty<C, I>(name), _member(member) { }
+        virtual Object* getPropertyObject(C& parent, I& inspector) {
+            P* propertyObject = &(parent.*_member);
+            return new ConcreteObject<P, I>(*propertyObject, Property::_name, inspector);
+        }
+    };
+
+    static size_t TypeIdCounter = 0;
+    template <class T> size_t getTypeId() {
+        static size_t typeId = ++TypeIdCounter;
+        return typeId;
+    }
+
+    struct Class {
+        string _name;
+        Class(const string& name) : _name(name) { }
+        virtual size_t countProperties() = 0;
+        virtual size_t getTypeId() = 0;
+    };
+
+    template <class C, class I> struct ConcreteClass : public Class {
+        vector<ClassProperty<C, I>*> _properties;
+        ConcreteClass(const string& name) : Class(name) { }
+        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P, I>(name, member)); }
+        virtual size_t countProperties() { return _properties.size(); }
+        virtual size_t getTypeId() { return t47::getTypeId<C>(); }
+    };
+
+    template <class C, class I> struct ClassBuilder {
+        I& _inspector;
+        ConcreteClass<C, I> _class;
+        ClassBuilder(const string& name, I& inspector) : _class(name), _inspector(inspector) { }
+        template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { _class.addProperty<P>(name, member); return *this; }
+        I& endClass() { _inspector.addClass<C>(_class); return _inspector; }
+    };
+
+    template <bool> struct Identity { };                                                        // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+
+    template <class I> struct Inspector {
+        vector<Class*> _classes;
+        template <class C> ClassBuilder<C, I> beginClass(const string& name) { return ClassBuilder<C, I>(name, (I&)(*this)); }
+        template <class C> void addClass(ConcreteClass<C, I>& theClass) { _classes.push_back(new ConcreteClass<C, I>(theClass)); }
+        template <class T> Object* getObject(T& t, const string& name, I& inspector) { return new ConcreteObject<T, I>(t, name, inspector); }
+        template <class T> bool hasClass() { return getClass<T>() != NULL; }
+        template <class C> ConcreteClass<C, I>* getClass() { return getClass<C>(Identity<my::IsClass<C>::value>()); }           // https://stackoverflow.com/questions/3052579/explicit-specialization-in-n
+        template <class C> ConcreteClass<C, I>* getClass(Identity<true> isClass) {
+            for (size_t i = 0; i < _classes.size(); i++)
+                if (_classes[i]->getTypeId() == getTypeId<C>())
+                    return (ConcreteClass<C, I>*)_classes[i];
+            return NULL;
+        }
+        template <class C> ConcreteClass<C, I>* getClass(Identity<false> isClass) { return NULL; }
+    };
+
+    struct Object {
+        string _name;
+        Object(const string& name) : _name(name) { }
+        const string& getName() { return _name; };
+        virtual bool hasClassType() = 0;
+        virtual const string getTypename() = 0;
+        virtual size_t countProperties() = 0;
+        virtual Object* getProperty(size_t index) = 0;
+        virtual Object* getProperty(const string& name) = 0;
+        virtual string toString() = 0;
+        virtual void fromString(const string& str) = 0;
+        virtual void inspect() = 0;
+    };
+
+    template <class T, class I> struct ConcreteObject : public Object {
+        static const bool IsClass = my::IsClass<T>::value;
+        static const bool HasOutStream = my::HasOutStream<T>::value;
+        static const bool HasInStream = my::HasInStream<T>::value;
+        static const bool HasOnInspect = HasOnInspectMethod<I, T>::value;
+        T& _ref;
+        I& _inspector;
+        ConcreteObject(T& t, const string& name, I& inspector) : Object(name), _ref(t), _inspector(inspector) { }
+        virtual bool hasClassType() { return hasClassType(Identity<IsClass>()); }
+        bool hasClassType(Identity<true> isClass) { return _inspector.getClass<T>(); }
+        bool hasClassType(Identity<false> isclass) { return false; }
+        virtual const string getTypename() { return getTypename(Identity<IsClass>()); }   // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+        const string getTypename(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_name : "unknown or builtin type"; }
+        const string getTypename(Identity<false> isClass) { return "builtin type"; }
+        virtual size_t countProperties() { return countProperties(Identity<IsClass>()); }
+        size_t countProperties(Identity<true> isClass) { return _inspector.hasClass<T>() ? getProperties().size() : 0; }
+        size_t countProperties(Identity<false> isClass) { return 0; }
+        virtual Object* getProperty(size_t index) { return getProperty(index, Identity<IsClass>()); }
+        Object* getProperty(size_t index, Identity<true> isClass) {
+            return _inspector.hasClass<T>() ? getProperties()[index]->getPropertyObject(_ref, _inspector) : NULL;
+        }
+        Object* getProperty(size_t index, Identity<false> isClass) { return NULL; }
+        virtual Object* getProperty(const string& name) { return getProperty(name, Identity<IsClass>()); }
+        Object* getProperty(const string& name, Identity<true> isClass) {
+            if (!_inspector.hasClass<T>()) return NULL;
+            for (size_t i = 0; i < getProperties().size(); i++)
+                if (getProperties()[i]->_name == name) return getProperties()[i]->getPropertyObject(_ref, _inspector);
+            return NULL;
+        }
+        Object* getProperty(const string& name, Identity<false> isClass) { return NULL; }
+        virtual string toString() { return toString(Identity<HasOutStream>()); }
+        string toString(Identity<true> hasOutStream) { return my::toString(_ref); }
+        string toString(Identity<false> hasOutStream) { return "operator << missing"; }
+        virtual void fromString(const string& str) { fromString(str, Identity<HasInStream>()); }
+        void fromString(const string& str, Identity<true> hasInStream) { my::fromString(_ref, str); }
+        void fromString(const string& str, Identity<false> hasInStream) { my::error("operator >> missing"); }
+        vector<ClassProperty<T, I>*> getProperties() { return _inspector.getClass<T>()->_properties; }
+        virtual void inspect() { inspect(Identity<HasOnInspect>()); }
+        void inspect(Identity<true> hasOnInspect) { _inspector.onInspect(*this); }
+        void inspect(Identity<false> hasOnInspect) { my::error("onInspect() method missing"); }
+    };
+
+    struct Person { string name = "Chuck"; int health = 42; };
+
+    void test() {
+         
+        string script = "local person = Person()\n"
+            "print person.name\n"
+            "print person.health\n";
+        /*LuaScripting scripting;
+        scripting.beginClass<Person>("Person")
+            .addProperty("name", &Person::name)
+            .addProperty("health", &Person::health)
+        .endClass();
+        run(script, scripting);
+        */
     }
 }
 
