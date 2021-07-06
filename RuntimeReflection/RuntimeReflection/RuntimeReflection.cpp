@@ -3074,7 +3074,7 @@ namespace t48 {
     };
 
     struct Person { string name = "Chuck"; int health = 42; };
-
+ 
     // Register object in luabridge
     void test() {
         string script = "local person = Person()\n"
@@ -3091,9 +3091,9 @@ namespace t48 {
 
 void test()
 {
-    //t48::test();
+    t48::test();
     //t47::test();
-    t46::test();
+    //t46::test();
     //t45::test();
     //t44::test();
     //t43::test();
