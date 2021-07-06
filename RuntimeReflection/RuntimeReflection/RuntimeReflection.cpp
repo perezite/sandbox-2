@@ -2821,12 +2821,64 @@ namespace t46 {
             .beginClass<Test>("Test")
                 .addFunction("say2", &Test::say2)
             .endClass();
+
         int result = luaL_dostring(L, script.c_str());
         if (result != LUA_OK) my::error(lua_tostring(L, -1));
     }
 }
 
 namespace t47 {
+    struct Test {
+        void say(int x) { cout << "hello world " << x << endl; }
+        void say2() { cout << "hello world 2" << endl; }
+    };
+
+    template <class T> struct LuabridgeClass {
+        T _luabridgeClass;
+        LuabridgeClass(T luabridgeClass) : _luabridgeClass(luabridgeClass) { }
+        template <class U> void addConstructor(U& u) { _luabridgeClass.addConstructor(u); }
+        template <class U> void addProperty(const char* name, U& u) { _luabridgeClass.addProperty(name, u); }
+        void endClass() { _luabridgeClass.endClass; }
+    };
+
+    void* luabridgeClass;
+    template <class T> void storeLuabridgeClass(T t) { 
+        luabridgeClass = malloc(sizeof(T));
+        memcpy(luabridgeClass, &t, sizeof(T));
+    }
+
+    template <class T> LuabridgeClass<T> createLuabridgeClass(T t) {
+        return LuabridgeClass<T>(t);
+    }
+
+    template <class T> void endClass() {
+        //((Namespace::Class<T>*)luabridgeClass)->endClass();
+    }
+
+    // https://stackoverflow.com/questions/13532784/why-can-i-use-auto-on-a-private-type
+    void test() {
+        string script = "local test = Test()\n"
+            "test:say(42)"
+            "test:say2()"
+            "print 'Just a test'";
+        lua_State* L = luaL_newstate();
+        luaL_openlibs(L);
+        Namespace ns = getGlobalNamespace(L);
+        storeLuabridgeClass(ns.beginClass<Test>("Test"));
+        //endClass<Test>();
+        //LuabridgeClass<Namespace::Class<Test>> cls(ns.beginClass<Test>());
+       /* auto cls = ns.beginClass<Test>("Test");
+        cls.addConstructor<void(*) (void)>();
+        cls.addFunction("say", &Test::say);
+        cls.addFunction("say2", &Test::say2);
+        cls.endClass();*/
+
+        //int result = luaL_dostring(L, script.c_str());
+        //if (result != LUA_OK) my::error(lua_tostring(L, -1));
+    }
+}
+
+namespace t48 {
     template <class I> struct Inspector;
     struct Object;
     template <class T, class I> struct ConcreteObject;
@@ -2905,7 +2957,7 @@ namespace t47 {
         ConcreteClass(const string& name, I& inspector) : Class(name), _inspector(inspector) { }
         template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P, I>(name, member, _inspector)); }
         virtual size_t countProperties() { return _properties.size(); }
-        virtual size_t getTypeId() { return t47::getTypeId<C>(); }
+        virtual size_t getTypeId() { return t48::getTypeId<C>(); }
         virtual void inspect() { inspect(Identity<HasOnInspectClass>()); }
         void inspect(Identity<true> hasOnInspectClass) { _inspector.onInspect(*this); }
         void inspect(Identity<false> hasOnInspectClass) { my::error("onInspect() method for classes missing"); }
@@ -2992,16 +3044,14 @@ namespace t47 {
         void inspect(Identity<false> hasOnInspect) { my::error("onInspect() method missing"); }
     };
 
-
     struct LuaScripting : public Inspector<LuaScripting> {
         lua_State* _lua = luaL_newstate();
         virtual ~LuaScripting() { lua_close(_lua); }
         string _className;
         LuaScripting() { luaL_openlibs(_lua); }
         template <class C, class P> void onInspect(ConcreteProperty<C, P, LuaScripting>& prop) {
-            getGlobalNamespace(_lua)
-                .beginClass<C>(_className.c_str())
-                    .addProperty(prop._name.c_str(), prop._member)
+            getGlobalNamespace(_lua).beginClass<C>(_className.c_str())
+                .addProperty(prop._name.c_str(), prop._member)
             .endClass();
         }
         template <class C> void onInspect(ConcreteClass<C, LuaScripting>& theClass) {
@@ -3041,6 +3091,7 @@ namespace t47 {
 
 void test()
 {
+    //t48::test();
     //t47::test();
     t46::test();
     //t45::test();
