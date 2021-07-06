@@ -2628,6 +2628,7 @@ namespace t43 {
         Class(const string& name) : _name(name) { }
         virtual size_t countProperties() = 0;
         virtual size_t getTypeId() = 0;
+        virtual void inspect() = 0;
     };
 
     template <class C, class I> struct ConcreteClass : public Class {
@@ -2636,6 +2637,7 @@ namespace t43 {
         template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P, I>(name, member)); }
         virtual size_t countProperties() { return _properties.size(); }
         virtual size_t getTypeId() { return t43::getTypeId<C>(); }
+        virtual void inspect() { }
     };
 
     template <class C, class I> struct ClassBuilder {
@@ -2741,6 +2743,7 @@ namespace t43 {
         }
     };
 
+    // Attach editor to object and edit values
     void test() { 
         Editor editor;
         editor.beginClass<Hero>("Hero")
@@ -2800,11 +2803,13 @@ namespace t45 {
 namespace t46 {
     struct Test {
         void say(int x) { cout << "hello world " << x << endl; }
+        void say2() { cout << "hello world 2" << endl; }
     };
     
     void test() {
         string script = "local test = Test()\n"
                         "test:say(42)"
+                        "test:say2()"
                         "print 'Just a test'";
         lua_State* L = luaL_newstate();
         luaL_openlibs(L);
@@ -2812,6 +2817,9 @@ namespace t46 {
             .beginClass<Test>("Test")
                 .addConstructor<void(*) (void)>()
                 .addFunction("say", &Test::say)
+            .endClass()
+            .beginClass<Test>("Test")
+                .addFunction("say2", &Test::say2)
             .endClass();
         int result = luaL_dostring(L, script.c_str());
         if (result != LUA_OK) my::error(lua_tostring(L, -1));
@@ -2822,7 +2830,10 @@ namespace t47 {
     template <class I> struct Inspector;
     struct Object;
     template <class T, class I> struct ConcreteObject;
-
+    template <class C, class I> struct ConcreteClass;
+    template <class C, class P, class I> struct ConcreteProperty;
+    template <bool> struct Identity { };                                                        // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+    
     template<class Inspector, class Object> struct HasOnInspectMethod {
         typedef char yes[1]; typedef char no[2];
         template<class Inspector2, class Object2, void(Inspector2::*)(ConcreteObject<Object2, Inspector2>&)> struct Sfinae {};
@@ -2831,9 +2842,27 @@ namespace t47 {
         static const bool value = sizeof(check<Inspector, Object>(0)) == sizeof(yes);
     };
 
+    template<class Inspector, class Class> struct HasOnInspectClassMethod {
+        typedef char yes[1]; typedef char no[2];
+        template<class Inspector2, class Class2, void(Inspector2::*)(ConcreteClass<Class2, Inspector2>&)> struct Sfinae {};
+        template<class Inspector2, class Class2> static yes& check(Sfinae<Inspector2, Class2, &Inspector2::onInspect>*);
+        template<class Inspector2, class Class2> static no& check(...);
+        static const bool value = sizeof(check<Inspector, Class>(0)) == sizeof(yes);
+    };
+
+    template<class Inspector, class Class, class Prop> struct HasOnInspectPropertyMethod {
+        typedef char yes[1]; typedef char no[2];
+        template<class Inspector2, class Class2, class Prop2, void(Inspector2::*)(ConcreteProperty<Class2, Prop2, Inspector2>&)> struct Sfinae {};
+        template<class Inspector2, class Class2, class Prop2> static yes& check(Sfinae<Inspector2, Class2, Prop2, &Inspector2::onInspect>*);
+        template<class Inspector2, class Class2, class Prop2> static no& check(...);
+        static const bool value = sizeof(check<Inspector, Class, Prop>(0)) == sizeof(yes);
+    };
+
+
     struct Property {
         string _name;
         Property(const string& name) : _name(name) { }
+        virtual void inspect() = 0;
     };
 
     template <class C, class I> struct ClassProperty : public Property {
@@ -2842,12 +2871,17 @@ namespace t47 {
     };
 
     template <class C, class P, class I> struct ConcreteProperty : public ClassProperty<C, I> {
+        static const bool HasOnInspectProperty = HasOnInspectPropertyMethod<I, C, P>::value;
         P C::* _member;
-        ConcreteProperty(const string& name, P C::* member) : ClassProperty<C, I>(name), _member(member) { }
+        I& _inspector;
+        ConcreteProperty(const string& name, P C::* member, I& inspector) : ClassProperty<C, I>(name), _member(member), _inspector(inspector) { }
         virtual Object* getPropertyObject(C& parent, I& inspector) {
             P* propertyObject = &(parent.*_member);
             return new ConcreteObject<P, I>(*propertyObject, Property::_name, inspector);
         }
+        virtual void inspect() { inspect(Identity<HasOnInspectProperty>()); }
+        void inspect(Identity<true> hasOnInspectProperty) { _inspector.onInspect(*this); }
+        void inspect(Identity<false> hasOnInspectProperty) { my::error("onInspect() method for properties missing"); }
     };
 
     static size_t TypeIdCounter = 0;
@@ -2861,25 +2895,30 @@ namespace t47 {
         Class(const string& name) : _name(name) { }
         virtual size_t countProperties() = 0;
         virtual size_t getTypeId() = 0;
+        virtual void inspect() = 0;
     };
 
     template <class C, class I> struct ConcreteClass : public Class {
+        static const bool HasOnInspectClass = HasOnInspectClassMethod<I, C>::value;
+        I& _inspector;
         vector<ClassProperty<C, I>*> _properties;
-        ConcreteClass(const string& name) : Class(name) { }
-        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P, I>(name, member)); }
+        ConcreteClass(const string& name, I& inspector) : Class(name), _inspector(inspector) { }
+        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P, I>(name, member, _inspector)); }
         virtual size_t countProperties() { return _properties.size(); }
         virtual size_t getTypeId() { return t47::getTypeId<C>(); }
+        virtual void inspect() { inspect(Identity<HasOnInspectClass>()); }
+        void inspect(Identity<true> hasOnInspectClass) { _inspector.onInspect(*this); }
+        void inspect(Identity<false> hasOnInspectClass) { my::error("onInspect() method for classes missing"); }
     };
 
     template <class C, class I> struct ClassBuilder {
         I& _inspector;
         ConcreteClass<C, I> _class;
-        ClassBuilder(const string& name, I& inspector) : _class(name), _inspector(inspector) { }
+        ClassBuilder(const string& name, I& inspector) : _class(name, inspector), _inspector(inspector) { }
         template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { _class.addProperty<P>(name, member); return *this; }
         I& endClass() { _inspector.addClass<C>(_class); return _inspector; }
     };
 
-    template <bool> struct Identity { };                                                        // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
 
     template <class I> struct Inspector {
         vector<Class*> _classes;
@@ -2953,25 +2992,56 @@ namespace t47 {
         void inspect(Identity<false> hasOnInspect) { my::error("onInspect() method missing"); }
     };
 
+
+    struct LuaScripting : public Inspector<LuaScripting> {
+        lua_State* _lua = luaL_newstate();
+        virtual ~LuaScripting() { lua_close(_lua); }
+        string _className;
+        LuaScripting() { luaL_openlibs(_lua); }
+        template <class C, class P> void onInspect(ConcreteProperty<C, P, LuaScripting>& prop) {
+            getGlobalNamespace(_lua)
+                .beginClass<C>(_className.c_str())
+                    .addProperty(prop._name.c_str(), prop._member)
+            .endClass();
+        }
+        template <class C> void onInspect(ConcreteClass<C, LuaScripting>& theClass) {
+            _className = theClass._name;
+            getGlobalNamespace(_lua).beginClass<C>(_className.c_str())
+                .addConstructor<void(*) (void)>()
+            .endClass();
+            for (size_t i = 0; i < theClass.countProperties(); i++)
+                theClass._properties[i]->inspect();
+        }
+        void bind() {
+            for (size_t i = 0; i < _classes.size(); i++)
+                _classes[i]->inspect();
+        }
+        void runScript(const string& script) {
+            bind();
+            int result = luaL_dostring(_lua, script.c_str());
+            if (result != LUA_OK) my::error(lua_tostring(_lua, -1));
+        }
+    };
+
     struct Person { string name = "Chuck"; int health = 42; };
 
+    // Register object in luabridge
     void test() {
-         
         string script = "local person = Person()\n"
-            "print person.name\n"
-            "print person.health\n";
-        /*LuaScripting scripting;
+                        "print(person.name)\n"
+                        "print(person.health)\n";
+        LuaScripting scripting;
         scripting.beginClass<Person>("Person")
             .addProperty("name", &Person::name)
             .addProperty("health", &Person::health)
         .endClass();
-        run(script, scripting);
-        */
+        scripting.runScript(script);
     }
 }
 
 void test()
 {
+    //t47::test();
     t46::test();
     //t45::test();
     //t44::test();
@@ -3024,10 +3094,6 @@ void test()
     //test2();
     //demo100();
 }
-
-// TODO:
-// Attach editor to object and edit values
-// Register object in (fake) Script Binding system
 
 int main() {
     test();
