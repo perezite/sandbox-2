@@ -2268,8 +2268,6 @@ namespace t39 {
 
     // Serialize object with one basic and one nested Property
     void test() {
-
-
         Writer writer;
         writer.beginClass<Hero>("Hero")
             .addProperty("name", &Hero::name)
@@ -3089,9 +3087,308 @@ namespace t48 {
     }
 }
 
-void test()
+namespace d1 {
+    template <class I> struct Inspector;
+    struct Object;
+    template <class T, class I> struct ConcreteObject;
+    template <class C, class I> struct ConcreteClass;
+    template <class C, class P, class I> struct ConcreteProperty;
+    template <bool> struct Identity { };                                                        // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+
+    template<class Inspector, class Object> struct HasOnInspectMethod {
+        typedef char yes[1]; typedef char no[2];
+        template<class Inspector2, class Object2, void(Inspector2::*)(ConcreteObject<Object2, Inspector2>&)> struct Sfinae {};
+        template<class Inspector2, class Object2> static yes& check(Sfinae<Inspector2, Object2, &Inspector2::onInspect>*);
+        template<class Inspector2, class Object2> static no& check(...);
+        static const bool value = sizeof(check<Inspector, Object>(0)) == sizeof(yes);
+    };
+
+    template<class Inspector, class Class> struct HasOnInspectClassMethod {
+        typedef char yes[1]; typedef char no[2];
+        template<class Inspector2, class Class2, void(Inspector2::*)(ConcreteClass<Class2, Inspector2>&)> struct Sfinae {};
+        template<class Inspector2, class Class2> static yes& check(Sfinae<Inspector2, Class2, &Inspector2::onInspect>*);
+        template<class Inspector2, class Class2> static no& check(...);
+        static const bool value = sizeof(check<Inspector, Class>(0)) == sizeof(yes);
+    };
+
+    template<class Inspector, class Class, class Prop> struct HasOnInspectPropertyMethod {
+        typedef char yes[1]; typedef char no[2];
+        template<class Inspector2, class Class2, class Prop2, void(Inspector2::*)(ConcreteProperty<Class2, Prop2, Inspector2>&)> struct Sfinae {};
+        template<class Inspector2, class Class2, class Prop2> static yes& check(Sfinae<Inspector2, Class2, Prop2, &Inspector2::onInspect>*);
+        template<class Inspector2, class Class2, class Prop2> static no& check(...);
+        static const bool value = sizeof(check<Inspector, Class, Prop>(0)) == sizeof(yes);
+    };
+
+
+    struct Property {
+        string _name;
+        Property(const string& name) : _name(name) { }
+        virtual void inspect() = 0;
+    };
+
+    template <class C, class I> struct ClassProperty : public Property {
+        ClassProperty(const string& name) : Property(name) { }
+        virtual Object* getPropertyObject(C& parent, I& inspector) = 0;
+    };
+
+    template <class C, class P, class I> struct ConcreteProperty : public ClassProperty<C, I> {
+        static const bool HasOnInspectProperty = HasOnInspectPropertyMethod<I, C, P>::value;
+        P C::* _member;
+        I& _inspector;
+        ConcreteProperty(const string& name, P C::* member, I& inspector) : ClassProperty<C, I>(name), _member(member), _inspector(inspector) { }
+        virtual Object* getPropertyObject(C& parent, I& inspector) {
+            P* propertyObject = &(parent.*_member);
+            return new ConcreteObject<P, I>(*propertyObject, Property::_name, inspector);
+        }
+        virtual void inspect() { inspect(Identity<HasOnInspectProperty>()); }
+        void inspect(Identity<true> hasOnInspectProperty) { _inspector.onInspect(*this); }
+        void inspect(Identity<false> hasOnInspectProperty) { my::error("onInspect() method for properties missing"); }
+    };
+
+    static size_t TypeIdCounter = 0;
+    template <class T> size_t getTypeId() {
+        static size_t typeId = ++TypeIdCounter;
+        return typeId;
+    }
+
+    struct Class {
+        string _name;
+        Class(const string& name) : _name(name) { }
+        virtual size_t countProperties() = 0;
+        virtual size_t getTypeId() = 0;
+        virtual void inspect() = 0;
+    };
+
+    template <class C, class I> struct ConcreteClass : public Class {
+        static const bool HasOnInspectClass = HasOnInspectClassMethod<I, C>::value;
+        I& _inspector;
+        vector<ClassProperty<C, I>*> _properties;
+        ConcreteClass(const string& name, I& inspector) : Class(name), _inspector(inspector) { }
+        template <class P> void addProperty(const string& name, P C::* member) { _properties.push_back(new ConcreteProperty<C, P, I>(name, member, _inspector)); }
+        virtual size_t countProperties() { return _properties.size(); }
+        virtual size_t getTypeId() { return d1::getTypeId<C>(); }
+        virtual void inspect() { inspect(Identity<HasOnInspectClass>()); }
+        void inspect(Identity<true> hasOnInspectClass) { _inspector.onInspect(*this); }
+        void inspect(Identity<false> hasOnInspectClass) { my::error("onInspect() method for classes missing"); }
+    };
+
+    template <class C, class I> struct ClassBuilder {
+        I& _inspector;
+        ConcreteClass<C, I> _class;
+        ClassBuilder(const string& name, I& inspector) : _class(name, inspector), _inspector(inspector) { }
+        template <class P> ClassBuilder& addProperty(const string& name, P C::* member) { _class.addProperty<P>(name, member); return *this; }
+        I& endClass() { _inspector.addClass<C>(_class); return _inspector; }
+    };
+
+
+    template <class I> struct Inspector {
+        vector<Class*> _classes;
+        template <class C> ClassBuilder<C, I> beginClass(const string& name) { return ClassBuilder<C, I>(name, (I&)(*this)); }
+        template <class C> void addClass(ConcreteClass<C, I>& theClass) { _classes.push_back(new ConcreteClass<C, I>(theClass)); }
+        template <class T> Object* getObject(T& t, const string& name, I& inspector) { return new ConcreteObject<T, I>(t, name, inspector); }
+        template <class T> bool hasClass() { return getClass<T>() != NULL; }
+        template <class C> ConcreteClass<C, I>* getClass() { return getClass<C>(Identity<my::IsClass<C>::value>()); }           // https://stackoverflow.com/questions/3052579/explicit-specialization-in-n
+        template <class C> ConcreteClass<C, I>* getClass(Identity<true> isClass) {
+            for (size_t i = 0; i < _classes.size(); i++)
+                if (_classes[i]->getTypeId() == getTypeId<C>())
+                    return (ConcreteClass<C, I>*)_classes[i];
+            return NULL;
+        }
+        template <class C> ConcreteClass<C, I>* getClass(Identity<false> isClass) { return NULL; }
+    };
+
+    struct Object {
+        string _name;
+        Object(const string& name) : _name(name) { }
+        const string& getName() { return _name; };
+        virtual bool hasClassType() = 0;
+        virtual const string getTypename() = 0;
+        virtual size_t countProperties() = 0;
+        virtual Object* getProperty(size_t index) = 0;
+        virtual Object* getProperty(const string& name) = 0;
+        virtual string toString() = 0;
+        virtual void fromString(const string& str) = 0;
+        virtual void inspect() = 0;
+    };
+
+    template <class T, class I> struct ConcreteObject : public Object {
+        static const bool IsClass = my::IsClass<T>::value;
+        static const bool HasOutStream = my::HasOutStream<T>::value;
+        static const bool HasInStream = my::HasInStream<T>::value;
+        static const bool HasOnInspect = HasOnInspectMethod<I, T>::value;
+        T& _ref;
+        I& _inspector;
+        ConcreteObject(T& t, const string& name, I& inspector) : Object(name), _ref(t), _inspector(inspector) { }
+        virtual bool hasClassType() { return hasClassType(Identity<IsClass>()); }
+        bool hasClassType(Identity<true> isClass) { return _inspector.getClass<T>(); }
+        bool hasClassType(Identity<false> isclass) { return false; }
+        virtual const string getTypename() { return getTypename(Identity<IsClass>()); }   // https://stackoverflow.com/questions/3052579/explicit-specialization-in-non-namespace-scope
+        const string getTypename(Identity<true> isClass) { return _inspector.hasClass<T>() ? _inspector.getClass<T>()->_name : "unknown or builtin type"; }
+        const string getTypename(Identity<false> isClass) { return "builtin type"; }
+        virtual size_t countProperties() { return countProperties(Identity<IsClass>()); }
+        size_t countProperties(Identity<true> isClass) { return _inspector.hasClass<T>() ? getProperties().size() : 0; }
+        size_t countProperties(Identity<false> isClass) { return 0; }
+        virtual Object* getProperty(size_t index) { return getProperty(index, Identity<IsClass>()); }
+        Object* getProperty(size_t index, Identity<true> isClass) {
+            return _inspector.hasClass<T>() ? getProperties()[index]->getPropertyObject(_ref, _inspector) : NULL;
+        }
+        Object* getProperty(size_t index, Identity<false> isClass) { return NULL; }
+        virtual Object* getProperty(const string& name) { return getProperty(name, Identity<IsClass>()); }
+        Object* getProperty(const string& name, Identity<true> isClass) {
+            if (!_inspector.hasClass<T>()) return NULL;
+            for (size_t i = 0; i < getProperties().size(); i++)
+                if (getProperties()[i]->_name == name) return getProperties()[i]->getPropertyObject(_ref, _inspector);
+            return NULL;
+        }
+        Object* getProperty(const string& name, Identity<false> isClass) { return NULL; }
+        virtual string toString() { return toString(Identity<HasOutStream>()); }
+        string toString(Identity<true> hasOutStream) { return my::toString(_ref); }
+        string toString(Identity<false> hasOutStream) { return "operator << missing"; }
+        virtual void fromString(const string& str) { fromString(str, Identity<HasInStream>()); }
+        void fromString(const string& str, Identity<true> hasInStream) { my::fromString(_ref, str); }
+        void fromString(const string& str, Identity<false> hasInStream) { my::error("operator >> missing"); }
+        vector<ClassProperty<T, I>*> getProperties() { return _inspector.getClass<T>()->_properties; }
+        virtual void inspect() { inspect(Identity<HasOnInspect>()); }
+        void inspect(Identity<true> hasOnInspect) { _inspector.onInspect(*this); }
+        void inspect(Identity<false> hasOnInspect) { my::error("onInspect() method missing"); }
+    };
+    
+    inline string indent(size_t depth) { return string(depth * 4, ' '); }
+
+    struct Writer : public Inspector<Writer> {
+        void write(Object& object, ostringstream& os, size_t depth = 0) {
+            if (object.hasClassType()) {
+                os << indent(depth) << object.getName() << ": " << endl;
+                for (size_t i = 0; i < object.countProperties(); i++)
+                    write(*object.getProperty(i), os, depth + 1);
+            }
+            else
+                os << indent(depth) << object.getName() << ": " << object.toString() << endl;
+        }
+
+        template <class T> void write(string name, T& t, string& result) {
+            ostringstream os;
+            Object* object = this->getObject<T>(t, name, *this);
+            write(*object, os, 0);
+            delete object;
+            result = os.str();
+        }
+    };
+
+    void sanitize(const vector<string>& parts, vector<string>& result) {
+        for (size_t i = 0; i < parts.size(); i++) {
+            string trimmed;
+            my::trim(parts[i], trimmed);
+            if (!trimmed.empty())
+                result.push_back(trimmed);
+        }
+    }
+
+    struct InputStream {
+        istringstream _is;
+        string _peekLine;
+        InputStream(const string& str) : _is(str) { }
+        bool hasContent() { return !_is.eof() || !_peekLine.empty(); }
+        void peekLine(string& result) { std::getline(_is, _peekLine); result = _peekLine; }
+        void readLine(string& result) {
+            if (_peekLine.empty()) std::getline(_is, result);
+            else result = _peekLine;
+        }
+    };
+
+    struct Reader : public Inspector<Reader> {
+        void splitLine(const string& line, vector<string>& result) {
+            vector<string> parts;  my::split(line, ":", parts);
+            sanitize(parts, result);
+        }
+        bool isClassObject(vector<string>& parts) { return parts.size() == 1; }
+        size_t getIndent(const string& line) { return line.find_first_not_of(my::whitespaces) / 4; }
+        void read(Object& object, const string& line, InputStream& stream) {    // https://cpppatterns.com/patterns/read-line-by-line.html
+            vector<string> parts; splitLine(line, parts);
+            if (isClassObject(parts)) {
+                while (stream.hasContent()) {
+                    size_t propertyIndent = getIndent(line) + 1;
+                    string nextLine; stream.peekLine(nextLine);
+                    if (getIndent(nextLine) != propertyIndent) return;
+                    string currentLine; stream.readLine(currentLine);
+                    vector<string> currentParts; splitLine(currentLine, currentParts);
+                    read(*object.getProperty(currentParts[0]), currentLine, stream);
+                }
+            }
+            else {
+                object.fromString(parts[1]);
+            }
+        }
+
+        template <class T> void read(const string& name, const string& data, T& t) {
+            InputStream stream(data);
+            Object* object = this->getObject<T>(t, name, *this);
+            string line; stream.readLine(line);
+            read(*object, line, stream);
+            delete object;
+        }
+    };
+
+    struct Vector2f { float x = 1; float y = 2; };
+
+    struct Hero { string name = "Chuck"; int health = 42; Vector2f position; };
+
+    template <class Inspector> void registerTypes(Inspector& inspector) {
+        inspector.beginClass<Hero>("Hero")
+            .addProperty("name", &Hero::name)
+            .addProperty("health", &Hero::health)
+            .addProperty("position", &Hero::position)
+            .endClass()
+            .beginClass<Vector2f>("Vector2f")
+            .addProperty("x", &Vector2f::x)
+            .addProperty("y", &Vector2f::y)
+            .endClass();
+    }
+
+    void dump(Hero& hero) {
+        cout << hero.name << endl;
+        cout << hero.health << endl;
+        cout << hero.position.x << " " << hero.position.y << endl;
+    }
+
+    void serializationDemo() {
+        Writer writer; registerTypes(writer);
+        Hero hero; hero.name = "Mary"; hero.health = 9000; hero.position.x = 42; hero.position.y = 43;
+        string result;
+        writer.write("hero", hero, result);
+        cout << "INPUT:" << endl;
+        dump(hero);
+        cout << "OUTPUT: " << endl << result;
+    }
+
+    void deserializationDemo() {
+        Reader reader; registerTypes(reader);
+        const string input = "hero:\n"
+                                    "    name: Tom\n" 
+                                    "    health: 215\n"
+                                    "    position:\n"
+                                    "        x: 98\n"
+                                    "        y: 91\n";
+        Hero hero; 
+        reader.read("hero", input, hero);
+        cout << "INPUT:" << endl << input;
+        cout << "OUTPUT: " << endl;
+        dump(hero);
+    }
+
+    void demo() {
+        cout << "DEMO: Serialize nested object" << endl;
+        serializationDemo();
+
+        cout << "DEMO: Deserialize nested object" << endl;
+        deserializationDemo();
+    }
+}
+
+void run()
 {
-    t48::test();
+    d1::demo();
+    //t48::test();
     //t47::test();
     //t46::test();
     //t45::test();
@@ -3147,6 +3444,6 @@ void test()
 }
 
 int main() {
-    test();
+    run();
     cin.get(); 
 }
