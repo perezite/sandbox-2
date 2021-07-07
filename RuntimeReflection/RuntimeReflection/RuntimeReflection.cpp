@@ -3073,7 +3073,7 @@ namespace t48 {
 
     struct Person { string name = "Chuck"; int health = 42; };
  
-    // Register object in luabridge
+    // Register reflected object in luabridge and use it in LUA script
     void test() {
         string script = "local person = Person()\n"
                         "print(person.name)\n"
@@ -3376,17 +3376,22 @@ namespace d1 {
         dump(hero);
     }
 
+    void separator() {
+        cout << "==============" << endl;
+    }
+
     void demo() {
-        cout << "DEMO: Serialize nested object" << endl;
+        cout << "DEMO: Serialize nested object" << endl; separator();
         serializationDemo();
 
-        cout << "DEMO: Deserialize nested object" << endl;
+        cout << "DEMO: Deserialize nested object" << endl; separator();
         deserializationDemo();
     }
 }
 
 void run()
 {
+    // Interesting: http://www.gotw.ca/gotw/076.htm
     d1::demo();
     //t48::test();
     //t47::test();
