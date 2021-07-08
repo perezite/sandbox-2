@@ -3087,6 +3087,48 @@ namespace t48 {
     }
 }
 
+namespace t49 {
+    struct TheClass {
+        int i = 42;
+    };
+
+    template <class T> struct Store {
+        T _t;
+        Store(T& t) : _t(t) { }
+        void addProperty() {
+            _t.addProperty("i", &TheClass::i);
+        }
+        void addConstructor() {
+            _t.addConstructor<void(*) (void)>();
+        }
+        void endClass() {
+            _t.endClass();
+        }
+    };
+
+    template <class T> void myFun(T bla) {
+        Store<T> store(bla);
+        store.addProperty();
+        store.addConstructor();
+        store.endClass();
+    }
+
+    void runScript(lua_State* lua) {
+        string script = "local theClass = TheClass()\n"
+            "print(theClass.i)\n";
+
+        int result = luaL_dostring(lua, script.c_str());
+        if (result != LUA_OK) my::error(lua_tostring(lua, -1));
+    }
+
+    void demo() {
+        lua_State* lua = luaL_newstate();
+        luaL_openlibs(lua);
+        myFun(getGlobalNamespace(lua).beginClass<TheClass>("TheClass"));
+        runScript(lua);
+    }
+}
+
 namespace d1 {
     template <class I> struct Inspector;
     struct Object;
@@ -3338,11 +3380,11 @@ namespace d1 {
             .addProperty("name", &Hero::name)
             .addProperty("health", &Hero::health)
             .addProperty("position", &Hero::position)
-            .endClass()
+        .endClass()
             .beginClass<Vector2f>("Vector2f")
             .addProperty("x", &Vector2f::x)
             .addProperty("y", &Vector2f::y)
-            .endClass();
+        .endClass();
     }
 
     void dump(Hero& hero) {
@@ -3392,7 +3434,10 @@ namespace d1 {
 void run()
 {
     // Interesting: http://www.gotw.ca/gotw/076.htm
+    // Also interesting: http://bloglitb.blogspot.com/2010/07/access-to-private-members-thats-easy.html
+    // And: https://gist.github.com/dabrahams/1528856
     d1::demo();
+    //t49::demo();
     //t48::test();
     //t47::test();
     //t46::test();
