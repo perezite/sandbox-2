@@ -3390,6 +3390,35 @@ namespace d1 {
         }
     };
 
+    struct LuaScripting : public Inspector<LuaScripting> {
+        lua_State* _lua = luaL_newstate();
+        virtual ~LuaScripting() { lua_close(_lua); }
+        string _className;
+        LuaScripting() { luaL_openlibs(_lua); }
+        template <class C, class P> void onInspect(ConcreteProperty<C, P, LuaScripting>& prop) {
+            getGlobalNamespace(_lua).beginClass<C>(_className.c_str())
+                .addProperty(prop._name.c_str(), prop._member)
+                .endClass();
+        }
+        template <class C> void onInspect(ConcreteClass<C, LuaScripting>& theClass) {
+            _className = theClass._name;
+            getGlobalNamespace(_lua).beginClass<C>(_className.c_str())
+                .addConstructor<void(*) (void)>()
+                .endClass();
+            for (size_t i = 0; i < theClass.countProperties(); i++)
+                theClass._properties[i]->inspect();
+        }
+        void bind() {
+            for (size_t i = 0; i < _classes.size(); i++)
+                _classes[i]->inspect();
+        }
+        void runScript(const string& script) {
+            bind();
+            int result = luaL_dostring(_lua, script.c_str());
+            if (result != LUA_OK) my::error(lua_tostring(_lua, -1));
+        }
+    };
+
     struct Vector2f { float x = 1; float y = 2; };
 
     struct Hero { string name = "Chuck"; int health = 42; Vector2f position; };
@@ -3437,12 +3466,24 @@ namespace d1 {
         dump(hero);
     }
 
-    void editorDemo() {
+    void editingDemo() {
         Editor editor; registerTypes(editor);
         Hero hero;
         cout << "INPUT:" << endl; dump(hero);
         editor.edit(hero, "hero");
         cout << "OUTPUT:" << endl; dump(hero);
+    }
+
+
+    void bindingDemo() {
+        LuaScripting scripting; registerTypes(scripting);
+        Hero hero;
+        cout << "INPUT:" << endl; dump(hero);
+        cout << "SCRIPT OUTPUT: " << endl;
+        string script = "local hero = Hero()\n"
+            "print('LUA: ' .. hero.name)\n"
+            "print('LUA: ' .. hero.health)\n";
+        scripting.runScript(script);
     }
 
     void separator() {
@@ -3453,20 +3494,20 @@ namespace d1 {
         cout << "DEMO: Serialize nested object" << endl; separator();
         serializationDemo();
 
-        cout << "DEMO: Deserialize nested object" << endl; separator();
+        cout << endl << "DEMO: Deserialize nested object" << endl; separator();
         deserializationDemo();
 
-        cout << "DEMO: Edit content in object" << endl; separator();
-        editorDemo();
+        cout << endl << "DEMO: Bind object to Lua" << endl; separator();
+        bindingDemo();
+
+        cout << endl << "DEMO: Edit content in object" << endl; separator();
+        editingDemo();
         cin.get();
     }
 }
 
 void run()
 {
-    // Interesting: http://www.gotw.ca/gotw/076.htm
-    // Also interesting: http://bloglitb.blogspot.com/2010/07/access-to-private-members-thats-easy.html
-    // And: https://gist.github.com/dabrahams/1528856
     d1::demo();
     //t49::demo();
     //t48::test();
@@ -3528,3 +3569,8 @@ int main() {
     run();
     cin.get(); 
 }
+
+// NOTES
+// Interesting: http://www.gotw.ca/gotw/076.htm
+// Also interesting: http://bloglitb.blogspot.com/2010/07/access-to-private-members-thats-easy.html
+// And: https://gist.github.com/dabrahams/1528856
