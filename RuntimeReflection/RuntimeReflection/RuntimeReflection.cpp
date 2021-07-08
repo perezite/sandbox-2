@@ -3371,6 +3371,25 @@ namespace d1 {
         }
     };
 
+    struct Editor : public Inspector<Editor> {
+        template <class T> void onInspect(ConcreteObject<T, Editor>& obj) {
+            cout << "Enter new value: ";
+            string input; cin >> input; cout << endl;
+            obj.fromString(input);
+        }
+
+        template <class T> void edit(T& t, const string& name) {
+            Object* object = getObject(t, name, *this);
+            while (true) {
+                cout << "Enter property name to edit (or 'done' to exit): ";
+                string input; cin >> input; cout << endl;
+                if (input == "done") return;
+                Object* prop = object->getProperty(input);
+                prop->inspect();
+            }
+        }
+    };
+
     struct Vector2f { float x = 1; float y = 2; };
 
     struct Hero { string name = "Chuck"; int health = 42; Vector2f position; };
@@ -3388,9 +3407,9 @@ namespace d1 {
     }
 
     void dump(Hero& hero) {
-        cout << hero.name << endl;
-        cout << hero.health << endl;
-        cout << hero.position.x << " " << hero.position.y << endl;
+        cout << "name: " << hero.name << endl;
+        cout << "health: " << hero.health << endl;
+        cout << "position.x: " << hero.position.x << " position.y: " << hero.position.y << endl;
     }
 
     void serializationDemo() {
@@ -3418,6 +3437,14 @@ namespace d1 {
         dump(hero);
     }
 
+    void editorDemo() {
+        Editor editor; registerTypes(editor);
+        Hero hero;
+        cout << "INPUT:" << endl; dump(hero);
+        editor.edit(hero, "hero");
+        cout << "OUTPUT:" << endl; dump(hero);
+    }
+
     void separator() {
         cout << "==============" << endl;
     }
@@ -3428,6 +3455,10 @@ namespace d1 {
 
         cout << "DEMO: Deserialize nested object" << endl; separator();
         deserializationDemo();
+
+        cout << "DEMO: Edit content in object" << endl; separator();
+        editorDemo();
+        cin.get();
     }
 }
 
