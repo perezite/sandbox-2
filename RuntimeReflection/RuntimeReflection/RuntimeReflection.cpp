@@ -3429,7 +3429,7 @@ namespace d1 {
             .addProperty("health", &Hero::health)
             .addProperty("position", &Hero::position)
         .endClass()
-            .beginClass<Vector2f>("Vector2f")
+        .beginClass<Vector2f>("Vector2f")
             .addProperty("x", &Vector2f::x)
             .addProperty("y", &Vector2f::y)
         .endClass();
