@@ -60,8 +60,10 @@
 
 		AAsset* asset = AAssetManager_open(g_AssetManager, fname, 0);
 		
+		off_t length = AAsset_getLength(asset);
+
 		auto result = funopen(asset, android_read, android_write, android_seek, android_close);
-		
+
 		//auto test = fileno(result);
 
 		return result;
@@ -75,7 +77,6 @@
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 #include <string>
-#include "Main.h"
 
 using namespace std;
 using namespace sb;
@@ -167,6 +168,7 @@ int main()
 
 	#ifdef __ANDROID__
 		initializeAndroidAssetManager();
+		sdl2_fopen("Sounds/killdeer.wav", "rb");
 		playSound("Sounds/killdeer.wav");
 	#else
 		playSound("C:\\Data\\Indie\\Development\\sandbox-2\\Audio2\\SDL2Miniaudio\\bin\\Assets\\Sounds\\killdeer.wav");
