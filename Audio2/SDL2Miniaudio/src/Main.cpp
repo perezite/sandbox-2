@@ -14,7 +14,7 @@
 
 	AAssetManager* g_AssetManager = NULL;
 
-	void test()
+	void initializeAndroidAssetManager()
 	{
 		JNIEnv* jni = getJavaNativeInterface();
 
@@ -27,36 +27,43 @@
 		jobject global_asset_manager = jni->NewGlobalRef(asset_manager);
 
 		// AAssetManager* pAssetManager = AAssetManager_fromJava(jni, global_asset_manager);
+		g_AssetManager = AAssetManager_fromJava(jni, global_asset_manager);
 
 	}
 
-	static int sdl2_read(void* cookie, char* buf, int size) {
-		//return AAsset_read((AAsset*)cookie, buf, size);
-		return SDL_RWread((SDL_RWops*)cookie, buf, sizeof(char), size);
+	static int android_read(void* cookie, char* buf, int size) {
+		return AAsset_read((AAsset*)cookie, buf, size);
+		// return SDL_RWread((SDL_RWops*)cookie, buf, sizeof(char), size);
 	}
 
-	static int sdl2_write(void* cookie, const char* buf, int size) {
-		//return EACCES; // can't provide write access to the apk
-		return SDL_RWwrite((SDL_RWops*)cookie, buf, sizeof(char), size);
+	static int android_write(void* cookie, const char* buf, int size) {
+		return EACCES; // can't provide write access to the apk
+		//return SDL_RWwrite((SDL_RWops*)cookie, buf, sizeof(char), size);
 	}
 
-	static fpos_t sdl2_seek(void* cookie, fpos_t offset, int whence) {
-		//return AAsset_seek((AAsset*)cookie, offset, whence);
-		return SDL_RWseek((SDL_RWops*)cookie, offset, whence);
+	static fpos_t android_seek(void* cookie, fpos_t offset, int whence) {
+		return AAsset_seek((AAsset*)cookie, offset, whence);
+		//return SDL_RWseek((SDL_RWops*)cookie, offset, whence);
 	}
 
-	static int sdl2_close(void* cookie) {
-		//AAsset_close((AAsset*)cookie);
-		return SDL_RWclose((SDL_RWops*)cookie);
+	static int android_close(void* cookie) {
+		AAsset_close((AAsset*)cookie);
+		//return SDL_RWclose((SDL_RWops*)cookie);
 	}
 
 	FILE* sdl2_fopen(const char* fname, const char* mode)
 	{
-		SDL_RWops* reader = SDL_RWFromFile(fname, mode);
-		// auto test = fileno(reader);
-		// return funopen(reader, sdl2_read, sdl2_write, sdl2_seek, sdl2_close);
-		auto result = funopen(reader, sdl2_read, sdl2_write, sdl2_seek, sdl2_close);
+	/*	SDL_RWops* reader = SDL_RWFromFile(fname, mode);
+		auto result = funopen(reader, android_read, android_write, android_seek, android_close);
 		auto test = fileno(result);
+		return result;*/
+
+		AAsset* asset = AAssetManager_open(g_AssetManager, fname, 0);
+		
+		auto result = funopen(asset, android_read, android_write, android_seek, android_close);
+		
+		auto test = fileno(result);
+
 		return result;
 	}
 
@@ -89,8 +96,13 @@ int main()
 {
 	Window window;
 
-	playSound("C:\\Data\\Indie\\Development\\sandbox-2\\Audio2\\SDL2Miniaudio\\bin\\Assets\\Sounds\\killdeer.wav");
-	// playSound("Sounds/killdeer.wav");
+	#ifdef __ANDROID__
+		initializeAndroidAssetManager();
+		playSound("Sounds/killdeer.wav");
+	#else
+		playSound("C:\\Data\\Indie\\Development\\sandbox-2\\Audio2\\SDL2Miniaudio\\bin\\Assets\\Sounds\\killdeer.wav");
+	#endif
+
 
 	while (window.isOpen())
 	{
