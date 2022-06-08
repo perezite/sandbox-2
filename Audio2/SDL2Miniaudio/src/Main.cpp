@@ -851,29 +851,47 @@ namespace d5
 		result = ma_engine_init(&config, &engine);
 		SB_ERROR_IF(result != MA_SUCCESS, "Failed to initialize audio engine.");
 	}
+
+	inline void releaseMiniaudio()
+	{
+		ma_engine_uninit(&engine);
+	}
+
+	class Miniaudio {
+		Miniaudio() { initMiniaudio(); }
+		virtual ~Miniaudio() { releaseMiniaudio(); }
+	public:
+		static Miniaudio& getInstance() {
+			static Miniaudio instance;
+			return instance;
+		}
+	};
 }
 
 namespace d5
 {
+	void initMiniaudioOnce() {
+		Miniaudio::getInstance();
+	}
+
 	class Sound {
 		ma_sound _sound;
 	public:
-		Sound(const string& filePath) {
-			ma_sound_init_from_file(&engine, filePath.c_str(), 0, NULL, NULL, &_sound);
+		Sound(const string& filePath) { 
+			initMiniaudioOnce();
+			ma_sound_init_from_file(&engine, filePath.c_str(), 0, NULL, NULL, &_sound); 
 		}
 		virtual ~Sound() { ma_sound_uninit(&_sound); }
 		void start() { ma_sound_start(&_sound); }
 		bool isPlaying() { return ma_sound_is_playing(&_sound); }
 	};
 
+
 	void demo()
 	{
 		Window window;
-
-		initMiniaudio();
-
 		Sound sound(my::getAbsoluteAssetPath("Sounds/ding.mp3"));
-		
+
 		while (window.isOpen())
 		{
 			Input::update();
@@ -887,8 +905,6 @@ namespace d5
 			window.clear(Color(1, 1, 1, 1));
 			window.display();
 		}
-
-		ma_engine_uninit(&engine);
 	}
 }
 
