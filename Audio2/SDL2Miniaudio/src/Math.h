@@ -17,8 +17,8 @@ namespace sb
 	}
 
 	template <class T>
-	inline T lerp(float t, const T& start, const T& end) {
-		return (1 - t) * start + t * end;
+	inline T lerp(float t, const T& play, const T& end) {
+		return (1 - t) * play + t * end;
 	}
 
 	inline float random(float min, float max) {
