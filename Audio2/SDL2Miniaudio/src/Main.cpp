@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <thread>
 #include <chrono>
+#include <mutex>
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
@@ -979,6 +980,11 @@ namespace d7
 
 	void releaseSound(ma_sound* sound) { ma_sound_uninit(sound); }
 	
+	void releaseAndDeleteAllSounds(vector<ma_sound*>& sounds) {
+		for_each(sounds.begin(), sounds.end(), releaseSound);
+		deleteAll(sounds);
+	}
+
 	void releaseAndDeleteAllFinishedSounds(vector<ma_sound*>& sounds) {
 		for (size_t i = 0; i < sounds.size(); i++) {
 			if (isSoundFinished(sounds[i])) {
@@ -991,45 +997,119 @@ namespace d7
 		removeAll(sounds, (ma_sound*)NULL);
 	}
 
-	class Player {
-		vector<ma_sound*> _sounds;
-		thread _updateThread;
-		Player() : _updateThread(update) { }
-	protected:
-		static void update() {
-			auto& sounds = getInstance()._sounds;
-			while (true) {
-				my::sleep(500);
-				releaseAndDeleteAllFinishedSounds(sounds);
-			}
-		}
-	public:
-		virtual ~Player() { 
-			for_each(_sounds.begin(), _sounds.end(), releaseSound);
-			deleteAll(_sounds);
-		}
-		static Player& getInstance() {
-			static Player player;
-			return player;
-		}
-		void play(const string& filePath) {
-			_sounds.push_back(new ma_sound());
-			initSound(filePath, *_sounds.back());
-			ma_sound_start(_sounds.back());
-		}
-	};
+	//class Player {
+	//	vector<ma_sound*> _soundInstances;
+	//	thread _updateThread;
+	//	Player() : _updateThread(update) { }
+	//protected:
+	//	static void update() {
+	//		auto& sounds = getInstance()._soundInstances;
+	//		while (true) {
+	//			my::sleep(500);
+	//			cout << sounds.size() << " ";
+	//			releaseAndDeleteAllFinishedSounds(sounds);
+	//			cout << sounds.size() << endl;
+	//		}
+	//	}
+	//public:
+	//	virtual ~Player() { 
+	//		for_each(_soundInstances.begin(), _soundInstances.end(), releaseSound);
+	//		deleteAll(_soundInstances);
+	//	}
+	//	static Player& getInstance() {
+	//		static Player player;
+	//		return player;
+	//	}
+	//	void playInstance(const string& filePath) {
+	//		_soundInstances.push_back(new ma_sound());
+	//		initSound(filePath, *_soundInstances.back());
+	//		ma_sound_start(_soundInstances.back());
+	//	}
+	//};
+
+	//class Miniaudio {
+	//	vector<ma_sound*> _soundInstances;
+	//	thread _updateThread;
+	//	Miniaudio() : _updateThread(update) { d5::initMiniaudio(); }
+	//protected:
+	//	static void update() {
+	//		auto& sounds = getInstance()._soundInstances;
+	//		while (true) {
+	//			my::sleep(500);
+	//			cout << sounds.size() << " ";
+	//			// releaseAndDeleteAllFinishedSounds(sounds);
+	//			cout << sounds.size() << endl;
+	//		}
+	//	}
+	//public:
+	//	virtual ~Miniaudio() { 
+	//		for_each(_soundInstances.begin(), _soundInstances.end(), releaseSound);
+	//		deleteAll(_soundInstances);
+	//		d5::releaseMiniaudio(); 
+	//	}
+	//	static Miniaudio& getInstance() {
+	//		static Miniaudio instance;
+	//		return instance;
+	//	}
+	//	void playInstance(const string& filePath) {
+	//		_soundInstances.push_back(new ma_sound());
+	//		initSound(filePath, *_soundInstances.back());
+	//		ma_sound_start(_soundInstances.back());
+	//	}
+	//};
+
+	mutex updateSoundInstancesMutex;
+	bool mustUpdateSoundInstances = false;
+	void updateSoundInstances();
 
 	class Sound {
 		string _filePath;
 		ma_sound _mainSound;
+		static thread UpdateThread;
+		static vector<ma_sound*> SoundInstances;
 	public:
+		inline static vector<ma_sound*>& getSoundInstances() { return SoundInstances; }
 		Sound(const string& filePath) : _filePath(filePath) {
 			d5::initMiniaudioOnce();
 			initSound(_filePath, _mainSound);
+			mustUpdateSoundInstances = true;
 		}
-		virtual ~Sound() { ma_sound_uninit(&_mainSound); }
-		void play() { Player::getInstance().play(_filePath); }
+		virtual ~Sound() { 
+			{
+				updateSoundInstancesMutex.lock();
+				releaseAndDeleteAllSounds(SoundInstances);
+				mustUpdateSoundInstances = false;
+				updateSoundInstancesMutex.unlock();
+			}
+
+			ma_sound_uninit(&_mainSound); 
+		}
+		void play() {
+			SoundInstances.push_back(new ma_sound());
+			initSound(_filePath, *SoundInstances.back());
+			ma_sound_start(SoundInstances.back());
+		}
 	};
+
+	thread Sound::UpdateThread(updateSoundInstances);
+	vector<ma_sound*> Sound::SoundInstances;
+
+	void updateSoundInstances() { 
+		while (true) {
+			my::sleep(500);
+			
+			{
+				updateSoundInstancesMutex.lock();
+				if (!mustUpdateSoundInstances)
+					break;
+				auto& sounds = Sound::getSoundInstances();
+				cout << sounds.size() << " ";
+				releaseAndDeleteAllFinishedSounds(sounds);
+				cout << sounds.size() << endl;
+				updateSoundInstancesMutex.unlock();
+			}
+		}
+	} 
 
 	void demo()
 	{
