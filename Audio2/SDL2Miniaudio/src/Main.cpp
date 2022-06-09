@@ -998,36 +998,6 @@ namespace d7
 		removeAll(sounds, (ma_sound*)NULL);
 	}
 
-	//class Player {
-	//	vector<ma_sound*> _soundInstances;
-	//	thread _updateThread;
-	//	Player() : _updateThread(update) { }
-	//protected:
-	//	static void update() {
-	//		auto& sounds = getInstance()._soundInstances;
-	//		while (true) {
-	//			my::sleep(500);
-	//			cout << sounds.size() << " ";
-	//			releaseAndDeleteAllFinishedSounds(sounds);
-	//			cout << sounds.size() << endl;
-	//		}
-	//	}
-	//public:
-	//	virtual ~Player() { 
-	//		for_each(_soundInstances.begin(), _soundInstances.end(), releaseSound);
-	//		deleteAll(_soundInstances);
-	//	}
-	//	static Player& getInstance() {
-	//		static Player player;
-	//		return player;
-	//	}
-	//	void playInstance(const string& filePath) {
-	//		_soundInstances.push_back(new ma_sound());
-	//		initSound(filePath, *_soundInstances.back());
-	//		ma_sound_start(_soundInstances.back());
-	//	}
-	//};
-
 	mutex updateSoundInstancesMutex;
 	atomic<bool> mustUpdateSoundInstances(true);					// https://stackoverflow.com/questions/40069759/terminate-current-thread-in-destructor
 	void updateSoundInstances();
@@ -1097,6 +1067,8 @@ namespace d7
 		Window window;
 		window.setFramerateLimit(60);
 		Sound sound(my::getAbsoluteAssetPath("Sounds/ding.mp3"));
+
+		size_t counter = 0;
 
 		while (window.isOpen())
 		{	
