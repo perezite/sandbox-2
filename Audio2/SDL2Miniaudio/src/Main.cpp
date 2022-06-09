@@ -8,6 +8,7 @@
 #include <thread>
 #include <chrono>
 #include <mutex>
+#include <atomic>
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
@@ -1027,89 +1028,69 @@ namespace d7
 	//	}
 	//};
 
-	//class Miniaudio {
-	//	vector<ma_sound*> _soundInstances;
-	//	thread _updateThread;
-	//	Miniaudio() : _updateThread(update) { d5::initMiniaudio(); }
-	//protected:
-	//	static void update() {
-	//		auto& sounds = getInstance()._soundInstances;
-	//		while (true) {
-	//			my::sleep(500);
-	//			cout << sounds.size() << " ";
-	//			// releaseAndDeleteAllFinishedSounds(sounds);
-	//			cout << sounds.size() << endl;
-	//		}
-	//	}
-	//public:
-	//	virtual ~Miniaudio() { 
-	//		for_each(_soundInstances.begin(), _soundInstances.end(), releaseSound);
-	//		deleteAll(_soundInstances);
-	//		d5::releaseMiniaudio(); 
-	//	}
-	//	static Miniaudio& getInstance() {
-	//		static Miniaudio instance;
-	//		return instance;
-	//	}
-	//	void playInstance(const string& filePath) {
-	//		_soundInstances.push_back(new ma_sound());
-	//		initSound(filePath, *_soundInstances.back());
-	//		ma_sound_start(_soundInstances.back());
-	//	}
-	//};
-
 	mutex updateSoundInstancesMutex;
-	bool mustUpdateSoundInstances = false;
+	atomic<bool> mustUpdateSoundInstances(true);					// https://stackoverflow.com/questions/40069759/terminate-current-thread-in-destructor
 	void updateSoundInstances();
+
+	class Miniaudio {
+		vector<ma_sound*> _soundInstances;
+		thread _updateThread;
+		Miniaudio() : _updateThread(updateSoundInstances) {
+			d5::initMiniaudio(); 
+		}
+	public:
+		static Miniaudio& getInstance() {
+			static Miniaudio instance;
+			return instance;
+		}
+		inline vector<ma_sound*>& getSoundInstances() { return _soundInstances; }
+		virtual ~Miniaudio() { 
+			updateSoundInstancesMutex.lock();
+			{
+				releaseAndDeleteAllSounds(_soundInstances);
+				mustUpdateSoundInstances = false;
+			}
+			updateSoundInstancesMutex.unlock();
+			_updateThread.join();									
+
+			d5::releaseMiniaudio();
+		}
+		void playSoundInstance(const string& filePath) {
+			_soundInstances.push_back(new ma_sound());
+			initSound(filePath, *_soundInstances.back());
+			ma_sound_start(_soundInstances.back());
+		}
+	};
+
+	void updateSoundInstances() {
+		while (mustUpdateSoundInstances) {
+			my::sleep(500);
+
+			updateSoundInstancesMutex.lock();
+			{
+				if (mustUpdateSoundInstances) {					
+					auto& sounds = Miniaudio::getInstance().getSoundInstances();
+					cout << sounds.size() << " ";
+					releaseAndDeleteAllFinishedSounds(sounds);
+					cout << sounds.size() << endl;
+				}
+			}
+			updateSoundInstancesMutex.unlock();
+		}
+	}
 
 	class Sound {
 		string _filePath;
 		ma_sound _mainSound;
 		static thread UpdateThread;
-		static vector<ma_sound*> SoundInstances;
 	public:
-		inline static vector<ma_sound*>& getSoundInstances() { return SoundInstances; }
 		Sound(const string& filePath) : _filePath(filePath) {
-			d5::initMiniaudioOnce();
+			Miniaudio::getInstance();
 			initSound(_filePath, _mainSound);
-			mustUpdateSoundInstances = true;
 		}
-		virtual ~Sound() { 
-			{
-				updateSoundInstancesMutex.lock();
-				releaseAndDeleteAllSounds(SoundInstances);
-				mustUpdateSoundInstances = false;
-				updateSoundInstancesMutex.unlock();
-			}
-
-			ma_sound_uninit(&_mainSound); 
-		}
-		void play() {
-			SoundInstances.push_back(new ma_sound());
-			initSound(_filePath, *SoundInstances.back());
-			ma_sound_start(SoundInstances.back());
-		}
+		virtual ~Sound() { ma_sound_uninit(&_mainSound); }
+		void play() { Miniaudio::getInstance().playSoundInstance(_filePath); }
 	};
-
-	thread Sound::UpdateThread(updateSoundInstances);
-	vector<ma_sound*> Sound::SoundInstances;
-
-	void updateSoundInstances() { 
-		while (true) {
-			my::sleep(500);
-			
-			{
-				updateSoundInstancesMutex.lock();
-				if (!mustUpdateSoundInstances)
-					break;
-				auto& sounds = Sound::getSoundInstances();
-				cout << sounds.size() << " ";
-				releaseAndDeleteAllFinishedSounds(sounds);
-				cout << sounds.size() << endl;
-				updateSoundInstancesMutex.unlock();
-			}
-		}
-	} 
 
 	void demo()
 	{
