@@ -22,7 +22,24 @@ namespace sb
 	}
 
 	template <class T>
-	inline void deleteFromVector(std::vector<T*>& vec, bool(*predicate)(T*)) {
+	void copyAll(const T& source, T& destination)
+	{
+		std::copy(std::begin(source), std::end(source), std::begin(destination));
+	}
+
+	template <class T>
+	void removeAll(std::vector<T*>& vec, T* val) {
+		vec.erase(std::remove(vec.begin(), vec.end(), val), vec.end());
+	}
+
+	template <class T> 
+	void deleteAll(std::vector<T*>& vec) {
+		for (size_t i = 0; i < vec.size(); i++)
+			delete vec[i];
+	}
+
+	template <class T>
+	inline void deleteAll(std::vector<T*>& vec, bool(*predicate)(T*)) {
 		std::vector<T*> toDelete;
 		for (std::size_t i = 0; i < vec.size(); i++) {
 			if (predicate(vec[i]))
@@ -33,18 +50,6 @@ namespace sb
 
 		for (std::size_t i = 0; i < toDelete.size(); i++)
 			delete toDelete[i];
-	}
-
-	template <class T>
-	void copyAll(const T& source, T& destination)
-	{
-		std::copy(std::begin(source), std::end(source), std::begin(destination));
-	}
-
-	template <class T> 
-	void deleteAll(std::vector<T>& vec) {
-		for (size_t i = 0; i < vec.size(); i++)
-			delete vec[i];
 	}
 	
 	template <class T>

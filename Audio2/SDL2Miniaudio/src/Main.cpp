@@ -5,6 +5,8 @@
 #include "Memory.h"
 #include <string>
 #include <algorithm>
+#include <thread>
+#include <chrono>
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
 
@@ -909,23 +911,20 @@ namespace d5
 	}
 }
 
-
-
 namespace d6
 {
 	class Sound {
 		string _filePath;
 		ma_sound _mainSound;
-		vector<ma_sound*> _playbacks;
+		vector<ma_sound*> _sounds;
 	protected:
 		void initSound(const string& filePath, ma_sound& sound) {
 			ma_sound_init_from_file(&d5::Miniaudio::getEngine(), filePath.c_str(), 0, NULL, NULL, &sound);
 		}
 		void releasePlaybacks() {
-			// TODO: _playbacks vector is empty...
-			for (size_t i = 0; i < _playbacks.size(); i++)
-				ma_sound_uninit(_playbacks[i]);
-			deleteAll(_playbacks);
+			for (size_t i = 0; i < _sounds.size(); i++)
+				ma_sound_uninit(_sounds[i]);
+			deleteAll(_sounds);
 		}
 	public:
 		Sound(const string& filePath) : _filePath(filePath) {
@@ -937,9 +936,9 @@ namespace d6
 			ma_sound_uninit(&_mainSound); 
 		}
 		void play() { 
-			_playbacks.push_back(new ma_sound());
-			initSound(_filePath, *_playbacks.back());
-			ma_sound_start(_playbacks.back());	
+			_sounds.push_back(new ma_sound());
+			initSound(_filePath, *_sounds.back());
+			ma_sound_start(_sounds.back());	
 		}
 		bool isPlaying() { return ma_sound_is_playing(&_mainSound); }
 	};
@@ -948,14 +947,102 @@ namespace d6
 	{
 		Window window;
 		Sound sound(my::getAbsoluteAssetPath("Sounds/ding.mp3"));
-		Sound sound2(my::getAbsoluteAssetPath("Sounds/ding.mp3"));
 
 		while (window.isOpen())
 		{
 			Input::update();
 			window.update();
 
-			if (Input::isTouchGoingDown(1) && !sound.isPlaying())
+			if (Input::isTouchGoingDown(1))
+				sound.play();
+
+			window.clear(Color(1, 1, 1, 1));
+			window.display();
+		}
+	}
+}
+
+namespace my
+{
+	void sleep(size_t millis) {
+		this_thread::sleep_for(chrono::milliseconds(millis));
+	}
+}
+
+namespace d7
+{
+	void initSound(const string& filePath, ma_sound& sound) {
+		ma_sound_init_from_file(&d5::Miniaudio::getEngine(), filePath.c_str(), 0, NULL, NULL, &sound);	
+	}
+
+	bool isSoundFinished(ma_sound* sound) {  return ma_sound_at_end(sound); }
+
+	void releaseSound(ma_sound* sound) { ma_sound_uninit(sound); }
+	
+	void releaseAndDeleteAllFinishedSounds(vector<ma_sound*>& sounds) {
+		for (size_t i = 0; i < sounds.size(); i++) {
+			if (isSoundFinished(sounds[i])) {
+				releaseSound(sounds[i]);
+				delete sounds[i];
+				sounds[i] = NULL;
+			}
+		}
+
+		removeAll(sounds, (ma_sound*)NULL);
+	}
+
+	class Player {
+		vector<ma_sound*> _sounds;
+		thread _updateThread;
+		Player() : _updateThread(update) { }
+	protected:
+		static void update() {
+			auto& sounds = getInstance()._sounds;
+			while (true) {
+				my::sleep(500);
+				releaseAndDeleteAllFinishedSounds(sounds);
+			}
+		}
+	public:
+		virtual ~Player() { 
+			for_each(_sounds.begin(), _sounds.end(), releaseSound);
+			deleteAll(_sounds);
+		}
+		static Player& getInstance() {
+			static Player player;
+			return player;
+		}
+		void play(const string& filePath) {
+			_sounds.push_back(new ma_sound());
+			initSound(filePath, *_sounds.back());
+			ma_sound_start(_sounds.back());
+		}
+	};
+
+	class Sound {
+		string _filePath;
+		ma_sound _mainSound;
+	public:
+		Sound(const string& filePath) : _filePath(filePath) {
+			d5::initMiniaudioOnce();
+			initSound(_filePath, _mainSound);
+		}
+		virtual ~Sound() { ma_sound_uninit(&_mainSound); }
+		void play() { Player::getInstance().play(_filePath); }
+	};
+
+	void demo()
+	{
+		Window window;
+		window.setFramerateLimit(60);
+		Sound sound(my::getAbsoluteAssetPath("Sounds/ding.mp3"));
+
+		while (window.isOpen())
+		{	
+			Input::update();
+			window.update();
+
+			if (Input::isTouchGoingDown(1))
 				sound.play();
 
 			window.clear(Color(1, 1, 1, 1));
@@ -966,7 +1053,8 @@ namespace d6
 
 int main() 
 {
-	d6::demo();			// Play the same cached sound multiple times in parallel
+	d7::demo();			// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds
+	//d6::demo();		// Play the same cached sound multiple times in parallel
 	//d5::demo();		// Play a cached sound, using classes
 	//d4::demo();		// Play a cached sound
 	//d3::demo();		// Play a random sound whenever the user clicks the window
