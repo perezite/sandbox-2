@@ -1052,7 +1052,6 @@ namespace d7
 	class Sound {
 		string _filePath;
 		ma_sound _mainSound;
-		static thread UpdateThread;
 	public:
 		Sound(const string& filePath) : _filePath(filePath) {
 			Miniaudio::getInstance();
@@ -1067,8 +1066,6 @@ namespace d7
 		Window window;
 		window.setFramerateLimit(60);
 		Sound sound(my::getAbsoluteAssetPath("Sounds/ding.mp3"));
-
-		size_t counter = 0;
 
 		while (window.isOpen())
 		{	
@@ -1086,6 +1083,7 @@ namespace d7
 
 int main() 
 {
+	// TODO: Wrap all calls to SoundInstances with a Mutex
 	d7::demo();			// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds
 	//d6::demo();		// Play the same cached sound multiple times in parallel
 	//d5::demo();		// Play a cached sound, using classes
