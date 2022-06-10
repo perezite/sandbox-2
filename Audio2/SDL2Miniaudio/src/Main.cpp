@@ -984,6 +984,7 @@ namespace d7
 	void releaseAndDeleteAllSounds(vector<ma_sound*>& sounds) {
 		for_each(sounds.begin(), sounds.end(), releaseSound);
 		deleteAll(sounds);
+		sounds.clear();
 	}
 
 	void releaseAndDeleteAllFinishedSounds(vector<ma_sound*>& sounds) {
@@ -998,56 +999,47 @@ namespace d7
 		removeAll(sounds, (ma_sound*)NULL);
 	}
 
-	mutex updateSoundInstancesMutex;
-	atomic<bool> mustUpdateSoundInstances(true);					// https://stackoverflow.com/questions/40069759/terminate-current-thread-in-destructor
-	void updateSoundInstances();
-
 	class Miniaudio {
-		vector<ma_sound*> _soundInstances;
 		thread _updateThread;
-		Miniaudio() : _updateThread(updateSoundInstances) {
+		bool _isThreadRunning;
+		mutex soundInstancesMutex;
+		vector<ma_sound*> _soundInstances;
+		Miniaudio() : _updateThread(&Miniaudio::updateThread, this), _isThreadRunning(true) {
 			d5::initMiniaudio(); 
+		}
+	protected:
+		void updateThread() {
+			while (_isThreadRunning) {
+				my::sleep(500);
+				soundInstancesMutex.lock();
+				cout << _soundInstances.size() << " ";
+				releaseAndDeleteAllFinishedSounds(_soundInstances);
+				cout << _soundInstances.size() << endl;
+				soundInstancesMutex.unlock();
+			}
+		}
+		void stopUpdateThread() {
+			_isThreadRunning = false;
+			_updateThread.join();
 		}
 	public:
 		static Miniaudio& getInstance() {
 			static Miniaudio instance;
 			return instance;
 		}
-		inline vector<ma_sound*>& getSoundInstances() { return _soundInstances; }
 		virtual ~Miniaudio() { 
-			updateSoundInstancesMutex.lock();
-			{
-				releaseAndDeleteAllSounds(_soundInstances);
-				mustUpdateSoundInstances = false;
-			}
-			updateSoundInstancesMutex.unlock();
-			_updateThread.join();									
-
+			stopUpdateThread();
+			releaseAndDeleteAllSounds(_soundInstances);
 			d5::releaseMiniaudio();
 		}
 		void playSoundInstance(const string& filePath) {
+			soundInstancesMutex.lock();
 			_soundInstances.push_back(new ma_sound());
 			initSound(filePath, *_soundInstances.back());
 			ma_sound_start(_soundInstances.back());
+			soundInstancesMutex.unlock();
 		}
 	};
-
-	void updateSoundInstances() {
-		while (mustUpdateSoundInstances) {
-			my::sleep(500);
-
-			updateSoundInstancesMutex.lock();
-			{
-				if (mustUpdateSoundInstances) {					
-					auto& sounds = Miniaudio::getInstance().getSoundInstances();
-					cout << sounds.size() << " ";
-					releaseAndDeleteAllFinishedSounds(sounds);
-					cout << sounds.size() << endl;
-				}
-			}
-			updateSoundInstancesMutex.unlock();
-		}
-	}
 
 	class Sound {
 		string _filePath;
@@ -1075,6 +1067,9 @@ namespace d7
 			if (Input::isTouchGoingDown(1))
 				sound.play();
 
+			if (Input::isKeyGoingDown(KeyCode::q))
+				break;
+
 			window.clear(Color(1, 1, 1, 1));
 			window.display();
 		}
@@ -1083,7 +1078,6 @@ namespace d7
 
 int main() 
 {
-	// TODO: Wrap all calls to SoundInstances with a Mutex
 	d7::demo();			// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds
 	//d6::demo();		// Play the same cached sound multiple times in parallel
 	//d5::demo();		// Play a cached sound, using classes
