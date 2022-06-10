@@ -973,24 +973,20 @@ namespace my
 
 namespace d7
 {
-	void initSound(const string& filePath, ma_sound& sound) {
+	inline void initSound(const string& filePath, ma_sound& sound) {
 		ma_sound_init_from_file(&d5::Miniaudio::getEngine(), filePath.c_str(), 0, NULL, NULL, &sound);	
 	}
-
-	bool isSoundFinished(ma_sound* sound) {  return ma_sound_at_end(sound); }
-
-	void releaseSound(ma_sound* sound) { ma_sound_uninit(sound); }
 	
 	void releaseAndDeleteAllSounds(vector<ma_sound*>& sounds) {
-		for_each(sounds.begin(), sounds.end(), releaseSound);
+		for_each(sounds.begin(), sounds.end(), ma_sound_uninit);
 		deleteAll(sounds);
 		sounds.clear();
 	}
 
 	void releaseAndDeleteAllFinishedSounds(vector<ma_sound*>& sounds) {
 		for (size_t i = 0; i < sounds.size(); i++) {
-			if (isSoundFinished(sounds[i])) {
-				releaseSound(sounds[i]);
+			if (ma_sound_at_end(sounds[i])) {
+				ma_sound_uninit(sounds[i]);
 				delete sounds[i];
 				sounds[i] = NULL;
 			}
