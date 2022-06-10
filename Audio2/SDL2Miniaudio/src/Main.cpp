@@ -1027,6 +1027,7 @@ namespace d7
 			static Miniaudio instance;
 			return instance;
 		}
+		static void initOnce() { Miniaudio::getInstance(); }
 		virtual ~Miniaudio() { 
 			stopUpdateThread();
 			releaseAndDeleteAllSounds(_soundInstances);
@@ -1046,7 +1047,7 @@ namespace d7
 		ma_sound _mainSound;
 	public:
 		Sound(const string& filePath) : _filePath(filePath) {
-			Miniaudio::getInstance();
+			Miniaudio::initOnce();
 			initSound(_filePath, _mainSound);
 		}
 		virtual ~Sound() { ma_sound_uninit(&_mainSound); }
