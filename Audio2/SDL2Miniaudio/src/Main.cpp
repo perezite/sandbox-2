@@ -44,7 +44,6 @@ namespace d0
 
 			// AAssetManager* pAssetManager = AAssetManager_fromJava(jni, global_asset_manager);
 			g_AssetManager = AAssetManager_fromJava(jni, global_asset_manager);
-
 		}
 
 		static int android_read(void* cookie, char* buf, int size) {
@@ -64,6 +63,8 @@ namespace d0
 
 		static int android_close(void* cookie) {
 			AAsset_close((AAsset*)cookie);
+			
+
 			return 0;
 			//return SDL_RWclose((SDL_RWops*)cookie);
 		}
@@ -1073,18 +1074,29 @@ namespace d7
 	}
 }
 
-namespace d8
-{
-	typedef struct
-	{
-		ma_vfs_callbacks cb;
-	} my_vfs;
+namespace my {
+#ifdef __ANDROID__
+	AAssetManager* assetManager = NULL;
 
-	ma_engine engine;
-	my_vfs vfs;
-
-	static ma_result my_vfs_open(ma_vfs* pVFS, const char* pFilePath, ma_uint32 openMode, ma_vfs_file* pFile)
+	void initializeAndroidAssetManager()
 	{
+		JNIEnv* jni = getJavaNativeInterface();
+
+		jobject activity = (jobject)SDL_AndroidGetActivity();
+
+		jclass activity_class = jni->GetObjectClass(activity);
+
+		jmethodID activity_class_getAssets = jni->GetMethodID(activity_class, "getAssets", "()Landroid/content/res/AssetManager;");
+		jobject asset_manager = jni->CallObjectMethod(activity, activity_class_getAssets); // activity.getAssets();
+		jobject global_asset_manager = jni->NewGlobalRef(asset_manager);
+
+		// AAssetManager* pAssetManager = AAssetManager_fromJava(jni, global_asset_manager);
+		assetManager = AAssetManager_fromJava(jni, global_asset_manager);
+	}
+#endif
+
+
+	string maOpenModeToString(ma_uint32 openMode) {
 		string mode;
 		if ((openMode & MA_OPEN_MODE_READ) != 0) {
 			if ((openMode & MA_OPEN_MODE_WRITE) != 0)
@@ -1095,24 +1107,49 @@ namespace d8
 		else
 			mode = "wb";
 
-		SDL_RWops* rw = SDL_RWFromFile(pFilePath, mode.c_str());
-		ma_result result = rw ? MA_SUCCESS : MA_ERROR;
+		return mode;
+	}
+}
 
-		*pFile = rw;
-		return result;
+namespace d8
+{
+	typedef struct
+	{
+		ma_vfs_callbacks cb;
+	} my_vfs;
+
+	ma_engine engine;
+	my_vfs vfs;
+
+#ifdef __ANDROID__
+
+	static ma_result my_vfs_open(ma_vfs* pVFS, const char* pFilePath, ma_uint32 openMode, ma_vfs_file* pFile)
+	{
+		//string mode = my::maOpenModeToString(openMode);
+		//SDL_RWops* rw = SDL_RWFromFile(pFilePath, mode.c_str());
+		//ma_result result = rw ? MA_SUCCESS : MA_ERROR;
+
+		//*pFile = rw;
+		//return result;
+
+		*pFile = AAssetManager_open(my::assetManager, pFilePath, AASSET_MODE_UNKNOWN);
+		//*pFile = asset;
+
+		return pFile ? MA_SUCCESS : MA_ERROR;
 	}
 
 	static ma_result my_vfs_info(ma_vfs* pVFS, ma_vfs_file file, ma_file_info* pInfo)
 	{
-		SDL_RWops* rw = (SDL_RWops*)file;
-		pInfo->sizeInBytes = SDL_RWsize(rw);
+		//SDL_RWops* rw = (SDL_RWops*)file;
+		//pInfo->sizeInBytes = SDL_RWsize(rw);
 
+		pInfo->sizeInBytes = AAsset_getLength((AAsset*)file);
 		return MA_SUCCESS;
 	}
 
 	static ma_result my_vfs_read(ma_vfs* pVFS, ma_vfs_file file, void* pDst, size_t sizeInBytes, size_t* pBytesRead)
 	{
-		size_t result;
+	/*	size_t result;
 
 		SDL_ClearError();
 		SDL_RWops* rw = (SDL_RWops*)file;
@@ -1126,6 +1163,35 @@ namespace d8
 			const char* check = SDL_GetError();
 			bool hasError = check != NULL && strlen(check) > 0;
 			return hasError ? MA_ERROR : MA_AT_END;
+		}*/
+
+		/*
+		    result = fread(pDst, 1, sizeInBytes, (FILE*)file);
+
+			if (pBytesRead != NULL) {
+				*pBytesRead = result;
+			}
+
+			if (result != sizeInBytes) {
+				if (result == 0 && feof((FILE*)file)) {
+					return MA_AT_END;
+				} else {
+					return ma_result_from_errno(ferror((FILE*)file));
+				}
+			}
+		*/
+
+		int result = AAsset_read((AAsset*)file, pDst, sizeInBytes);
+
+		if (pBytesRead != NULL)
+			*pBytesRead = result;
+
+		if (result != sizeInBytes)
+		{
+			if (result == 0)
+				return MA_AT_END;
+			else if (result < 0)
+				return MA_ERROR;
 		}
 
 		return MA_SUCCESS;
@@ -1133,21 +1199,34 @@ namespace d8
 
 	static ma_result my_vfs_close(ma_vfs* pVFS, ma_vfs_file file)
 	{
-		SDL_RWclose((SDL_RWops*)file);
+	/*	SDL_RWclose((SDL_RWops*)file);
+		return MA_SUCCESS;*/
+
+		AAsset_close((AAsset*)file);
 		return MA_SUCCESS;
 	}
 
+#endif
+
 	void init()
 	{
+		ma_result result;
+
+#ifdef __ANDROID__
+		my::initializeAndroidAssetManager();
+
 		vfs.cb.onOpen = my_vfs_open;
 		vfs.cb.onInfo = my_vfs_info;
 		vfs.cb.onRead = my_vfs_read;
 		vfs.cb.onClose = my_vfs_close;
 
-		ma_result result;
 		ma_engine_config config = ma_engine_config_init();
 		config.pResourceManagerVFS = &vfs;
 		result = ma_engine_init(&config, &engine);
+#else
+		result = ma_engine_init(NULL, &engine);
+#endif
+
 		SB_ERROR_IF(result != MA_SUCCESS, "Failed to initialize audio engine.");
 	}
 
