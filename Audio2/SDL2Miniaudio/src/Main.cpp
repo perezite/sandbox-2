@@ -1205,9 +1205,149 @@ namespace d8
 	}
 }
 
+namespace d9 
+{
+	typedef struct
+	{
+		ma_vfs_callbacks cb;
+	} my_vfs;
+
+	ma_engine engine;
+	my_vfs vfs;
+
+	void initMiniaudio()
+	{
+		ma_result result;
+
+#ifdef __ANDROID__
+		my::initializeAndroidAssetManager();
+
+		vfs.cb.onOpen = d8::my_vfs_open;
+		vfs.cb.onInfo = d8::my_vfs_info;
+		vfs.cb.onRead = d8::my_vfs_read;
+		vfs.cb.onClose = d8::my_vfs_close;
+
+		ma_engine_config config = ma_engine_config_init();
+		config.pResourceManagerVFS = &vfs;
+		result = ma_engine_init(&config, &engine);
+#else
+		result = ma_engine_init(NULL, &engine);
+#endif
+
+		SB_ERROR_IF(result != MA_SUCCESS, "Failed to initialize audio engine.");
+	}
+
+	inline void releaseMiniaudio()
+	{
+		ma_engine_uninit(&engine);
+	}
+
+	inline void initSound(const string& filePath, ma_sound& sound) {
+		ma_sound_init_from_file(&engine, filePath.c_str(), 0, NULL, NULL, &sound);
+	}
+
+	void releaseAndDeleteAllSounds(vector<ma_sound*>& sounds) {
+		for_each(sounds.begin(), sounds.end(), ma_sound_uninit);
+		deleteAll(sounds);
+		sounds.clear();
+	}
+
+	void releaseAndDeleteAllFinishedSounds(vector<ma_sound*>& sounds) {
+		for (size_t i = 0; i < sounds.size(); i++) {
+			if (ma_sound_at_end(sounds[i])) {
+				ma_sound_uninit(sounds[i]);
+				delete sounds[i];
+				sounds[i] = NULL;
+			}
+		}
+
+		removeAll(sounds, (ma_sound*)NULL);
+	}
+
+	class Miniaudio {
+		thread _updateThread;
+		bool _isThreadRunning;
+		mutex soundInstancesMutex;
+		vector<ma_sound*> _soundInstances;
+		Miniaudio() : _updateThread(&Miniaudio::updateThread, this), _isThreadRunning(true) {
+			initMiniaudio();
+		}
+	protected:
+		void updateThread() {
+			while (_isThreadRunning) {
+				my::sleep(500);
+				soundInstancesMutex.lock();
+				cout << _soundInstances.size() << " ";
+				releaseAndDeleteAllFinishedSounds(_soundInstances);
+				cout << _soundInstances.size() << endl;
+				soundInstancesMutex.unlock();
+			}
+		}
+		void stopUpdateThread() {
+			_isThreadRunning = false;
+			_updateThread.join();
+		}
+	public:
+		static Miniaudio& getInstance() {
+			static Miniaudio instance;
+			return instance;
+		}
+		static void initOnce() { Miniaudio::getInstance(); }
+		virtual ~Miniaudio() {
+			stopUpdateThread();
+			releaseAndDeleteAllSounds(_soundInstances);
+			releaseMiniaudio();
+		}
+		void playSoundInstance(const string& filePath) {
+			soundInstancesMutex.lock();
+			_soundInstances.push_back(new ma_sound());
+			initSound(filePath, *_soundInstances.back());
+			ma_sound_start(_soundInstances.back());
+			soundInstancesMutex.unlock();
+		}
+	};
+
+	class Sound {
+		string _filePath;
+		ma_sound _mainSound;
+	public:
+		Sound(const string& filePath) : _filePath(filePath) {
+			Miniaudio::initOnce();
+			initSound(_filePath, _mainSound);
+		}
+		virtual ~Sound() { ma_sound_uninit(&_mainSound); }
+		void play() { Miniaudio::getInstance().playSoundInstance(_filePath); }
+	};
+
+	void demo()
+	{
+		Window window;
+		window.setFramerateLimit(60);
+		Sound sound(my::getAbsoluteAssetPath("Sounds/ding.mp3"));
+
+		while (window.isOpen())
+		{
+			Input::update();
+			window.update();
+			window.setFramerateLimit(60);
+
+			if (Input::isTouchGoingDown(1))
+				sound.play();
+
+			if (Input::isKeyGoingDown(KeyCode::q))
+				break;
+
+			window.clear(Color(1, 1, 1, 1));
+			window.display();
+		}
+	}
+}
+
+
 int main() 
 {
-	d8::demo();			// Play a sound, whenever th user clicks the window. Use AAsset instead of SDL_RWops on android for file access
+	d9::demo();			// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds. Use AAsset instead of SDL_RWops
+	//d8::demo();		// Play a sound, whenever th user clicks the window. Use native file access (AAsset on Android) instead of SDl_RWops
 	//d7::demo();		// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds
 	//d6::demo();		// Play the same cached sound multiple times in parallel
 	//d5::demo();		// Play a cached sound, using classes
