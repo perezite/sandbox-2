@@ -1343,10 +1343,47 @@ namespace d9
 	}
 }
 
+namespace d10
+{
+	void demo()
+	{
+		Window window;
+		window.setFramerateLimit(60);
+		
+		//d9::Sound sound1(my::getAbsoluteAssetPath("Sounds/killdeer.wav"));
+		//d9::Sound sound2(my::getAbsoluteAssetPath("Sounds/ding.flac"));
+		//d9::Sound sound3(my::getAbsoluteAssetPath("Sounds/Rotate.mp3"));
+
+		vector<d9::Sound*> sounds;
+		sounds.push_back(new d9::Sound(my::getAbsoluteAssetPath("Sounds/killdeer.wav")));
+		sounds.push_back(new d9::Sound(my::getAbsoluteAssetPath("Sounds/ding.flac")));
+		sounds.push_back(new d9::Sound(my::getAbsoluteAssetPath("Sounds/Rotate.mp3")));
+
+		while (window.isOpen())
+		{
+			Input::update();
+			window.update();
+			window.setFramerateLimit(60);
+
+			if (Input::isTouchGoingDown(1))
+				sounds.at(rand() % sounds.size())->play();
+
+			if (Input::isKeyGoingDown(KeyCode::q))
+				break;
+
+			window.clear(Color(1, 1, 1, 1));
+			window.display();
+		}
+
+		deleteAll(sounds);
+	}
+}
+
 
 int main() 
 {
-	d9::demo();			// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds. Use AAsset instead of SDL_RWops
+	d10::demo();		// caching, auto cleanup, AAsset, randomized
+	//d9::demo();		// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds. Use AAsset instead of SDL_RWops
 	//d8::demo();		// Play a sound, whenever th user clicks the window. Use native file access (AAsset on Android) instead of SDl_RWops
 	//d7::demo();		// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds
 	//d6::demo();		// Play the same cached sound multiple times in parallel
