@@ -1127,6 +1127,12 @@ namespace d8
 		return pFile ? MA_SUCCESS : MA_ERROR;
 	}
 
+	static ma_result my_vfs_open_w(ma_vfs* pVFS, const wchar_t* pFilePath, ma_uint32 openMode, ma_vfs_file* pFile)
+	{
+		SB_ERROR("Not implemented!");
+		return MA_ERROR;
+	}
+
 	static ma_result my_vfs_info(ma_vfs* pVFS, ma_vfs_file file, ma_file_info* pInfo)
 	{
 		pInfo->sizeInBytes = AAsset_getLength((AAsset*)file);
@@ -1151,6 +1157,24 @@ namespace d8
 		return MA_SUCCESS;
 	}
 
+	static ma_result my_vfs_write(ma_vfs* pVFS, ma_vfs_file file, const void* pSrc, size_t sizeInBytes, size_t* pBytesWritten)
+	{
+		SB_ERROR("Not implemented!");
+		return MA_ERROR;
+	}
+
+	static ma_result my_vfs_seek(ma_vfs* pVFS, ma_vfs_file file, ma_int64 offset, ma_seek_origin origin)
+	{
+		SB_ERROR("Not implemented!");
+		return MA_ERROR;
+	}
+
+	static ma_result my_vfs_tell(ma_vfs* pVFS, ma_vfs_file file, ma_int64* pCursor)
+	{
+		SB_ERROR("Not implemented!");
+		return MA_ERROR;
+	}
+
 	static ma_result my_vfs_close(ma_vfs* pVFS, ma_vfs_file file)
 	{
 		AAsset_close((AAsset*)file);
@@ -1167,8 +1191,12 @@ namespace d8
 		my::initializeAndroidAssetManager();
 
 		vfs.cb.onOpen = my_vfs_open;
+		vfs.cb.onOpenW = my_vfs_open_w;
 		vfs.cb.onInfo = my_vfs_info;
 		vfs.cb.onRead = my_vfs_read;
+		vfs.cb.onWrite = my_vfs_write;
+		vfs.cb.onSeek = my_vfs_seek;
+		vfs.cb.onTell = my_vfs_tell;
 		vfs.cb.onClose = my_vfs_close;
 
 		ma_engine_config config = ma_engine_config_init();
@@ -1232,9 +1260,14 @@ namespace d9
 		my::initializeAndroidAssetManager();
 
 		vfs.cb.onOpen = d8::my_vfs_open;
+		vfs.cb.onOpenW = d8::my_vfs_open_w;
 		vfs.cb.onInfo = d8::my_vfs_info;
 		vfs.cb.onRead = d8::my_vfs_read;
+		vfs.cb.onWrite = d8::my_vfs_write;
+		vfs.cb.onSeek = d8::my_vfs_seek;
+		vfs.cb.onTell = d8::my_vfs_tell;
 		vfs.cb.onClose = d8::my_vfs_close;
+
 
 		ma_engine_config config = ma_engine_config_init();
 		config.pResourceManagerVFS = &vfs;
@@ -1262,7 +1295,7 @@ namespace d9
 		deleteAll(sounds);
 		sounds.clear();
 	}
-
+	
 	void releaseAndDeleteAllFinishedSounds(vector<ma_sound*>& sounds) {
 		for (size_t i = 0; i < sounds.size(); i++) {
 			if (ma_sound_at_end(sounds[i])) {
@@ -1483,7 +1516,7 @@ int main()
 {
 	//d13::demo();		// TODO: Better error messages (when file does not exists etc.)
 	//d12::demo();		// Every sound instance plays only one sound. Calling play() multiple times causes the sound to restart.
-	cerr << "d11::demo does not yet work on Android!" << endl; cin.get(); exit(1);
+	//cerr << "d11::demo does not yet work on Android!" << endl; cin.get(); exit(1);
 	d11::demo();		// Play music track
 	//d10::demo();		// caching, auto cleanup, AAsset, randomized
 	//t0::test();		// https://cplusplus.com/forum/general/102593/. Punchline: Always store pointers to complex objects into vectors, not stack objects.
