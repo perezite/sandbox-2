@@ -9,8 +9,17 @@
 #include <chrono>
 #include <mutex>
 #include <atomic>
+#include <exception>
+
+#define STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"    // Enables Vorbis decoding.
+
 #define MINIAUDIO_IMPLEMENTATION
 #include "miniaudio.h"
+
+// The stb_vorbis implementation must come after the implementation of miniaudio.
+#undef STB_VORBIS_HEADER_ONLY
+#include "stb_vorbis.c"
 
 #ifdef __ANDROID__
 	#include "../build/Platform/Android/Application/SDL_android_main.h"
@@ -87,7 +96,7 @@ namespace d0
 			return result;
 		}
 	
-		#define fopen(name, mode) sdl2_fopen(name, mode)
+		// #define fopen(name, mode) sdl2_fopen(name, mode)
 	
 	#endif
 
@@ -1242,8 +1251,10 @@ namespace d9
 		ma_engine_uninit(&engine);
 	}
 
-	inline void initSound(const string& filePath, ma_sound& sound) {
-		ma_sound_init_from_file(&engine, filePath.c_str(), 0, NULL, NULL, &sound);
+	inline void initMiniaudioSound(const string& filePath, ma_sound& sound, bool useStreaming = false) {
+		ma_uint32 flags = useStreaming ? MA_SOUND_FLAG_STREAM : 0;
+		ma_result result = ma_sound_init_from_file(&engine, filePath.c_str(), flags, NULL, NULL, &sound);
+		SB_ERROR_IF(result != MA_SUCCESS, "Failed to initialize sound.");
 	}
 
 	void releaseAndDeleteAllSounds(vector<ma_sound*>& sounds) {
@@ -1301,22 +1312,33 @@ namespace d9
 		void playSoundInstance(const string& filePath) {
 			soundInstancesMutex.lock();
 			_soundInstances.push_back(new ma_sound());
-			initSound(filePath, *_soundInstances.back());
+			initMiniaudioSound(filePath, *_soundInstances.back());
 			ma_sound_start(_soundInstances.back());
 			soundInstancesMutex.unlock();
 		}
 	};
 
-	class Sound {
+	class MiniaudioSound {
 		string _filePath;
 		ma_sound _mainSound;
+		bool _initialized;
 	public:
-		Sound(const string& filePath) : _filePath(filePath) {
+		MiniaudioSound(const string& filePath, bool useStreaming = false) 
+			: _filePath(filePath), _initialized(false) 
+		{
 			Miniaudio::initOnce();
-			initSound(_filePath, _mainSound);
+			initMiniaudioSound(_filePath, _mainSound, useStreaming);
+			_initialized = true;
 		}
-		virtual ~Sound() { ma_sound_uninit(&_mainSound); }
+		virtual ~MiniaudioSound() {
+			ma_sound_uninit(&_mainSound);
+		}
 		void play() { Miniaudio::getInstance().playSoundInstance(_filePath); }
+	};
+
+	class Sound : public MiniaudioSound {
+	public:
+		Sound(const string& filePath) : MiniaudioSound(filePath) { }
 	};
 
 	void demo()
@@ -1343,16 +1365,55 @@ namespace d9
 	}
 }
 
+namespace t0
+{
+	int counter;
+
+	class Sound {
+		size_t _id;
+		string _path;
+	public:
+		Sound(const string& path) : _path(path) {
+			_id = counter++;
+			cout << "Sound::Sound(" << path << ")" << endl;
+		}
+		Sound(const Sound& other) : _id(other._id), _path(other._path) { std::cout << "Sound::Copy(" << _id << ")" << std::endl; }
+		virtual ~Sound() {
+			cout << "Sound::~Sound() (" << _id << ")" << endl;
+		}
+	};
+
+	void test()
+	{
+		{
+			vector<Sound> sounds;
+			//sounds.reserve(2);				// using this prevents reallaction. Destructor is only called once per object then
+			sounds.emplace_back("1");
+			sounds.emplace_back("2");
+			cout << "End of scope" << endl;
+		}
+		cin.get();
+	}
+}
+
 namespace d10
 {
+	size_t getNonRepeatingIndex(size_t maxIndex) {
+		static size_t lastIndex = 0;
+
+		size_t index = lastIndex;
+		while (index == lastIndex)
+			index = rand() % maxIndex;
+
+		lastIndex = index;
+		cout << index << endl;
+		return index;
+	}
+
 	void demo()
 	{
 		Window window;
 		window.setFramerateLimit(60);
-		
-		//d9::Sound sound1(my::getAbsoluteAssetPath("Sounds/killdeer.wav"));
-		//d9::Sound sound2(my::getAbsoluteAssetPath("Sounds/ding.flac"));
-		//d9::Sound sound3(my::getAbsoluteAssetPath("Sounds/Rotate.mp3"));
 
 		vector<d9::Sound*> sounds;
 		sounds.push_back(new d9::Sound(my::getAbsoluteAssetPath("Sounds/killdeer.wav")));
@@ -1365,8 +1426,10 @@ namespace d10
 			window.update();
 			window.setFramerateLimit(60);
 
-			if (Input::isTouchGoingDown(1))
-				sounds.at(rand() % sounds.size())->play();
+			if (Input::isTouchGoingDown(1)) {
+				size_t index = getNonRepeatingIndex(sounds.size());
+				sounds.at(index)->play();
+			}
 
 			if (Input::isKeyGoingDown(KeyCode::q))
 				break;
@@ -1379,10 +1442,51 @@ namespace d10
 	}
 }
 
+namespace d11
+{
+	class Music : public d9::MiniaudioSound {
+	public:
+		Music(const string& filePath) : d9::MiniaudioSound(filePath, true) { }
+	};
+
+	void demo()
+	{
+		Window window;
+		window.setFramerateLimit(60);
+
+		// does not work on android. It works with a d9::Sound though...
+		Music test(my::getAbsoluteAssetPath("Music/BackgroundMusic.ogg"));
+
+		while (window.isOpen())
+		{
+			Input::update();
+			window.update();
+			window.setFramerateLimit(60);
+
+			if (Input::isTouchGoingDown(1)) {
+				test.play();
+			}
+
+			window.clear(Color(1, 1, 1, 1));
+			window.display();
+		}
+	}
+}
+
+namespace d12 {
+	void demo() {
+
+	}
+}
 
 int main() 
 {
-	d10::demo();		// caching, auto cleanup, AAsset, randomized
+	//d13::demo();		// TODO: Better error messages (when file does not exists etc.)
+	//d12::demo();		// Every sound instance plays only one sound. Calling play() multiple times causes the sound to restart.
+	cerr << "d11::demo does not yet work on Android!" << endl; cin.get(); exit(1);
+	d11::demo();		// Play music track
+	//d10::demo();		// caching, auto cleanup, AAsset, randomized
+	//t0::test();		// https://cplusplus.com/forum/general/102593/. Punchline: Always store pointers to complex objects into vectors, not stack objects.
 	//d9::demo();		// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds. Use AAsset instead of SDL_RWops
 	//d8::demo();		// Play a sound, whenever th user clicks the window. Use native file access (AAsset on Android) instead of SDl_RWops
 	//d7::demo();		// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds

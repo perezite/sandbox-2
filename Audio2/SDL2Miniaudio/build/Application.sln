@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Packaging.Windows", "Packaging\Windows\Packaging.Windows.vcxproj", "{97C2A5E5-4AF0-4B5E-83DA-48505247E667}"
 EndProject
@@ -22,11 +22,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Application.Windows", "Platform\Windows\Application\Application.Windows.vcxproj", "{0C624D38-FC5F-49A0-846B-EE5B7B1EBAB9}"
 EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		Shared\Application\Application.vcxitems*{0c624d38-fc5f-49a0-846b-ee5b7b1ebab9}*SharedItemsImports = 4
-		Shared\Application\Application.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
-		Shared\Application\Application.vcxitems*{71ba3082-afac-433b-b51c-17e3c244fea7}*SharedItemsImports = 4
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|_x86 = Debug|_x86
 		Debug|ARM = Debug|ARM
@@ -79,5 +74,13 @@ Global
 		{EE53054D-8C75-4E62-B9F9-94A06FC7DD95} = {AEA2BFC2-2BB1-4544-89CF-885471D2995B}
 		{71BA3082-AFAC-433B-B51C-17E3C244FEA7} = {3BBBCD76-8C98-4CF6-8F65-682D0E5205A8}
 		{0C624D38-FC5F-49A0-846B-EE5B7B1EBAB9} = {EE53054D-8C75-4E62-B9F9-94A06FC7DD95}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {43ED88A0-6602-43E6-AB3B-02476A77D8D9}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		Shared\Application\Application.vcxitems*{0c624d38-fc5f-49a0-846b-ee5b7b1ebab9}*SharedItemsImports = 4
+		Shared\Application\Application.vcxitems*{45d41acc-2c3c-43d2-bc10-02aa73ffc7c7}*SharedItemsImports = 9
+		Shared\Application\Application.vcxitems*{71ba3082-afac-433b-b51c-17e3c244fea7}*SharedItemsImports = 4
 	EndGlobalSection
 EndGlobal
