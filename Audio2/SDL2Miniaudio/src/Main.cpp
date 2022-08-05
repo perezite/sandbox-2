@@ -1121,6 +1121,20 @@ namespace d8
 
 #ifdef __ANDROID__
 
+	static int maSeekOriginToWhence(ma_seek_origin maSeekOrigin) 
+	{
+		if (maSeekOrigin == ma_seek_origin_start)
+			return SEEK_SET;
+		else if (maSeekOrigin == ma_seek_origin_current)
+			return SEEK_CUR;
+		else if (maSeekOrigin == ma_seek_origin_end)
+			return SEEK_END;
+		else {
+			SB_ERROR("Invalid Miniaudio seek origin: " << maSeekOrigin);
+			return int();
+		}
+	}
+
 	static ma_result my_vfs_open(ma_vfs* pVFS, const char* pFilePath, ma_uint32 openMode, ma_vfs_file* pFile)
 	{
 		*pFile = AAssetManager_open(my::assetManager, pFilePath, AASSET_MODE_UNKNOWN);
@@ -1159,20 +1173,28 @@ namespace d8
 
 	static ma_result my_vfs_write(ma_vfs* pVFS, ma_vfs_file file, const void* pSrc, size_t sizeInBytes, size_t* pBytesWritten)
 	{
-		SB_ERROR("Not implemented!");
 		return MA_ERROR;
 	}
 
 	static ma_result my_vfs_seek(ma_vfs* pVFS, ma_vfs_file file, ma_int64 offset, ma_seek_origin origin)
 	{
-		SB_ERROR("Not implemented!");
-		return MA_ERROR;
+		off_t result = AAsset_seek((AAsset*)file, offset, maSeekOriginToWhence(origin));
+
+		if (result == -1)
+			return MA_ERROR;
+
+		return MA_SUCCESS;
 	}
 
 	static ma_result my_vfs_tell(ma_vfs* pVFS, ma_vfs_file file, ma_int64* pCursor)
 	{
-		SB_ERROR("Not implemented!");
-		return MA_ERROR;
+		off_t result = AAsset_seek(((AAsset*)file), 0, SEEK_CUR);
+		
+		if (result == -1)
+			return MA_ERROR;
+		
+		*pCursor = result;
+		return MA_SUCCESS;
 	}
 
 	static ma_result my_vfs_close(ma_vfs* pVFS, ma_vfs_file file)
@@ -1487,8 +1509,7 @@ namespace d11
 		Window window;
 		window.setFramerateLimit(60);
 
-		// does not work on android. It works with a d9::Sound though...
-		Music test(my::getAbsoluteAssetPath("Music/BackgroundMusic.ogg"));
+		Music music(my::getAbsoluteAssetPath("Music/BackgroundMusic.ogg"));
 
 		while (window.isOpen())
 		{
@@ -1496,9 +1517,8 @@ namespace d11
 			window.update();
 			window.setFramerateLimit(60);
 
-			if (Input::isTouchGoingDown(1)) {
-				test.play();
-			}
+			if (Input::isTouchGoingDown(1)) 
+				music.play();
 
 			window.clear(Color(1, 1, 1, 1));
 			window.display();
