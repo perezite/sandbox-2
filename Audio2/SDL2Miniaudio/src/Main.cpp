@@ -1588,6 +1588,9 @@ namespace d12 {
 			ma_engine& miniaudioEngine = Miniaudio::getInstance().getEngine();
 			ma_sound_init_from_file(&miniaudioEngine, assetPath.c_str(), 0, NULL, NULL, &_sound);
 		}
+		~Sound() {
+			ma_sound_uninit(&_sound);
+		}
 		inline const string& getAssetPath() const { return _assetPath; }
 		inline const bool isPlaying() const { return ma_sound_is_playing(&_sound); }
 		void play() { 
@@ -1634,6 +1637,8 @@ namespace d13 {
 #endif
 	}
 
+	static bool hasEnded(d12::Sound* sound) { return !sound->isPlaying(); }
+
 	void demo() {
 		Window window;
 		vector<d12::Sound*> sounds;
@@ -1654,9 +1659,9 @@ namespace d13 {
 			}
 
 			counter++;
-			if (counter % 30 == 0)
-			{
+			if (counter % 30 == 0) {
 				printSounds(sounds);
+				deleteAll(sounds, hasEnded);
 			}
 
 			window.clear(Color(1, 1, 1, 1));
