@@ -1527,17 +1527,95 @@ namespace d11
 }
 
 namespace d12 {
-	void demo() {
+	typedef struct
+	{
+		ma_vfs_callbacks cb;
+	} my_vfs;
 
+	class Miniaudio {
+		ma_engine _engine;
+		my_vfs _vfs;
+		Miniaudio() { 
+			ma_result result;
+
+#ifdef __ANDROID__
+			my::initializeAndroidAssetManager();
+
+			_vfs.cb.onOpen = d8::my_vfs_open;
+			_vfs.cb.onOpenW = d8::my_vfs_open_w;
+			_vfs.cb.onInfo = d8::my_vfs_info;
+			_vfs.cb.onRead = d8::my_vfs_read;
+			_vfs.cb.onWrite = d8::my_vfs_write;
+			_vfs.cb.onSeek = d8::my_vfs_seek;
+			_vfs.cb.onTell = d8::my_vfs_tell;
+			_vfs.cb.onClose = d8::my_vfs_close;
+
+			ma_engine_config config = ma_engine_config_init();
+			config.pResourceManagerVFS = &_vfs;
+			result = ma_engine_init(&config, &_engine);
+#else
+			result = ma_engine_init(NULL, &_engine);
+#endif
+
+			SB_ERROR_IF(result != MA_SUCCESS, "Failed to initialize audio engine.");
+		}
+		~Miniaudio() {
+			ma_engine_uninit(&_engine);
+		}
+	public:
+		static Miniaudio& getInstance() {
+			static Miniaudio instance;
+			return instance;
+		}
+		ma_engine& getEngine() { return _engine; }
+	};
+
+	void initMiniaudioOnce() {
+		Miniaudio::getInstance();
+	}
+
+	class Sound {
+		ma_sound _sound;
+	public:
+		Sound(const string& assetPath) { 
+			initMiniaudioOnce();
+			ma_engine& miniaudioEngine = Miniaudio::getInstance().getEngine();
+			ma_sound_init_from_file(&miniaudioEngine, assetPath.c_str(), 0, NULL, NULL, &_sound);
+		}
+		void play() { 
+			if (ma_sound_is_playing(&_sound))
+				ma_sound_seek_to_pcm_frame(&_sound, 0);
+			ma_sound_start(&_sound);
+		}
+	};
+
+	void demo() {
+		Window window;
+		window.setFramerateLimit(60);
+
+		Sound sound(my::getAbsoluteAssetPath("Sounds/killdeer.wav"));
+
+		while (window.isOpen())
+		{
+			Input::update();
+			window.update();
+			window.setFramerateLimit(60);
+
+			if (Input::isTouchGoingDown(1))
+				sound.play();
+
+			window.clear(Color(1, 1, 1, 1));
+			window.display();
+		}
 	}
 }
 
 int main() 
 {
-	//d13::demo();		// TODO: Better error messages (when file does not exists etc.)
-	//d12::demo();		// Every sound instance plays only one sound. Calling play() multiple times causes the sound to restart.
-	//cerr << "d11::demo does not yet work on Android!" << endl; cin.get(); exit(1);
-	d11::demo();		// Play music track
+	//d14::demo();		// TODO: Proper error message when file does not exist
+	//d13::demo();		// Every sound instance plays only one sound. Calling play() multiple times causes the sound to restart.
+	d12::demo();		// New Api: Sound::Play() and Music::Play() replay the sound instead of playing a separate sound
+	//d11::demo();		// Play music track
 	//d10::demo();		// caching, auto cleanup, AAsset, randomized
 	//t0::test();		// https://cplusplus.com/forum/general/102593/. Punchline: Always store pointers to complex objects into vectors, not stack objects.
 	//d9::demo();		// Play the same cached sound multiple times in parallel with automatic cleanup of old sounds. Use AAsset instead of SDL_RWops
