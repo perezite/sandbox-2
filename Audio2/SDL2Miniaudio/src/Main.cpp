@@ -1451,20 +1451,24 @@ namespace t0
 	}
 }
 
-namespace d10
+namespace my
 {
-	size_t getNonRepeatingIndex(size_t maxIndex) {
+	size_t getNonRepeatingIndex(size_t indexCount, bool debug = false) {
 		static size_t lastIndex = 0;
 
 		size_t index = lastIndex;
 		while (index == lastIndex)
-			index = rand() % maxIndex;
+			index = rand() % indexCount;
 
 		lastIndex = index;
-		cout << index << endl;
+		if (debug)
+			cout << index << endl;
 		return index;
 	}
+}
 
+namespace d10
+{
 	void demo()
 	{
 		Window window;
@@ -1482,7 +1486,7 @@ namespace d10
 			window.setFramerateLimit(60);
 
 			if (Input::isTouchGoingDown(1)) {
-				size_t index = getNonRepeatingIndex(sounds.size());
+				size_t index = my::getNonRepeatingIndex(sounds.size(), true);
 				sounds.at(index)->play();
 			}
 
@@ -1576,12 +1580,16 @@ namespace d12 {
 
 	class Sound {
 		ma_sound _sound;
+		string _assetPath;
 	public:
-		Sound(const string& assetPath) { 
+		Sound(const string& assetPath): _assetPath(assetPath)
+		{ 
 			initMiniaudioOnce();
 			ma_engine& miniaudioEngine = Miniaudio::getInstance().getEngine();
 			ma_sound_init_from_file(&miniaudioEngine, assetPath.c_str(), 0, NULL, NULL, &_sound);
 		}
+		inline const string& getAssetPath() const { return _assetPath; }
+		inline const bool isPlaying() const { return ma_sound_is_playing(&_sound); }
 		void play() { 
 			if (ma_sound_is_playing(&_sound))
 				ma_sound_seek_to_pcm_frame(&_sound, 0);
@@ -1610,11 +1618,59 @@ namespace d12 {
 	}
 }
 
+namespace d13 {
+	d12::Sound* createSound() {
+		vector<string> filenames = { "killdeer.wav", "Rotate.mp3", "ding.flac", "Collision.ogg" };
+		string path = "Sounds/" + filenames[my::getNonRepeatingIndex(4)];
+		return new d12::Sound(my::getAbsoluteAssetPath(path));
+	}
+
+	void printSounds(vector<d12::Sound*> sounds) {
+#ifdef WIN32
+		system("cls");
+		for (size_t i = 0; i < sounds.size(); i++) {
+			cout << sounds[i]->getAssetPath() << " isPlaying: " << sounds[i]->isPlaying() << endl;
+		}
+#endif
+	}
+
+	void demo() {
+		Window window;
+		vector<d12::Sound*> sounds;
+		window.setFramerateLimit(60);
+		int counter = -1;
+
+		while (window.isOpen())
+		{
+			Input::update();
+			window.update();
+			window.setFramerateLimit(60);
+
+			if (Input::isTouchGoingDown(1)) {
+				d12::Sound* sound = createSound();
+				sounds.push_back(sound);
+				sound->play();
+				printSounds(sounds);
+			}
+
+			counter++;
+			if (counter % 30 == 0)
+			{
+				printSounds(sounds);
+			}
+
+			window.clear(Color(1, 1, 1, 1));
+			window.display();
+		}
+	}
+}
+
 int main() 
 {
-	//d14::demo();		// TODO: Proper error message when file does not exist
-	//d13::demo();		// Every sound instance plays only one sound. Calling play() multiple times causes the sound to restart.
-	d12::demo();		// New Api: Sound::Play() and Music::Play() replay the sound instead of playing a separate sound
+	//d15::demo();		// TODO: Proper error message when file does not exist
+	//d14::demo();		// Every sound instance plays only one sound. Calling play() multiple times causes the sound to restart.
+	d13::demo();		// Play multiple sounds 
+	//d12::demo();		// New Api: Sound::Play() replays the sound instead of playing a separate sound
 	//d11::demo();		// Play music track
 	//d10::demo();		// caching, auto cleanup, AAsset, randomized
 	//t0::test();		// https://cplusplus.com/forum/general/102593/. Punchline: Always store pointers to complex objects into vectors, not stack objects.
