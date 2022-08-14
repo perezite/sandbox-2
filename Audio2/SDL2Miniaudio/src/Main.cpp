@@ -1589,6 +1589,7 @@ namespace d12 {
 			ma_sound_init_from_file(&miniaudioEngine, assetPath.c_str(), 0, NULL, NULL, &_sound);
 		}
 		~Sound() {
+			ma_sound_stop(&_sound);
 			ma_sound_uninit(&_sound);
 		}
 		inline const string& getAssetPath() const { return _assetPath; }
@@ -1637,7 +1638,7 @@ namespace d13 {
 #endif
 	}
 
-	static bool hasEnded(d12::Sound* sound) { return !sound->isPlaying(); }
+	static bool hasSoundEnded(d12::Sound* sound) { return !sound->isPlaying(); }
 
 	void demo() {
 		Window window;
@@ -1661,8 +1662,63 @@ namespace d13 {
 			counter++;
 			if (counter % 30 == 0) {
 				printSounds(sounds);
-				deleteAll(sounds, hasEnded);
+				deleteAll(sounds, hasSoundEnded);
 			}
+
+			window.clear(Color(1, 1, 1, 1));
+			window.display();
+		}
+
+		deleteAll(sounds);
+	}
+}
+
+namespace d14 {
+	class MiniaudioSound {
+		ma_sound _sound;
+		string _assetPath;
+	public:
+		MiniaudioSound(const string& assetPath, bool useStreaming = false) : _assetPath(assetPath)
+		{
+			d12::initMiniaudioOnce();
+			ma_engine& miniaudioEngine = d12::Miniaudio::getInstance().getEngine();
+			ma_uint32 flags = useStreaming ? MA_SOUND_FLAG_STREAM : 0;
+			ma_result result = ma_sound_init_from_file(&miniaudioEngine, assetPath.c_str(), flags, NULL, NULL, &_sound);
+			if (result != MA_SUCCESS)
+				SB_ERROR("Initializing audio failed: " + assetPath);
+		}
+		~MiniaudioSound() {
+			ma_sound_stop(&_sound);
+			ma_sound_uninit(&_sound);
+		}
+		inline const string& getAssetPath() const { return _assetPath; }
+		inline const bool isPlaying() const { return ma_sound_is_playing(&_sound); }
+		void play() {
+			if (ma_sound_is_playing(&_sound))
+				ma_sound_seek_to_pcm_frame(&_sound, 0);
+			ma_sound_start(&_sound);
+		}
+	};
+
+	class Music : public MiniaudioSound {
+	public:
+		Music(const string& assetPath) : MiniaudioSound(assetPath, true) { }
+	};
+
+	void demo() {
+		Window window;
+		Music music(my::getAbsoluteAssetPath("Music/BackgroundMusic.ogg"));
+
+		window.setFramerateLimit(60);
+
+		while (window.isOpen())
+		{
+			Input::update();
+			window.update();
+			window.setFramerateLimit(60);
+
+			if (Input::isTouchGoingDown(1))
+				music.play();
 
 			window.clear(Color(1, 1, 1, 1));
 			window.display();
@@ -1672,10 +1728,11 @@ namespace d13 {
 
 int main() 
 {
-	//d15::demo();		// TODO: Proper error message when file does not exist
-	//d14::demo();		// Every sound instance plays only one sound. Calling play() multiple times causes the sound to restart.
-	d13::demo();		// Play multiple sounds 
-	//d12::demo();		// New Api: Sound::Play() replays the sound instead of playing a separate sound
+	//d16::demo();		// TODO: Proper error message when file does not exist
+	//d15::demo();		// Play multiple music tracks with the new Api
+	d14::demo();		// New Api: Music::play() on a playing music restarts the music instead of playing an additional music
+	//d13::demo();		// Play multiple sound tracks with the new Api.
+	//d12::demo();		// New Api: Sound::play() on a playing sound replays the sound instead of playing an additional sound
 	//d11::demo();		// Play music track
 	//d10::demo();		// caching, auto cleanup, AAsset, randomized
 	//t0::test();		// https://cplusplus.com/forum/general/102593/. Punchline: Always store pointers to complex objects into vectors, not stack objects.
