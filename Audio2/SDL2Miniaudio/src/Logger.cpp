@@ -55,12 +55,14 @@ namespace sb
 	}
 
 	void logError(std::stringstream& stream) {
-		SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", stream.str().c_str());
-
-        if (SDL_WasInit(SDL_INIT_VIDEO))
-            displayError(stream);
-        else
-            handleErrorWithoutSdl();
+		if (SDL_WasInit(SDL_INIT_VIDEO)) {
+			SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", stream.str().c_str());
+			displayError(stream);
+		}
+		else {
+			std::cerr << stream.str();
+			handleErrorWithoutSdl();
+		}
 
         exit(1);
 	}
