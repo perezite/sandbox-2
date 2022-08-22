@@ -31,6 +31,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+		<!--Our app supports any aspect ratio, no matter how big. So just set it to some very big value. 
+		    Additional information:
+		    https://stackoverflow.com/questions/44197453/android-black-bar-below-status-bar-what-is-it
+		    https://android-developers.googleblog.com/2017/03/update-your-app-to-take-advantage-of.html
+		    https://developer.android.com/guide/practices/screens_support#MaxAspectRatio -->
+		<meta-data android:name="android.max_aspect" android:value="5.0" />
     </application>
     <uses-feature android:glEsVersion="0x00020000"/>
     <uses-sdk android:minSdkVersion="5"/>
