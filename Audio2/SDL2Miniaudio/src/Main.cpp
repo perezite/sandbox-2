@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "Asset.h"
 #include "Memory.h"
+#include "Quad.h"
 #include <string>
 #include <algorithm>
 #include <thread>
@@ -1687,7 +1688,7 @@ namespace d14 {
 			if (result != MA_SUCCESS)
 				SB_ERROR("Initializing audio failed: " + assetPath);
 		}
-		~MiniaudioSound() {
+		~MiniaudioSound() {	
 			ma_sound_stop(&_sound);
 			ma_sound_uninit(&_sound);
 		}
@@ -1708,19 +1709,29 @@ namespace d14 {
 	void demo() {
 		Window window;
 		Music music(my::getAbsoluteAssetPath("Music/BackgroundMusic.ogg"));
+		Quad quad;
 
 		window.setFramerateLimit(60);
+		window.getCamera().setCenter(0);
+		window.getCamera().requestSize(100);
+		quad.setScale(50);
+
 
 		while (window.isOpen())
 		{
 			Input::update();
 			window.update();
-			window.setFramerateLimit(60);
+			 //window.clear(Color(1, 1, 1, 1));
+			window.clear(Color(1, 0, 0, 1));
 
-			if (Input::isTouchGoingDown(1))
-				music.play();
+			//if (Input::isTouchGoingDown(1))
+			//	music.play();
 
-			window.clear(Color(1, 1, 1, 1));
+			window.draw(quad);
+
+			if (Input::isTouchDown(1))
+				quad.setScale(quad.getScale() * 1.01f);
+
 			window.display();
 		}
 	}
