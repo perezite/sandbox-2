@@ -12,6 +12,7 @@ public class MainActivity extends AppCompatActivity {
     // Used to load the 'app' library on application startup.
     static {
         System.loadLibrary("app");
+		System.loadLibrary("SDL2");
     }
 
     private ActivityMainBinding binding;
