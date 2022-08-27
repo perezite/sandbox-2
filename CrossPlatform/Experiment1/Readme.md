@@ -1,5 +1,4 @@
 - Get hello-jni working using the latest and greatest Android Studio project
-- Also configure a special build setting for building x86 only (way faster then building everything)
 - Verify that deployment via gradle works
 
 # How To
