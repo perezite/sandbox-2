@@ -1,0 +1,1 @@
+These libraries were created using the hello-libs NDK example. See: https://github.com/android/ndk-samples/tree/main/hello-libs/gen-libs
