@@ -10,6 +10,7 @@ Java_com_organisation_app_MainActivity_stringFromJNI(JNIEnv* env, jobject /* thi
 {			
 	SDL_version version;
 	SDL_GetVersion(&version);
+	
 	char sdlVersion[1024];
 	sprintf(sdlVersion, "%u.%u.%u", version.major, version.minor, version.patch);
 
