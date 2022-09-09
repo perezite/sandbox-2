@@ -1,7 +1,8 @@
-- Get hello-jni working using the latest and greatest Android Studio project
+# What this does
+- Get hello-libs NDK working using the latest and greatest Android Studio project
 - Verify that deployment via gradle works
 
-# What I did
+# Reproduction steps
 
 ## Setup basic app 
 ### Generate the App Code
@@ -27,9 +28,9 @@
 - https://developer.android.com/studio/build/dependencies
 
 ### Verify that deploying the app works
-	- Open Android Emulator from VS
-	- gradlew installDebug
-	- Run the app
+- Open Android Emulator from VS
+- gradlew installDebug
+- Run the app
 
 ## Try to link SDL2 (incomplete)
 
