@@ -8,17 +8,12 @@ cmake_minimum_required(VERSION 3.18.1)
 project("app")
 
 # set directory for libraries
-set(distribution_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../distribution)
+set(distribution_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../sdl2Distribution)
 
-# add static gmath library
-add_library(lib_gmath STATIC IMPORTED)
-set_target_properties(lib_gmath PROPERTIES IMPORTED_LOCATION
-    ${distribution_DIR}/gmath/lib/${ANDROID_ABI}/libgmath.a)
-
-# add dynamic gperf library
-add_library(lib_gperf SHARED IMPORTED)
-set_target_properties(lib_gperf PROPERTIES IMPORTED_LOCATION
-    ${distribution_DIR}/gperf/lib/${ANDROID_ABI}/libgperf.so)
+# add dynamic SDL2 library
+add_library(SDL2 SHARED IMPORTED)
+set_target_properties(SDL2 PROPERTIES IMPORTED_LOCATION
+    ${distribution_DIR}/libs/${ANDROID_ABI}/libSDL2.so)
 
 # Creates and names a library, sets it as either STATIC
 # or SHARED, and provides the relative paths to its source code.
@@ -47,8 +42,7 @@ find_library( # Sets the name of the path variable.
 
 # set include directories for libraries
 target_include_directories(app PRIVATE
-                           ${distribution_DIR}/gmath/include
-                           ${distribution_DIR}/gperf/include)
+                           ${distribution_DIR}/include)
 
 # Specifies libraries CMake should link to your target library. You
 # can link multiple libraries, such as libraries you define in this
@@ -58,6 +52,5 @@ target_link_libraries( # Specifies the target library.
 
         # Links the target library to the log library
         # included in the NDK.
-	    lib_gmath
-        lib_gperf
+	    SDL2
         ${log-lib})

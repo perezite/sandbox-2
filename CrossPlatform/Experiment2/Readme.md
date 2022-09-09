@@ -9,6 +9,8 @@
 - Read the following, in particular the post at the very bottom: https://stackoverflow.com/questions/32487192/add-abifilters-to-gradle-properties
 - Add the abi-filters in build.gradle -> android -> buildTypes -> debug -> ndk -> abiFilters
 
+## Incorporate SDL2 into the build process
+
 ## Temporary notes 
 
 ### First try: Add SDL2 via jniLibs folder
