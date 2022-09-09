@@ -1,38 +1,15 @@
-# What this does
-- Get hello-libs NDK working using the latest and greatest Android Studio project
-- Verify that deployment via gradle works
+# Goal
+- Incorporate the SDL2 library
+- Call GetVersion() from the library and display it on the screen
 
 # Reproduction steps
 
-## Setup basic app 
-### Generate the App Code
-- Android Studio -> New Project -> Native C++ 
-- Add the following settings
-	- Name: App
-	- Package Name: com.example.app
-	- Save Location: Somewhere
-	- C++ Standard: C++ 11
-- Wait for the gradle build to complete
+## Add ABI filters
+- I only have SDL2 binaries for x86 and armeabi-v7a readily available. To avoid compilation issues, I am going to restrict the app to compile only for these ABI's
+- Read the following, in particular the post at the very bottom: https://stackoverflow.com/questions/32487192/add-abifilters-to-gradle-properties
+- Add the abi-filters in build.gradle -> android -> buildTypes -> debug -> ndk -> abiFilters
 
-### Copy the App folder to this folder here
-### Verify that building from command line works
-- cd to this folder here
-- gradlew clean
-- gradlew assembleDebug
-- gradlew clean
-
-### Read the following articles
-- https://developer.android.com/studio/build/build-variants
-- https://developer.android.com/studio/build
-- https://developer.android.com/studio/releases/gradle-plugin#updating-plugin
-- https://developer.android.com/studio/build/dependencies
-
-### Verify that deploying the app works
-- Open Android Emulator from VS
-- gradlew installDebug
-- Run the app
-
-## Try to link SDL2 (incomplete)
+## Temporary notes 
 
 ### First try: Add SDL2 via jniLibs folder
 - Basic idea was to add the SDL2 *.so files to jniLibs folder
