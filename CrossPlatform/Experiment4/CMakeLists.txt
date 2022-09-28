@@ -7,4 +7,4 @@ add_subdirectory("calculator")
 
 add_executable(app "main.cpp")
 
-target_link_libraries(app PUBLIC Calculator)
+target_link_libraries(app PUBLIC calculator)

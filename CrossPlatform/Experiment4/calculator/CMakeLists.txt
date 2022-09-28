@@ -1,1 +1,1 @@
-add_library(Calculator calc.cpp)
+add_library(calculator STATIC calc.cpp)

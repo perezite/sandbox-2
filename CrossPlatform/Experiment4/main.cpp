@@ -16,7 +16,7 @@ void main()
 #elif defined(MY_DEBUG)
 	cout << "Debug Build" << endl;
 #endif
-
+	
 	cout << add(1, 2) << endl;
 
 	cin.get();
