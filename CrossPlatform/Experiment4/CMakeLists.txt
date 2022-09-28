@@ -3,7 +3,7 @@ project(app)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_subdirectory(calculator)
+add_subdirectory("calculator")
 
 add_executable(app "main.cpp")
 
