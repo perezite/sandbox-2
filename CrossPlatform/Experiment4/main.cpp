@@ -1,4 +1,6 @@
 #include <iostream>
+#include "calculator/calc.h"
+
 using namespace std;
 
 #ifdef NDEBUG
@@ -15,8 +17,7 @@ void main()
 		cout << "Debug Build" << endl;
 	#endif
 
-	auto test = 42;
-	cout << "test" << endl;
+	cout << add(1, 2) << endl;
 
 	cin.get();
 }

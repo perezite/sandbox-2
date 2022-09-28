@@ -3,4 +3,8 @@ project(app)
 
 set(CMAKE_CXX_STANDARD 14)
 
-add_executable(app main.cpp)
+add_subdirectory(calculator)
+
+add_executable(app "main.cpp")
+
+target_link_libraries(app PUBLIC Calculator)
