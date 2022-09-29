@@ -43,11 +43,10 @@ void printCppVersion()
 int main()
 {
 	printBuildConfiguration();
-
-	cout << add(1, 2) << endl;
-
 	printVisualStudioCppVersion();
 	printCppVersion();
+
+	cout << add(1, 2) << endl;
 
 	cin.get();
 
