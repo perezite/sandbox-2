@@ -1,11 +1,15 @@
 cmake_minimum_required(VERSION 3.13)
 project(app)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED True)
+add_subdirectory("build")
 
-add_subdirectory("calculator")
+# message(${CMAKE_SYSTEM_NAME})
 
-add_executable(app "main.cpp")
+#set(cmake_cxx_standard 11)
+#set(cmake_cxx_standard_required true)
 
-target_link_libraries(app PUBLIC calculator)
+#add_subdirectory("calculator")
+
+#add_executable(app "main.cpp")
+
+#target_link_libraries(app public calculator)
