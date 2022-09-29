@@ -4,3 +4,5 @@ project(app)
 set(OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/binaries)
 
 add_subdirectory("build")
+
+add_subdirectory("source" "app")

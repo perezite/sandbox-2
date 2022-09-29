@@ -46,7 +46,7 @@ int main()
 	printVisualStudioCppVersion();
 	printCppVersion();
 
-	cout << add(1, 2) << endl;
+	cout << "Result: " << add(1, 2) << endl;
 
 	cin.get();
 
