@@ -22,3 +22,4 @@
     - Add com/organisation/mygame/MyGame.java with minimal class
 - In app/src/main/res/values/strings
     - Replace Game with Super Duper
+- gradlew assembleDebug
