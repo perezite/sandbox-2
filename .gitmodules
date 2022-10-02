@@ -1,0 +1,3 @@
+[submodule "CrossPlatform/Experiment5/SDL"]
+	path = CrossPlatform/Experiment5/SDL
+	url = https://github.com/libsdl-org/SDL
