@@ -6,8 +6,8 @@
 
 - Clone https://github.com/libsdl-org/SDL somewhere
 - Read SDL/docs/Readme-android.md
-- Copy android-project here
-- Copy SDL here (the whole folder)
+- Copy android-project here (../Experiment5/android-project)
+- Add SDL as a submodule here (../Experiment5/SDL)
 - In android-project/app/jni
     - Remove all *.mk files (we use CMake instead)
     - Adjust CMakeLists.txt to reference our top-level SDL folder as a "subdirectory"
