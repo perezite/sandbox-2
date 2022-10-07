@@ -2,6 +2,9 @@
 #include <stdio.h>
 #include <string>
 #include <string.h>
+#include "version.h"
+
+using namespace std;
 
 bool init();
 
@@ -80,6 +83,12 @@ int main( int argc, char* args[] )
 	}
 	else
 	{	
+		auto versionDescription = "O2 Version: " + getVersion();
+		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION,
+                         "O2 Version Number",
+                         versionDescription.c_str(),
+                         NULL);
+
 		bool quit = false;
 
 		SDL_Event e;

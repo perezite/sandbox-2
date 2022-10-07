@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.6)
 
-project(GAME)
+project(o2-demo)
 
-add_subdirectory("../../../../source" "src")
+set(O2_ANDROID 1)
+
+add_subdirectory("../../../../demo" "demo")
