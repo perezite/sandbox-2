@@ -12,5 +12,5 @@ call emsdk install latest
 call emsdk activate latest
 
 rem open the emscripten shell
-cd ../..
-call tools/emsdk/emcmdprompt.bat
+cd ..
+call emsdk/emcmdprompt
