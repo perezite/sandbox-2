@@ -1,0 +1,1 @@
+Trying to get a basic Emscripten app up and running, using basic command line tools - no cmake for now
