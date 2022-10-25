@@ -1,3 +1,6 @@
 [submodule "CrossPlatform/Experiment5/SDL"]
 	path = CrossPlatform/Experiment5/SDL
 	url = https://github.com/libsdl-org/SDL
+[submodule "Assimp/Assimp1/assimp"]
+	path = Assimp/Assimp1/assimp
+	url = https://github.com/assimp/assimp
