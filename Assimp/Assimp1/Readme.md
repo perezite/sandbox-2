@@ -1,1 +1,1 @@
-Assimp compiles huge binaries in emscripten. In this snippet, we try to reduce the size and compilation time using (not very well documented) compiler flags
+Compile the assimp library using emscripten
