@@ -5,7 +5,7 @@ pushd build
 	call cmake --build .
 popd
 
-pushd bin
+pushd binaries
 	call emrun index.html --kill_exit
 	cd ..
 pushd
