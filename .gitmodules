@@ -4,3 +4,6 @@
 [submodule "Assimp/Assimp1/assimp"]
 	path = Assimp/Assimp1/assimp
 	url = https://github.com/assimp/assimp
+[submodule "Assimp/Assimp2/assimp"]
+	path = Assimp/Assimp2/assimp
+	url = https://github.com/assimp/assimp
