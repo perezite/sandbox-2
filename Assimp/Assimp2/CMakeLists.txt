@@ -19,6 +19,6 @@ add_subdirectory(assimp)
 
 set(CMAKE_EXECUTABLE_SUFFIX .html) 
 add_executable(index main.cpp)
-set_target_properties(index PROPERTIES LINK_FLAGS "--emrun")
+set_target_properties(index PROPERTIES LINK_FLAGS "-sALLOW_MEMORY_GROWTH --emrun")
 
 target_link_libraries(index assimp)
