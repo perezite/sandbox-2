@@ -1,0 +1,1 @@
+add_library(o2-lib STATIC "window.cpp" "window.h")
