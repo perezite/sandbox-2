@@ -3,20 +3,20 @@
 using namespace std;
 using namespace o2;
 
-string getDebugModeInfo()
+string getBuildTypeInfo()
 {
     #ifdef _DEBUG
-        return "debug mode";
+        return "debug build";
     #endif
     
     #ifdef NDEBUG
-        return "release mode";
+        return "release build";
     #endif
 }
 
 int main()
 {
-    cout << "o2-app " << getDebugModeInfo() << endl;
+    cout << "o2-app " << getBuildTypeInfo() << endl;
 
     Window window;
     cin.get();
