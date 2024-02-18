@@ -13,4 +13,4 @@ if (O2_STANDALONE)
 	# set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../output/binaries)
 endif()
 
-add_library(o2-lib STATIC "o2-lib/window.cpp" "o2-lib/window.h")
+add_library(o2-lib STATIC "o2-lib/window.cpp" "o2-lib/window.h" "o2-lib/o2.h" "o2-lib/o2.cpp")

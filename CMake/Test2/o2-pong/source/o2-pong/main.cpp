@@ -1,9 +1,10 @@
-﻿#include "window.h"
+﻿#include "o2.h"
+#include "window.h"
 #include <iostream>
 using namespace std;
 using namespace o2;
 
-string getBuildTypeInfo()
+string getBuildConfigurationInfo()
 {
     #ifdef _DEBUG
         return "debug build";
@@ -16,7 +17,8 @@ string getBuildTypeInfo()
 
 int main()
 {
-    cout << "o2-app " << getBuildTypeInfo() << endl;
+    cout << "o2-app " << ::getBuildConfigurationInfo() << endl;
+    cout << "o2-lib " << o2::getBuildConfigurationInfo() << endl;
 
     Window window;
     cin.get();
