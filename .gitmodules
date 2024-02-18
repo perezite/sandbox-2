@@ -7,3 +7,6 @@
 [submodule "Assimp/Assimp2/assimp"]
 	path = Assimp/Assimp2/assimp
 	url = https://github.com/assimp/assimp
+[submodule "CMake/Test3/o2-pong/third-party/test-submodule"]
+	path = CMake/Test3/o2-pong/third-party/test-submodule
+	url = https://github.com/perezite/test-submodule
