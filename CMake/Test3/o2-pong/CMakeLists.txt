@@ -8,6 +8,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/output/binaries)
 add_subdirectory(third-party/test-submodule lib)
 include_directories(third-party/test-submodule/source/lib)
 
-add_executable(app "source/o2-pong/main.cpp")
+add_executable(app "source/main.cpp")
 
 target_link_libraries(app lib)
